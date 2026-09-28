@@ -1,0 +1,23 @@
+/* =============================================================================
+ * Card — Styles (dark theme)
+ *
+ * Conteneur sombre avec bordure subtile. Optionnellement cliquable.
+ * ============================================================================= */
+
+.card {
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  transition: background-color var(--transition-fast),
+              border-color var(--transition-fast);
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.clickable:hover {
+  background-color: var(--color-bg-card-hover);
+  border-color: var(--color-border-hover);
+}

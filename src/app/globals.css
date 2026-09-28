@@ -1,0 +1,12 @@
+/* =============================================================================
+ * GetSpecial — Styles globaux
+ *
+ * Point d'entrée CSS. Importe les tokens, le reset et les animations.
+ * N'ajouter ici que des styles véritablement globaux.
+ * ============================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+@import '../styles/tokens.css';
+@import '../styles/reset.css';
+@import '../styles/animations.css';

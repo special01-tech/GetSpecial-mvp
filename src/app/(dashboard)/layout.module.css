@@ -1,0 +1,29 @@
+/* =============================================================================
+ * Dashboard Layout — Styles
+ *
+ * Structure principale de l'app authentifiée :
+ * - Sidebar fixe à gauche (desktop)
+ * - Zone de contenu scrollable
+ * - Header fixe en haut (mobile)
+ * - BottomNav fixe en bas (mobile)
+ * ============================================================================= */
+
+.layout {
+  display: flex;
+  min-height: 100dvh;
+}
+
+.main {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  padding: var(--space-8);
+  background-color: var(--color-bg-secondary);
+}
+
+/* Sur mobile : pas de margin sidebar, padding top/bottom pour header/bottomnav */
+@media (max-width: 768px) {
+  .main {
+    margin-left: 0;
+    padding: calc(var(--header-height) + var(--space-4)) var(--space-4) calc(var(--bottom-nav-height) + var(--space-4));
+  }
+}

@@ -1,0 +1,109 @@
+/* =============================================================================
+ * Sidebar — Styles (dark theme, conforme aux maquettes)
+ *
+ * Navigation latérale desktop avec :
+ * - Logo GetSpecial en haut
+ * - Liens de navigation
+ * - Lien Aide en bas
+ * Masquée sur mobile (remplacée par BottomNav).
+ * ============================================================================= */
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--sidebar-width);
+  height: 100dvh;
+  background-color: var(--color-bg-sidebar);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-6) 0;
+  z-index: 100;
+}
+
+/* Logo en haut */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-5);
+  margin-bottom: var(--space-6);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}
+
+.logoIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-white);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+}
+
+/* Zone de navigation principale */
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+  padding: 0 var(--space-3);
+}
+
+/* Navigation secondaire (Aide, en bas) */
+.navBottom {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: 0 var(--space-3);
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-4);
+}
+
+/* Lien de navigation */
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  transition: background-color var(--transition-fast),
+              color var(--transition-fast);
+}
+
+.navLink:hover {
+  background-color: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+}
+
+/* Lien actif : fond orange subtil, texte orange */
+.navLinkActive {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+/* Icône dans le lien */
+.navIcon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Masquer sur mobile */
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+}
