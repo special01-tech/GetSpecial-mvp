@@ -13,7 +13,6 @@
  * + 🔐 AUTH     : auth                → Gestion des comptes & sessions
  * ============================================================================= */
 
-export * from './auth';
 export * from './context-store';
 export * from './signal-collector';
 export * from './opportunity-engine';

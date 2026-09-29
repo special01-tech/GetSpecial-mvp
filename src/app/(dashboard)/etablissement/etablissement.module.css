@@ -1,0 +1,338 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.publicLink {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--color-primary);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.publicLink:hover {
+  text-decoration: underline;
+}
+
+/* Two Columns Layout */
+.layout {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 28px;
+  align-items: flex-start;
+}
+
+.leftCol,
+.rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Restaurant Cover & Info Card */
+.restaurantHeroCard {
+  background-color: var(--color-bg-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.coverContainer {
+  height: 140px;
+  width: 100%;
+  position: relative;
+  background-color: #000;
+}
+
+.coverImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.8);
+}
+
+.heroContent {
+  padding: 16px 22px 22px 22px;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.identityRow {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  margin-top: -38px;
+}
+
+.logoBox {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-full);
+  background-color: #FFFFFF;
+  border: 3px solid var(--color-bg-surface-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #000000;
+  box-shadow: var(--shadow-md);
+  flex-shrink: 0;
+}
+
+.nameGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 2px;
+}
+
+.restaurantName {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.2;
+}
+
+.category {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.openBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background-color: rgba(34, 197, 94, 0.15);
+  color: #22C55E;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.openDot {
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-full);
+  background-color: #22C55E;
+}
+
+.editBtn {
+  padding: 6px 14px;
+  border-radius: var(--radius-md);
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.editBtn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Info Details Card */
+.infoCard {
+  background-color: var(--color-bg-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.infoItem {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.infoItem:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.infoLeft {
+  display: flex;
+  gap: 14px;
+}
+
+.infoIcon {
+  color: var(--color-text-muted);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.infoLabels {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.infoTitle {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.infoValue {
+  font-size: 0.86rem;
+  color: var(--color-text-primary);
+}
+
+.socialIcons {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.socialBadge {
+  padding: 3px 8px;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.04);
+  font-size: 0.74rem;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+/* Right Panels */
+.panelCard {
+  background-color: var(--color-bg-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.panelTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.photoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.photoThumb {
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.photoThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.btnRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* Offers Pills */
+.offersRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.offerPill {
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background-color: rgba(255, 92, 0, 0.1);
+  border: 1px solid rgba(255, 92, 0, 0.25);
+  color: #FFA066;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+/* Preferences Toggle */
+.toggleItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.toggleLabel {
+  font-size: 0.84rem;
+  color: var(--color-text-primary);
+}
+
+.switch {
+  width: 42px;
+  height: 24px;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.15);
+  position: relative;
+  cursor: pointer;
+  border: none;
+  transition: background-color var(--transition-fast);
+  padding: 2px;
+}
+
+.switchActive {
+  background-color: var(--color-primary);
+}
+
+.switchKnob {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background-color: #FFFFFF;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform var(--transition-fast);
+}
+
+.switchActive .switchKnob {
+  transform: translateX(18px);
+}
+
+.advancedLink {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  margin-top: 4px;
+}
+
+.advancedLink:hover {
+  color: var(--color-text-primary);
+}
+
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

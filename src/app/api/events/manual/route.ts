@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
-import { success, error } from '@/server/lib/api-response';
+import { success, error, unauthorized } from '@/server/lib/api-response';
+import { requireRestaurantOwnership } from '@/server/lib/auth';
 import { logAudit } from '@/server/lib/audit';
 import { z } from 'zod';
 
@@ -23,8 +24,11 @@ export async function POST(req: NextRequest) {
 
     const { restaurantId, title, description, dateTime, intensity } = validated.data;
 
+    // Vérifier les droits du gérant sur le restaurant
+    await requireRestaurantOwnership(restaurantId);
+
     // Normalisation dans le format de signal unifié
-    const signal = await (prisma as any).signal.create({
+    const signal = await prisma.signal.create({
       data: {
         restaurantId,
         type: 'event',
@@ -50,6 +54,7 @@ export async function POST(req: NextRequest) {
 
     return success(signal, 201);
   } catch (err: any) {
+    if (err.message === 'Non autorisé' || err.message?.includes('accès refusé')) return unauthorized();
     return error(err.message, 500);
   }
 }

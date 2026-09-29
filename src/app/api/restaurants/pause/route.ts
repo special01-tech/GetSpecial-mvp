@@ -1,5 +1,5 @@
-import { NextRequest } from 'next/server';
-import { success, error } from '@/server/lib/api-response';
+import { success, error, unauthorized } from '@/server/lib/api-response';
+import { requireRestaurantOwnership } from '@/server/lib/auth';
 import { postSafetyService } from '@/server/modules/publisher/post-safety.service';
 import { z } from 'zod';
 
@@ -8,7 +8,7 @@ const PauseSchema = z.object({
   isPaused: z.boolean(),
 });
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
     const body = await req.json();
     const validated = PauseSchema.safeParse(body);
@@ -17,6 +17,8 @@ export async function POST(req: NextRequest) {
       return error('Paramètres invalides', 400);
     }
 
+    await requireRestaurantOwnership(validated.data.restaurantId);
+
     const res = await postSafetyService.toggleRestaurantPause(
       validated.data.restaurantId,
       validated.data.isPaused
@@ -24,6 +26,7 @@ export async function POST(req: NextRequest) {
 
     return success({ isPaused: res.isPaused });
   } catch (err: any) {
+    if (err.message === 'Non autorisé' || err.message.includes('accès refusé')) return unauthorized();
     return error(err.message, 500);
   }
 }

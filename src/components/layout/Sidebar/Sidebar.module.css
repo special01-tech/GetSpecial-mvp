@@ -1,11 +1,5 @@
 /* =============================================================================
- * Sidebar — Styles (dark theme, conforme aux maquettes)
- *
- * Navigation latérale desktop avec :
- * - Logo GetSpecial en haut
- * - Liens de navigation
- * - Lien Aide en bas
- * Masquée sur mobile (remplacée par BottomNav).
+ * Sidebar — GetSpecial Dark SaaS Navigation
  * ============================================================================= */
 
 .sidebar {
@@ -18,91 +12,106 @@
   border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
-  padding: var(--space-6) 0;
-  z-index: 100;
+  padding: 20px 14px;
+  z-index: 90;
+  user-select: none;
 }
 
-/* Logo en haut */
-.logo {
+/* Brand header */
+.brand {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: 0 var(--space-5);
-  margin-bottom: var(--space-6);
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-primary);
+  gap: 10px;
+  padding: 4px 8px 24px 8px;
 }
 
-.logoIcon {
+.logoBadge {
   width: 28px;
   height: 28px;
-  border-radius: var(--radius-sm);
-  background-color: var(--color-primary);
+  border-radius: 8px;
+  background: rgba(255, 92, 0, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-white);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-bold);
+  border: 1px solid rgba(255, 92, 0, 0.25);
+  flex-shrink: 0;
 }
 
-/* Zone de navigation principale */
-.nav {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  flex: 1;
-  padding: 0 var(--space-3);
-}
-
-/* Navigation secondaire (Aide, en bas) */
-.navBottom {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: 0 var(--space-3);
-  border-top: 1px solid var(--color-border);
-  padding-top: var(--space-4);
-}
-
-/* Lien de navigation */
-.navLink {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-muted);
-  transition: background-color var(--transition-fast),
-              color var(--transition-fast);
-}
-
-.navLink:hover {
-  background-color: var(--color-bg-elevated);
+.brandName {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
   color: var(--color-text-primary);
 }
 
-/* Lien actif : fond orange subtil, texte orange */
-.navLinkActive {
-  background-color: var(--color-primary-light);
+/* Navigation lists */
+.navGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.secondaryGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 16px;
+}
+
+/* Navigation Items */
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  border: 1px solid transparent;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+}
+
+.navItem:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+  color: var(--color-text-primary);
+}
+
+/* Active Nav State — Exact match with design reference */
+.navItemActive {
+  background: rgba(255, 92, 0, 0.12);
+  border: 1px solid rgba(255, 92, 0, 0.28);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.navItemActive .navIcon {
   color: var(--color-primary);
 }
 
-/* Icône dans le lien */
 .navIcon {
-  width: 20px;
-  height: 20px;
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: var(--color-text-muted);
+  transition: color var(--transition-fast);
 }
 
-/* Masquer sur mobile */
-@media (max-width: 768px) {
+.navItem:hover .navIcon {
+  color: var(--color-text-primary);
+}
+
+.navLabel {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Hide sidebar on mobile */
+@media (max-width: 820px) {
   .sidebar {
     display: none;
   }

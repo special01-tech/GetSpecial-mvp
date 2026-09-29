@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
-import { success, error } from '@/server/lib/api-response';
+import { success, error, unauthorized } from '@/server/lib/api-response';
+import { requireRestaurantOwnership } from '@/server/lib/auth';
 import { logAudit } from '@/server/lib/audit';
 
 export async function GET(req: NextRequest) {
@@ -8,7 +9,6 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const platform = searchParams.get('platform');
     const restaurantId = searchParams.get('state') || searchParams.get('restaurantId');
-    const code = searchParams.get('code') || 'mock_code';
     const outstandAccountId = searchParams.get('account_id') || `outstand_acc_${platform}_${Date.now()}`;
     const username = searchParams.get('username') || `@${platform}_restaurant`;
 
@@ -16,7 +16,10 @@ export async function GET(req: NextRequest) {
       return error('platform et state (restaurantId) requis', 400);
     }
 
-    const socialAccount = await (prisma as any).socialAccount.upsert({
+    // Vérifier les droits du gérant sur le restaurant
+    await requireRestaurantOwnership(restaurantId);
+
+    const socialAccount = await prisma.socialAccount.upsert({
       where: {
         restaurantId_platform: {
           restaurantId,
@@ -53,6 +56,7 @@ export async function GET(req: NextRequest) {
       message: `Compte ${platform} connecté avec succès.`,
     });
   } catch (err: any) {
+    if (err.message === 'Non autorisé' || err.message?.includes('accès refusé')) return unauthorized();
     return error(err.message, 500);
   }
 }

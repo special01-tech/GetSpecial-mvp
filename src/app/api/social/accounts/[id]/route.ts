@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
-import { success, error } from '@/server/lib/api-response';
+import { success, error, unauthorized } from '@/server/lib/api-response';
+import { requireRestaurantOwnership } from '@/server/lib/auth';
 import { logAudit } from '@/server/lib/audit';
 
 export async function DELETE(
@@ -10,7 +11,7 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    const account = await (prisma as any).socialAccount.findUnique({
+    const account = await prisma.socialAccount.findUnique({
       where: { id },
     });
 
@@ -18,7 +19,10 @@ export async function DELETE(
       return error('Compte introuvable', 404);
     }
 
-    await (prisma as any).socialAccount.delete({
+    // Vérifier les droits du gérant sur le restaurant
+    await requireRestaurantOwnership(account.restaurantId);
+
+    await prisma.socialAccount.delete({
       where: { id },
     });
 
@@ -32,6 +36,7 @@ export async function DELETE(
 
     return success({ disconnected: true, id });
   } catch (err: any) {
+    if (err.message === 'Non autorisé' || err.message?.includes('accès refusé')) return unauthorized();
     return error(err.message, 500);
   }
 }

@@ -6,12 +6,12 @@
 -- Activation de l'extension pgcrypto / uuid si nécessaire
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- 1. Table: users
+-- 1. Table: users (synchronisée avec auth.users de Supabase)
 CREATE TABLE IF NOT EXISTS public.users (
-  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  id TEXT PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,
   name TEXT,
-  "passwordHash" TEXT NOT NULL,
+  "avatarUrl" TEXT,
   "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -200,7 +200,7 @@ BEGIN
     AND ("userId" = auth.uid()::text OR "userId" = (auth.jwt() ->> 'sub'))
   );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- RLS Restaurants
 DROP POLICY IF EXISTS "restaurants_owner_policy" ON public.restaurants;
@@ -251,3 +251,40 @@ CREATE POLICY "feedback_owner_policy" ON public.feedback
 DROP POLICY IF EXISTS "audit_log_owner_policy" ON public.audit_log;
 CREATE POLICY "audit_log_owner_policy" ON public.audit_log
   FOR ALL USING ("restaurantId" IS NULL OR public.user_owns_restaurant("restaurantId"));
+
+-- RLS Users (l'utilisateur ne peut lire et modifier que son propre profil)
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "users_self_policy" ON public.users;
+CREATE POLICY "users_self_policy" ON public.users
+  FOR ALL USING (id = auth.uid()::text);
+
+-- =============================================================================
+-- Trigger de synchronisation automatique : auth.users -> public.users
+-- =============================================================================
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.users (id, email, name, "avatarUrl", "createdAt", "updatedAt")
+  VALUES (
+    NEW.id::text,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'name', NEW.raw_user_meta_data->>'full_name'),
+    NEW.raw_user_meta_data->>'avatar_url',
+    NOW(),
+    NOW()
+  )
+  ON CONFLICT (id) DO UPDATE
+  SET
+    email = EXCLUDED.email,
+    name = COALESCE(EXCLUDED.name, public.users.name),
+    "updatedAt" = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
-import { success, error } from '@/server/lib/api-response';
+import { success, error, unauthorized } from '@/server/lib/api-response';
+import { requireRestaurantOwnership } from '@/server/lib/auth';
 import { logAudit } from '@/server/lib/audit';
 import { z } from 'zod';
 
@@ -25,7 +26,10 @@ export async function PATCH(
       return error(validated.error.issues[0]?.message ?? 'Données de profil invalides', 400);
     }
 
-    const updated = await (prisma as any).restaurantProfile.upsert({
+    // Vérifier les droits du gérant sur le restaurant
+    await requireRestaurantOwnership(id);
+
+    const updated = await prisma.restaurantProfile.upsert({
       where: { restaurantId: id },
       update: validated.data,
       create: {
@@ -44,6 +48,7 @@ export async function PATCH(
 
     return success(updated);
   } catch (err: any) {
+    if (err.message === 'Non autorisé' || err.message?.includes('accès refusé')) return unauthorized();
     return error(err.message, 500);
   }
 }

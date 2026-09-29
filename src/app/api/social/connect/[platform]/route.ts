@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
-import { success, error } from '@/server/lib/api-response';
+import { success, error, unauthorized } from '@/server/lib/api-response';
+import { requireRestaurantOwnership } from '@/server/lib/auth';
 import { outstandService } from '@/server/modules/publisher/outstand.service';
 
 export async function POST(
@@ -15,6 +16,9 @@ export async function POST(
       return error('restaurantId requis', 400);
     }
 
+    // Vérifier les droits du gérant sur le restaurant
+    await requireRestaurantOwnership(restaurantId);
+
     if (platform !== 'facebook' && platform !== 'instagram') {
       return error('Plateforme non supportée actuellement (Facebook et Instagram uniquement)', 400);
     }
@@ -23,6 +27,7 @@ export async function POST(
 
     return success({ url: authUrl });
   } catch (err: any) {
+    if (err.message === 'Non autorisé' || err.message?.includes('accès refusé')) return unauthorized();
     return error(err.message, 500);
   }
 }

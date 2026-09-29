@@ -14,10 +14,10 @@ datasource db {
 // --- Utilisateur (Gérant / Propriétaire) ---
 
 model User {
-  id           String       @id @default(cuid())
+  id           String       @id              // UUID de auth.users Supabase
   email        String       @unique
   name         String?
-  passwordHash String
+  avatarUrl    String?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   restaurants  Restaurant[]
