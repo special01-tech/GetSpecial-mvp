@@ -38,9 +38,9 @@ export class FeedbackLoopService {
    * Récupère les métriques pour un restaurant sur une période donnée.
    */
   async getMetricsByRestaurant(restaurantId: string): Promise<FeedbackRecord[]> {
-    const events = await prisma.feedbackEvent.findMany({
+    const events = await (prisma as any).feedbackEvent.findMany({
       where: { restaurantId },
-      orderBy: { recordedAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
 
     return events as unknown as FeedbackRecord[];
@@ -50,9 +50,9 @@ export class FeedbackLoopService {
    * Récupère le feedback directement rattaché à une publication spécifique.
    */
   async getFeedbackByPublication(publicationId: string): Promise<FeedbackRecord[]> {
-    const events = await prisma.feedbackEvent.findMany({
+    const events = await (prisma as any).feedbackEvent.findMany({
       where: { publicationId },
-      orderBy: { recordedAt: 'asc' },
+      orderBy: { createdAt: 'asc' },
     });
 
     return events as unknown as FeedbackRecord[];

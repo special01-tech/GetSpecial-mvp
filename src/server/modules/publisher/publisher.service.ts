@@ -22,13 +22,13 @@ export class PublisherService {
       throw new ValidationError(validated.error.issues[0]?.message ?? 'Planification invalide');
     }
 
-    const created = await prisma.publication.create({
+    const created = await (prisma as any).publication.create({
       data: {
         platform: validated.data.platform,
-        scheduledAt: validated.data.scheduledAt ?? new Date(),
-        status: 'scheduled',
-        contentId: validated.data.contentId,
+        status: 'pending',
+        postId: validated.data.contentId,
         restaurantId: validated.data.restaurantId,
+        sendIdempotencyKey: `legacy_pub_${Date.now()}`,
       },
     });
 
@@ -39,17 +39,17 @@ export class PublisherService {
    * Marque une publication comme réussie avec l'identifiant distant.
    */
   async markAsPublished(id: string, externalPostId?: string): Promise<PublicationRecord> {
-    const exists = await prisma.publication.findUnique({ where: { id } });
+    const exists = await (prisma as any).publication.findUnique({ where: { id } });
     if (!exists) {
       throw new NotFoundError('Publication');
     }
 
-    const updated = await prisma.publication.update({
+    const updated = await (prisma as any).publication.update({
       where: { id },
       data: {
         status: 'published',
         publishedAt: new Date(),
-        externalPostId: externalPostId ?? null,
+        outstandPostId: externalPostId ?? null,
       },
     });
 
@@ -63,12 +63,12 @@ export class PublisherService {
     restaurantId: string,
     status?: string
   ): Promise<PublicationRecord[]> {
-    const publications = await prisma.publication.findMany({
+    const publications = await (prisma as any).publication.findMany({
       where: {
         restaurantId,
         ...(status ? { status } : {}),
       },
-      orderBy: { scheduledAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
 
     return publications as unknown as PublicationRecord[];

@@ -1,9 +1,5 @@
 // =============================================================================
-// GetSpecial — Schéma Prisma
-//
-// Modèle de données du MVP. Suit la boucle produit :
-// User → Restaurant (KNOW) → Signal (OBSERVE) → Opportunity (THINK)
-// → Content (CREATE) → Publication (PUBLISH) → FeedbackEvent (LEARN)
+// GetSpecial — Schéma Prisma & Tables Supabase (Phases 1 à 7)
 // =============================================================================
 
 generator client {
@@ -15,7 +11,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- Utilisateur ---
+// --- Utilisateur (Gérant / Propriétaire) ---
 
 model User {
   id           String       @id @default(cuid())
@@ -25,113 +21,226 @@ model User {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   restaurants  Restaurant[]
+  auditLogs    AuditLog[]
+
+  @@map("users")
 }
 
-// --- KNOW : Context Store ---
+// --- KNOW : Context Store (Restaurant & Profil) ---
 
 model Restaurant {
-  id           String        @id @default(cuid())
+  id           String             @id @default(cuid())
   name         String
-  type         String        // fast-food, restaurant, bar, café, boulangerie, food-truck
+  type         String             // fast-food, restaurant, bar, café, boulangerie, food-truck
   address      String
   latitude     Float
   longitude    Float
-  timezone     String        @default("Europe/Paris")
-  openingHours Json?         // { "mon": "09:00-22:00", ... }
-  specialties  String[]      // tags de spécialités
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  timezone     String             @default("Europe/Paris")
+  openingHours Json?              // { "mon": "09:00-22:00", ... }
+  specialties  String[]           // tags de spécialités
+  status       String             @default("active") // active, paused, archived
+  isPaused     Boolean            @default(false)    // Pause globale au niveau restaurant
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
   userId       String
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  signals       Signal[]
-  contents      Content[]
-  publications  Publication[]
+  profile        RestaurantProfile?
+  offers         Offer[]
+  socialAccounts SocialAccount[]
+  signals        Signal[]
+  opportunities  Opportunity[]
+  posts          Post[]
+  publications   Publication[]
   feedbackEvents FeedbackEvent[]
+  auditLogs      AuditLog[]
+
+  @@map("restaurants")
+}
+
+model RestaurantProfile {
+  id             String     @id @default(cuid())
+  restaurantId   String     @unique
+  restaurant     Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  tone           String     @default("chaleureux") // chaleureux, dynamique, gourmet, humoristique
+  hasTerrace     Boolean    @default(false)
+  offPeakDays    String[]   @default([])           // ["monday", "tuesday"]
+  constraints    String[]   @default([])           // ["pas de porc", "menu végétarien"]
+  customRules    Json?
+  status         String     @default("active")
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@map("restaurant_profile")
+}
+
+// --- OFFRES ---
+
+model Offer {
+  id               String     @id @default(cuid())
+  restaurantId     String
+  restaurant       Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  title            String
+  description      String
+  discountValue    String?    // ex: "15%", "1 café offert"
+  recurrence       String     @default("none") // none, daily, weekly, monthly
+  recurrenceDays   String[]   @default([])     // ["tuesday", "thursday"]
+  lastPromotedAt   DateTime?
+  status           String     @default("active") // active, paused, archived
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  @@map("offers")
+}
+
+// --- COMPTES SOCIAUX (Outstand) ---
+
+model SocialAccount {
+  id                String     @id @default(cuid())
+  restaurantId      String
+  restaurant        Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  platform          String     // facebook, instagram, google_business, tiktok
+  outstandAccountId String
+  username          String?
+  status            String     @default("connected") // connected, reconnect_needed, disconnected
+  lastSyncAt        DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  @@unique([restaurantId, platform])
+  @@map("social_accounts")
 }
 
 // --- OBSERVE : Signal Collector ---
 
 model Signal {
   id           String        @id @default(cuid())
-  type         String        // weather, event, holiday, custom
-  source       String        // open-meteo, openholidays, manual
-  data         Json          // données brutes du signal
-  detectedAt   DateTime      @default(now())
-
   restaurantId String
   restaurant   Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  type         String        // weather, event, holiday, manual
+  intensity    Float         @default(1.0)
+  source       String        // openweathermap, ticketmaster, manual
+  data         Json          // payload normalisé
+  detectedAt   DateTime      @default(now())
+  status       String        @default("active")
+  createdAt    DateTime      @default(now())
 
   opportunities Opportunity[]
+
+  @@map("signals")
 }
 
 // --- THINK : Opportunity Engine ---
 
 model Opportunity {
-  id             String    @id @default(cuid())
+  id             String     @id @default(cuid())
+  restaurantId   String
+  restaurant     Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   title          String
   description    String
-  relevanceScore Float     // 0.0 à 1.0
-  suggestedAt    DateTime  @default(now())
-  status         String    @default("pending") // pending, accepted, dismissed
+  urgency        String     @default("medium") // high (immédiat), medium (créneau fixe), low (habituel)
+  recommendedTone String?
+  relevanceScore Float      @default(0.5)
+  factsCited     Json?      // liste des faits vérifiés
+  status         String     @default("pending") // pending, accepted, dismissed, generated
+  suggestedAt    DateTime   @default(now())
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 
-  signalId       String
-  signal         Signal    @relation(fields: [signalId], references: [id], onDelete: Cascade)
+  signalId       String?
+  signal         Signal?    @relation(fields: [signalId], references: [id], onDelete: SetNull)
 
-  contents       Content[]
+  posts          Post[]
+  feedbackEvents FeedbackEvent[]
+
+  @@map("opportunities")
 }
 
-// --- CREATE : Content Generator ---
+// --- CREATE & VALIDATION : Posts & Machine à états ---
 
-model Content {
-  id           String        @id @default(cuid())
-  text         String
-  imageUrl     String?
-  platform     String        // instagram, facebook, google-business
-  status       String        @default("draft") // draft, ready, published
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+model Post {
+  id             String       @id @default(cuid())
+  restaurantId   String
+  restaurant     Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  opportunityId  String?
+  opportunity    Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  text           String
+  imageUrl       String?
+  platform       String       // facebook, instagram, google_business
+  // Machine à états: draft -> pending_approval -> approved -> scheduled -> published / failed
+  status         String       @default("pending_approval")
+  verifiedFacts  Json?
+  scheduledAt    DateTime?
+  approvedAt     DateTime?
+  publishedAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
-  restaurantId String
-  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  publications   Publication[]
 
-  opportunityId String?
-  opportunity   Opportunity?  @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
-
-  publications  Publication[]
+  @@map("posts")
 }
 
-// --- PUBLISH : Publisher ---
+// --- PUBLISH : Publications Outstand ---
 
 model Publication {
-  id            String    @id @default(cuid())
-  platform      String    // instagram, facebook, google-business
-  externalPostId String?  // ID du post sur la plateforme
-  publishedAt   DateTime?
-  scheduledAt   DateTime?
-  status        String    @default("scheduled") // scheduled, published, failed
+  id              String      @id @default(cuid())
+  restaurantId    String
+  restaurant      Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  postId          String
+  post            Post        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  platform        String
+  outstandPostId  String?
+  sendIdempotencyKey String   @unique // Empêche tout double envoi
+  attempts        Int         @default(0)
+  lastError       String?
+  status          String      @default("pending") // pending, publishing, published, failed
+  publishedAt     DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
-  contentId     String
-  content       Content   @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  feedbackEvents  FeedbackEvent[]
 
-  restaurantId  String
-  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-
-  feedbackEvents FeedbackEvent[]
+  @@map("publications")
 }
 
-// --- LEARN : Feedback Loop ---
+// --- FEEDBACK & REJETS ---
 
 model FeedbackEvent {
-  id            String    @id @default(cuid())
-  type          String    // sale, engagement, reach, click
-  value         Float     // montant vente, nombre likes, etc.
-  recordedAt    DateTime  @default(now())
-
-  publicationId String?
-  publication   Publication? @relation(fields: [publicationId], references: [id], onDelete: SetNull)
-
+  id            String       @id @default(cuid())
   restaurantId  String
   restaurant    Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  type          String       // dismiss_opportunity, sale, engagement, reach, click
+  reason        String?      // Motif de rejet ou détails
+  value         Float?       // valeur métrique optionnelle
+  opportunityId String?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  publicationId String?
+  publication   Publication? @relation(fields: [publicationId], references: [id], onDelete: SetNull)
+  status        String       @default("active")
+  createdAt     DateTime     @default(now())
+
+  @@map("feedback")
+}
+
+// --- AUDIT LOG ---
+
+model AuditLog {
+  id           String      @id @default(cuid())
+  restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  userId       String?
+  user         User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action       String      // ex: "restaurant.create", "post.approve", "platform.pause"
+  entityType   String      // "restaurant", "post", "opportunity", etc.
+  entityId     String?
+  details      Json?
+  ipAddress    String?
+  status       String      @default("logged")
+  createdAt    DateTime    @default(now())
+
+  @@index([restaurantId])
+  @@index([action])
+  @@map("audit_log")
 }
