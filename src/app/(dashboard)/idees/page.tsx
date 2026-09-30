@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PageHeader from '@/components/ui/PageHeader';
 import FilterPills, { FilterOption } from '@/components/ui/FilterPills';
 import IdeaCard from '@/components/ui/IdeaCard';
 import { MOCK_IDEAS } from '@/lib/mock-data';
+import type { IdeaItemDTO } from '@/types/dto';
 import styles from './idees.module.css';
 
 const FILTER_OPTIONS: FilterOption[] = [
@@ -20,8 +21,39 @@ const FILTER_OPTIONS: FilterOption[] = [
 
 export default function IdeesPage() {
   const [activeFilter, setActiveFilter] = useState('all');
+  const [ideas, setIdeas] = useState<IdeaItemDTO[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredIdeas = MOCK_IDEAS.filter((idea) => {
+  useEffect(() => {
+    async function loadIdeas() {
+      try {
+        const restRes = await fetch('/api/restaurants');
+        if (restRes.ok) {
+          const restJson = await restRes.json();
+          if (restJson.success && restJson.data && restJson.data.length > 0) {
+            const restId = restJson.data[0].id;
+            const res = await fetch(`/api/opportunities?restaurantId=${restId}&view=ideas`);
+            if (res.ok) {
+              const json = await res.json();
+              if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+                setIdeas(json.data);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Erreur chargement idées:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadIdeas();
+  }, []);
+
+  const allIdeas = ideas.length > 0 ? ideas : MOCK_IDEAS;
+
+  const filteredIdeas = allIdeas.filter((idea) => {
     if (activeFilter === 'all') return true;
     if (activeFilter === 'today') return idea.period.toLowerCase().includes("aujourd'hui");
     if (activeFilter === 'week') return idea.period.toLowerCase().includes('semaine') || idea.period.toLowerCase().includes('vendredi');

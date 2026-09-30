@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Grid } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button';
 import PublicationCard from '@/components/ui/PublicationCard';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { MOCK_PUBLICATIONS } from '@/lib/mock-data';
+import type { PublicationDTO } from '@/types/dto';
 import styles from './publications.module.css';
 
 const DAYS_NAMES = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -15,8 +16,38 @@ const DAYS_NAMES = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 export default function PublicationsPage() {
   const [viewMode, setViewMode] = useState<'calendar' | 'gallery'>('calendar');
   const [selectedDay, setSelectedDay] = useState<number>(16);
+  const [publications, setPublications] = useState<PublicationDTO[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Simulation jours d'avril (30 jours, commence un mardi => 1 case vide)
+  useEffect(() => {
+    async function loadPublications() {
+      try {
+        const restRes = await fetch('/api/restaurants');
+        if (restRes.ok) {
+          const restJson = await restRes.json();
+          if (restJson.success && restJson.data && restJson.data.length > 0) {
+            const restId = restJson.data[0].id;
+            const res = await fetch(`/api/publications?restaurantId=${restId}`);
+            if (res.ok) {
+              const json = await res.json();
+              if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+                setPublications(json.data);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Erreur chargement publications:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadPublications();
+  }, []);
+
+  const allPosts = publications.length > 0 ? publications : MOCK_PUBLICATIONS;
+
+  // Simulation jours du mois courant
   const emptyDays = [null];
   const daysOfMonth = Array.from({ length: 30 }, (_, i) => i + 1);
   const calendarCells = [...emptyDays, ...daysOfMonth];
@@ -24,7 +55,7 @@ export default function PublicationsPage() {
   // Jours avec publications
   const eventDays = [16, 18, 20, 22];
 
-  const upcomingPosts = MOCK_PUBLICATIONS.slice(0, 3);
+  const upcomingPosts = allPosts.slice(0, 3);
 
   return (
     <div className={styles.container}>

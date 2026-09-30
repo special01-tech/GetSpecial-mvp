@@ -12,16 +12,20 @@ interface HeaderProps {
     name?: string | null;
     email?: string;
   } | null;
+  restaurant?: {
+    name: string;
+    subtitle: string;
+  } | null;
 }
 
-export default function Header({ user }: HeaderProps) {
+export default function Header({ user, restaurant }: HeaderProps) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const restaurantName = MOCK_RESTAURANT.name;
-  const restaurantSubtitle = MOCK_RESTAURANT.subtitle;
+  const restaurantName = restaurant?.name || MOCK_RESTAURANT.name;
+  const restaurantSubtitle = restaurant?.subtitle || MOCK_RESTAURANT.subtitle;
 
   const handleLogout = async () => {
     try {

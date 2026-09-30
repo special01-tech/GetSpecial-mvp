@@ -85,6 +85,7 @@ function CreatePublicationForm() {
   );
   const [tone, setTone] = useState<string>('Convivial');
   const [isPublishedSuccess, setIsPublishedSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedChoice = IDEA_CHOICES.find((c) => c.id === selectedIdeaId) || IDEA_CHOICES[0];
 
@@ -95,11 +96,36 @@ function CreatePublicationForm() {
     setHoursText(choice.hours);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < 3) {
       setCurrentStep((prev) => (prev + 1) as 2 | 3);
     } else {
-      setIsPublishedSuccess(true);
+      setIsSubmitting(true);
+      try {
+        const restRes = await fetch('/api/restaurants');
+        if (restRes.ok) {
+          const restJson = await restRes.json();
+          if (restJson.success && restJson.data && restJson.data.length > 0) {
+            const restId = restJson.data[0].id;
+            await fetch('/api/posts', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                restaurantId: restId,
+                text: `${promoText}\n\n${descriptionText}\n\n📍 Horaires: ${hoursText} • Ambiance ${tone}`,
+                imageUrl: selectedChoice.image,
+                platform: 'instagram',
+                status: 'scheduled',
+              }),
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Erreur création post:', err);
+      } finally {
+        setIsSubmitting(false);
+        setIsPublishedSuccess(true);
+      }
     }
   };
 
@@ -325,8 +351,14 @@ function CreatePublicationForm() {
                   <div />
                 )}
 
-                <Button variant="primary" onClick={handleNext}>
-                  <span>{currentStep === 3 ? 'Générer & Publier ✨' : 'Suivant →'}</span>
+                <Button variant="primary" onClick={handleNext} disabled={isSubmitting}>
+                  <span>
+                    {isSubmitting
+                      ? 'Publication en cours...'
+                      : currentStep === 3
+                      ? 'Générer & Publier ✨'
+                      : 'Suivant →'}
+                  </span>
                 </Button>
               </div>
             </>

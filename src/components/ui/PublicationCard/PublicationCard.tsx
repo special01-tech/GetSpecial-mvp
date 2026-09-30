@@ -1,10 +1,11 @@
 import React from 'react';
 import StatusBadge, { BadgeVariant } from '@/components/ui/StatusBadge';
-import { PublicationItem } from '@/lib/mock-data';
+import type { PublicationItem } from '@/lib/mock-data';
+import type { PublicationDTO } from '@/types/dto';
 import styles from './PublicationCard.module.css';
 
 interface PublicationCardProps {
-  publication: PublicationItem;
+  publication: PublicationDTO | PublicationItem;
 }
 
 export default function PublicationCard({ publication }: PublicationCardProps) {

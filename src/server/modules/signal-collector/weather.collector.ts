@@ -1,79 +1,111 @@
 import { NormalizedSignal } from './signal.types';
 
-export class WeatherCollector {
-  private readonly apiKey: string | undefined;
+/* =============================================================================
+ * Weather Collector — Open-Meteo (Conforme Section 11.2 du Document Projet)
+ *
+ * API 100% gratuite, sans clé API requise, fournissant des prévisions mondiales
+ * précises basées sur la géolocalisation du restaurant.
+ * ============================================================================= */
 
-  constructor() {
-    this.apiKey = process.env.OPENWEATHERMAP_API_KEY;
+export class WeatherCollector {
+  /**
+   * Récupère la météo courante et les prévisions via l'API Open-Meteo gratuite.
+   */
+  async collect(lat: number, lon: number): Promise<NormalizedSignal[]> {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code&hourly=temperature_2m,precipitation_probability,weather_code&timezone=auto`;
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 6000);
+
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
+
+      if (!res.ok) {
+        throw new Error(`Open-Meteo HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      return this.normalizeOpenMeteo(data, lat, lon);
+    } catch (err) {
+      console.warn('[WEATHER_COLLECTOR] Erreur Open-Meteo, utilisation du fallback local :', err);
+      return this.getFallbackSignals(lat, lon);
+    }
   }
 
   /**
-   * Récupère la météo courante et les prévisions par coordonnées.
-   * Gère les timeouts et effectue jusqu'à 3 tentatives en cas d'échec.
+   * Normalise les données météo Open-Meteo en signaux exploitables
    */
-  async collect(lat: number, lon: number): Promise<NormalizedSignal[]> {
-    if (!this.apiKey) {
-      console.warn('[WEATHER_COLLECTOR] Pas de clé OPENWEATHERMAP_API_KEY configurée. Utilisation de données météo simulées.');
-      return this.getFallbackSignals(lat, lon);
-    }
+  private normalizeOpenMeteo(data: any, lat: number, lon: number): NormalizedSignal[] {
+    const current = data.current;
+    const temp = Math.round(current?.temperature_2m ?? 22);
+    const code = current?.weather_code ?? 0;
+    const precip = current?.precipitation ?? 0;
 
-    const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${this.apiKey}&units=metric&lang=fr`;
-
-    let attempts = 0;
-    const maxAttempts = 3;
-
-    while (attempts < maxAttempts) {
-      attempts++;
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 6000);
-
-        const res = await fetch(url, { signal: controller.signal });
-        clearTimeout(timeout);
-
-        if (!res.ok) {
-          throw new Error(`OpenWeatherMap HTTP ${res.status}`);
-        }
-
-        const data = await res.json();
-        return this.normalizeForecast(data);
-      } catch (err) {
-        console.warn(`[WEATHER_COLLECTOR] Essai ${attempts}/${maxAttempts} échoué :`, err);
-        if (attempts >= maxAttempts) {
-          return this.getFallbackSignals(lat, lon);
-        }
-        await new Promise((r) => setTimeout(r, 1000 * attempts));
-      }
-    }
-
-    return this.getFallbackSignals(lat, lon);
-  }
-
-  private normalizeForecast(data: any): NormalizedSignal[] {
-    const list = data?.list || [];
     const signals: NormalizedSignal[] = [];
 
-    // On analyse les 4 prochains créneaux (12 prochaines heures)
-    for (const item of list.slice(0, 4)) {
-      const weatherMain = item.weather?.[0]?.main?.toLowerCase() || '';
-      const weatherDesc = item.weather?.[0]?.description || '';
-      const temp = Math.round(item.main?.temp ?? 20);
-      const isRain = weatherMain.includes('rain') || weatherMain.includes('drizzle');
-      const isSun = weatherMain.includes('clear') && temp >= 22;
-      const isCold = temp < 10;
-
-      let intensity = 0.5;
-      if (isRain) intensity = 0.8;
-      if (isSun) intensity = 0.7;
-
+    // Détection Pluie / Averses
+    if (code >= 51 || precip > 0.5) {
       signals.push({
+        source: 'open-meteo',
         type: 'weather',
-        source: 'openweathermap',
-        intensity,
-        timestamp: item.dt_txt || new Date().toISOString(),
-        title: isRain ? `Pluie prévue (${temp}°C)` : isSun ? `Grand soleil et douceur (${temp}°C)` : `Météo : ${weatherDesc} (${temp}°C)`,
-        summary: `Température de ${temp}°C avec ${weatherDesc}. Vent à ${Math.round(item.wind?.speed ?? 0)} m/s.`,
-        rawPayload: item,
+        timestamp: new Date(),
+        intensity: code >= 63 || precip > 2 ? 0.95 : 0.75,
+        payload: {
+          condition: 'rain',
+          description: code >= 95 ? 'Orages violents' : 'Pluie continue',
+          temperature: temp,
+          summary: `Pluie et ${temp}°C : forte incitation à la livraison et aux plats réconfortants.`,
+          actionHint: 'Mettez en avant vos plats chauds, vos soupes ou une offre livraison offerte.',
+        },
+      });
+    }
+    // Détection Forte Chaleur / Beau temps
+    else if (temp >= 28) {
+      signals.push({
+        source: 'open-meteo',
+        type: 'weather',
+        timestamp: new Date(),
+        intensity: 0.9,
+        payload: {
+          condition: 'heat',
+          description: 'Forte chaleur et soleil',
+          temperature: temp,
+          summary: `Forte chaleur (${temp}°C) : forte demande de boissons fraîches et terrasse ombragée.`,
+          actionHint: 'Proposez des cocktails glacés, glaces ou salades fraîches.',
+        },
+      });
+    }
+    // Détection Froid
+    else if (temp <= 10) {
+      signals.push({
+        source: 'open-meteo',
+        type: 'weather',
+        timestamp: new Date(),
+        intensity: 0.85,
+        payload: {
+          condition: 'cold',
+          description: 'Froid hivernal',
+          temperature: temp,
+          summary: `Temps froid (${temp}°C) : recherche d'ambiance cosy et de boissons chaudes.`,
+          actionHint: 'Mettez en avant le chocolat chaud maison, cafés gourmands et gratins.',
+        },
+      });
+    }
+    // Beau temps tempéré (Terrasse)
+    else {
+      signals.push({
+        source: 'open-meteo',
+        type: 'weather',
+        timestamp: new Date(),
+        intensity: 0.8,
+        payload: {
+          condition: 'clear',
+          description: 'Ciel dégagé et température agréable',
+          temperature: temp,
+          summary: `Météo idéale (${temp}°C) : opportunité terrasse et déjeuners à l'extérieur.`,
+          actionHint: 'Invitez votre communauté à profiter de la terrasse pour le déjeuner.',
+        },
       });
     }
 
@@ -83,13 +115,17 @@ export class WeatherCollector {
   private getFallbackSignals(lat: number, lon: number): NormalizedSignal[] {
     return [
       {
+        source: 'open-meteo-fallback',
         type: 'weather',
-        source: 'openweathermap',
-        intensity: 0.7,
-        timestamp: new Date().toISOString(),
-        title: 'Ciel dégagé et température agréable (22°C)',
-        summary: 'Conditions idéales pour le service en terrasse ce midi.',
-        rawPayload: { simulated: true, lat, lon },
+        timestamp: new Date(),
+        intensity: 0.8,
+        payload: {
+          condition: 'rain',
+          description: 'Pluie prévue ce soir',
+          temperature: 24,
+          summary: 'Pluie prévue ce soir : opportunité livraison et plats chauds réconfortants.',
+          actionHint: 'Proposez une offre spéciale livraison ou un plat gourmand de saison.',
+        },
       },
     ];
   }

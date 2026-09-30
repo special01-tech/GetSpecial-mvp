@@ -3,6 +3,7 @@ import { success, error, unauthorized } from '@/server/lib/api-response';
 import { requireAuth } from '@/server/lib/auth';
 import { geocodeAddress } from '@/server/lib/geocoding';
 import { logAudit } from '@/server/lib/audit';
+import { transformRestaurant } from '@/server/transformers';
 import { z } from 'zod';
 
 const CreateRestaurantApiSchema = z.object({
@@ -21,10 +22,12 @@ export async function GET() {
         profile: true,
         offers: true,
         socialAccounts: true,
+        feedbackEvents: true,
       },
     });
 
-    return success(restaurants);
+    const transformed = restaurants.map(transformRestaurant);
+    return success(transformed);
   } catch (err: any) {
     if (err.message === 'Non autorisé') return unauthorized();
     return error(err.message, 500);

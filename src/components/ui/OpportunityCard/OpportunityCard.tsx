@@ -4,11 +4,12 @@ import React from 'react';
 import Link from 'next/link';
 import { CloudRain, Trophy, Flame, Wine, Utensils, Music, ArrowRight } from 'lucide-react';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { Opportunity } from '@/lib/mock-data';
+import type { Opportunity } from '@/lib/mock-data';
+import type { OpportunityDTO } from '@/types/dto';
 import styles from './OpportunityCard.module.css';
 
 interface OpportunityCardProps {
-  opportunity: Opportunity;
+  opportunity: OpportunityDTO | Opportunity;
 }
 
 export default function OpportunityCard({ opportunity }: OpportunityCardProps) {

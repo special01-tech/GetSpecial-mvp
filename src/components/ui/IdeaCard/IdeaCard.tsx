@@ -3,11 +3,12 @@
 import React from 'react';
 import Link from 'next/link';
 import { CloudRain, Trophy, TrendingUp, Calendar, Music, Sparkles } from 'lucide-react';
-import { IdeaItem } from '@/lib/mock-data';
+import type { IdeaItem } from '@/lib/mock-data';
+import type { IdeaItemDTO } from '@/types/dto';
 import styles from './IdeaCard.module.css';
 
 interface IdeaCardProps {
-  idea: IdeaItem;
+  idea: IdeaItemDTO | IdeaItem;
 }
 
 export default function IdeaCard({ idea }: IdeaCardProps) {

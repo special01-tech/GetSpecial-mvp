@@ -38,14 +38,23 @@ export async function getAuthUser() {
         // Ignorer si une race condition survient avec un trigger externe
         dbUser = await prisma.user.findUnique({
           where: { id: user.id },
-        })
+        });
+      }
+    }
+
+    if (dbUser) {
+      try {
+        const { ensureUserHasRestaurant } = await import('@/server/lib/seed-user-data');
+        await ensureUserHasRestaurant(dbUser.id);
+      } catch (seedErr) {
+        console.warn('Initialisation automatique restaurant ignorée:', seedErr);
       }
     }
   } catch (dbErr) {
-    console.warn('Base de données inaccessible via Prisma, utilisation du profil Supabase Auth direct:', dbErr)
+    console.warn('Base de données inaccessible via Prisma, utilisation du profil Supabase Auth direct:', dbErr);
   }
 
-  return { supabaseUser: user, dbUser }
+  return { supabaseUser: user, dbUser };
 }
 
 /**
@@ -77,3 +86,13 @@ export async function requireRestaurantOwnership(restaurantId: string) {
 
   return { dbUser, supabaseUser, restaurant }
 }
+
+/**
+ * Récupère le restaurant actif de l'utilisateur connecté (ou le premier disponible).
+ */
+export async function getCurrentRestaurant() {
+  const { dbUser } = await requireAuth();
+  const { ensureUserHasRestaurant } = await import('@/server/lib/seed-user-data');
+  return ensureUserHasRestaurant(dbUser.id);
+}
+

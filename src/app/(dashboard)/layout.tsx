@@ -1,7 +1,7 @@
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import BottomNav from '@/components/layout/BottomNav';
-import { getAuthUser } from '@/server/lib/auth';
+import { getAuthUser, getCurrentRestaurant } from '@/server/lib/auth';
 import styles from './layout.module.css';
 
 /* =============================================================================
@@ -27,11 +27,26 @@ export default async function DashboardLayout({
       }
     : null;
 
+  let currentRestaurant = null;
+  if (auth?.dbUser) {
+    try {
+      const rest = await getCurrentRestaurant();
+      if (rest) {
+        currentRestaurant = {
+          name: rest.name,
+          subtitle: `${rest.type || 'Restaurant'} • 1 min`,
+        };
+      }
+    } catch {
+      // Fallback silencieux sur mock
+    }
+  }
+
   return (
     <div className={styles.layout}>
       <Sidebar />
       <div className={styles.contentWrapper}>
-        <Header user={user} />
+        <Header user={user} restaurant={currentRestaurant} />
         <main className={styles.main}>{children}</main>
       </div>
       <BottomNav />

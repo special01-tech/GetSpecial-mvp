@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Store,
@@ -13,15 +13,75 @@ import {
   Edit2,
   Camera,
   Image as ImageIcon,
+  Loader2,
+  PauseCircle,
+  PlayCircle,
 } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import Button from '@/components/ui/Button';
 import { MOCK_RESTAURANT } from '@/lib/mock-data';
+import type { RestaurantDTO } from '@/types/dto';
 import styles from './etablissement.module.css';
 
 export default function EtablissementPage() {
+  const [restaurant, setRestaurant] = useState<RestaurantDTO | null>(null);
+  const [loading, setLoading] = useState(true);
   const [recommendationsToggle, setRecommendationsToggle] = useState(true);
   const [autoPublishToggle, setAutoPublishToggle] = useState(false);
+  const [isPausing, setIsPausing] = useState(false);
+
+  useEffect(() => {
+    async function loadRestaurant() {
+      try {
+        const res = await fetch('/api/restaurants');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data && json.data.length > 0) {
+            setRestaurant(json.data[0]);
+          }
+        }
+      } catch (err) {
+        console.error('Erreur chargement restaurant:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadRestaurant();
+  }, []);
+
+  const handleTogglePause = async () => {
+    if (!restaurant) return;
+    try {
+      setIsPausing(true);
+      const nextPaused = !restaurant.isPaused;
+      const res = await fetch('/api/restaurants/pause', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          restaurantId: restaurant.id,
+          isPaused: nextPaused,
+        }),
+      });
+
+      if (res.ok) {
+        setRestaurant((prev) =>
+          prev
+            ? {
+                ...prev,
+                isPaused: nextPaused,
+                status: nextPaused ? 'En pause' : 'Ouvert',
+              }
+            : null
+        );
+      }
+    } catch (err) {
+      console.error('Erreur pause restaurant:', err);
+    } finally {
+      setIsPausing(false);
+    }
+  };
+
+  const current = restaurant || MOCK_RESTAURANT;
 
   return (
     <div className={styles.container}>
@@ -44,30 +104,49 @@ export default function EtablissementPage() {
           <div className={styles.restaurantHeroCard}>
             <div className={styles.coverContainer}>
               <img
-                src={MOCK_RESTAURANT.coverImage}
-                alt={MOCK_RESTAURANT.name}
+                src={current.coverImage}
+                alt={current.name}
                 className={styles.coverImg}
               />
             </div>
 
             <div className={styles.heroContent}>
               <div className={styles.identityRow}>
-                <div className={styles.logoBox}>{MOCK_RESTAURANT.logoText}</div>
+                <div className={styles.logoBox}>{current.logoText}</div>
                 <div className={styles.nameGroup}>
-                  <h2 className={styles.restaurantName}>{MOCK_RESTAURANT.name}</h2>
-                  <span className={styles.category}>{MOCK_RESTAURANT.category}</span>
+                  <h2 className={styles.restaurantName}>{current.name}</h2>
+                  <span className={styles.category}>{current.category}</span>
                   <div className={styles.statusRow}>
-                    <span className={styles.openBadge}>
+                    <span className={restaurant?.isPaused ? styles.pausedBadge : styles.openBadge}>
                       <span className={styles.openDot} />
-                      {MOCK_RESTAURANT.status}
+                      {current.status}
                     </span>
                   </div>
                 </div>
               </div>
 
-              <button type="button" className={styles.editBtn}>
-                Modifier
-              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {restaurant && (
+                  <Button
+                    variant={restaurant.isPaused ? 'primary' : 'outline'}
+                    size="sm"
+                    onClick={handleTogglePause}
+                    disabled={isPausing}
+                  >
+                    {isPausing ? (
+                      <Loader2 size={13} className="animate-spin" />
+                    ) : restaurant.isPaused ? (
+                      <PlayCircle size={13} />
+                    ) : (
+                      <PauseCircle size={13} />
+                    )}
+                    <span>{restaurant.isPaused ? 'Reprendre l’activité' : 'Mettre en pause'}</span>
+                  </Button>
+                )}
+                <button type="button" className={styles.editBtn}>
+                  Modifier
+                </button>
+              </div>
             </div>
           </div>
 
@@ -79,7 +158,7 @@ export default function EtablissementPage() {
                 <Store size={18} className={styles.infoIcon} />
                 <div className={styles.infoLabels}>
                   <span className={styles.infoTitle}>Type d&apos;établissement</span>
-                  <span className={styles.infoValue}>{MOCK_RESTAURANT.typeEtablissement}</span>
+                  <span className={styles.infoValue}>{current.typeEtablissement}</span>
                 </div>
               </div>
             </div>
@@ -90,7 +169,7 @@ export default function EtablissementPage() {
                 <MapPin size={18} className={styles.infoIcon} />
                 <div className={styles.infoLabels}>
                   <span className={styles.infoTitle}>Adresse</span>
-                  <span className={styles.infoValue}>{MOCK_RESTAURANT.address}</span>
+                  <span className={styles.infoValue}>{current.address}</span>
                 </div>
               </div>
             </div>
@@ -101,7 +180,7 @@ export default function EtablissementPage() {
                 <Clock size={18} className={styles.infoIcon} />
                 <div className={styles.infoLabels}>
                   <span className={styles.infoTitle}>Horaires</span>
-                  <span className={styles.infoValue}>{MOCK_RESTAURANT.hours}</span>
+                  <span className={styles.infoValue}>{current.hours}</span>
                 </div>
               </div>
             </div>
@@ -113,9 +192,19 @@ export default function EtablissementPage() {
                 <div className={styles.infoLabels}>
                   <span className={styles.infoTitle}>Réseaux sociaux</span>
                   <div className={styles.socialIcons}>
-                    <span className={styles.socialBadge}>📸 Instagram</span>
-                    <span className={styles.socialBadge}>📘 Facebook</span>
-                    <span className={styles.socialBadge}>🎵 TikTok</span>
+                    {current.socialAccounts && current.socialAccounts.length > 0 ? (
+                      current.socialAccounts.map((acc: any) => (
+                        <span key={acc.id || acc.platform} className={styles.socialBadge}>
+                          {acc.platform === 'instagram' ? '📸 Instagram' : acc.platform === 'facebook' ? '📘 Facebook' : '🎵 TikTok'}
+                          {acc.username ? ` (${acc.username})` : ''}
+                        </span>
+                      ))
+                    ) : (
+                      <>
+                        <span className={styles.socialBadge}>📸 Instagram</span>
+                        <span className={styles.socialBadge}>📘 Facebook</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -142,7 +231,7 @@ export default function EtablissementPage() {
                 <div className={styles.infoLabels}>
                   <span className={styles.infoTitle}>Paramètres de communication</span>
                   <span className={styles.infoValue}>
-                    Ton : {MOCK_RESTAURANT.communicationTone} • Cible : {MOCK_RESTAURANT.targetAudience}
+                    Ton : {current.communicationTone} • Cible : {current.targetAudience}
                   </span>
                 </div>
               </div>
@@ -159,7 +248,7 @@ export default function EtablissementPage() {
           <div className={styles.panelCard}>
             <h3 className={styles.panelTitle}>Votre identité</h3>
             <div className={styles.photoGrid}>
-              {MOCK_RESTAURANT.photos.map((photo, i) => (
+              {(current.photos || []).map((photo: string, i: number) => (
                 <div key={i} className={styles.photoThumb}>
                   <img src={photo} alt={`Photo ${i + 1}`} />
                 </div>
@@ -186,11 +275,14 @@ export default function EtablissementPage() {
               </button>
             </div>
             <div className={styles.offersRow}>
-              {MOCK_RESTAURANT.offers.map((offer) => (
-                <span key={offer} className={styles.offerPill}>
-                  {offer}
-                </span>
-              ))}
+              {(current.offers || []).map((offer: any, i: number) => {
+                const title = typeof offer === 'string' ? offer : offer.title;
+                return (
+                  <span key={offer.id || i} className={styles.offerPill}>
+                    {title}
+                  </span>
+                );
+              })}
             </div>
           </div>
 

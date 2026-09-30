@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Lightbulb, ArrowRight } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
@@ -11,13 +11,50 @@ import {
   MOCK_TOP_PERFORMANCES,
   MOCK_PLATFORMS_BREAKDOWN,
 } from '@/lib/mock-data';
+import type { PerformanceDTO } from '@/types/dto';
 import styles from './performances.module.css';
 
 export default function PerformancesPage() {
   const [timeRange, setTimeRange] = useState('7d');
   const [activeTab, setActiveTab] = useState<'posts' | 'formats'>('posts');
+  const [perfData, setPerfData] = useState<PerformanceDTO | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const stats = MOCK_RESTAURANT.stats;
+  useEffect(() => {
+    async function loadPerformances() {
+      try {
+        const restRes = await fetch('/api/restaurants');
+        if (restRes.ok) {
+          const restJson = await restRes.json();
+          if (restJson.success && restJson.data && restJson.data.length > 0) {
+            const restId = restJson.data[0].id;
+            const res = await fetch(`/api/performances?restaurantId=${restId}`);
+            if (res.ok) {
+              const json = await res.json();
+              if (json.success && json.data) {
+                setPerfData(json.data);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Erreur chargement performances:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadPerformances();
+  }, []);
+
+  const stats = perfData?.summary || MOCK_RESTAURANT.stats;
+  const topList = perfData?.topPublications || MOCK_TOP_PERFORMANCES;
+  const donutSlices = perfData?.platformDistribution
+    ? perfData.platformDistribution.map((d) => ({
+        name: d.label,
+        percent: d.percentage,
+        color: d.color,
+      }))
+    : MOCK_PLATFORMS_BREAKDOWN;
 
   return (
     <div className={styles.container}>

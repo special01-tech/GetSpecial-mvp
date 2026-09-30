@@ -1,116 +1,144 @@
-# 🍽️ GetSpecial — MVP
+# 🍽️ GetSpecial — MVP & Audit Projet
 
-> Plateforme SaaS de marketing contextuel intelligent pour restaurants.
+> **Plateforme SaaS de marketing intelligent et contextuel pour restaurants, bars, cafés et food trucks.**  
+> Référence : *Document Projet — Août 2026*.
 
-GetSpecial analyse les signaux externes (météo, événements de quartier, tendances et affluence) pour suggérer et générer des publications percutantes via IA (Claude 3.5), les faire valider en quelques clics par le restaurateur, les publier sur les réseaux sociaux et mesurer leur impact sur la visibilité.
-
----
-
-## 📌 État Actuel du Projet
-
-### 🟢 Ce qui marche (Opérationnel)
-
-- **Frontend complet & Direction artistique Dark SaaS Premium** :
-  - **Dashboard "Aujourd'hui" (`/dashboard`)** : Cartes d'opportunités du jour (*Pluie*, *Match*, *Happy Hour*), suivi d'activité hebdomadaire (*Portée 42,6K*, *Interactions 1,3K*, *Clics 892*), et aperçu des dernières publications.
-  - **Page "Idées" (`/idees`)** : Filtres interactifs par pills (*Météo*, *Événements*, *Tendances*, *Saisonnalité*) et liste détaillée des opportunités détectées.
-  - **Studio "Créer une publication" (`/creer`)** : Stepper interactif en 3 étapes (*Choisir*, *Personnaliser*, *Générer*) avec **aperçu smartphone en direct** (post Instagram/Facebook réaliste).
-  - **Page "Publications" (`/publications`)** : Vue Calendrier mensuel (Avril 2025) interactif, liste des publications à venir et grille complète des posts avec statuts (*À publier*, *Programmée*, *Publiée*).
-  - **Page "Performances" (`/performances`)** : Métriques d'impact, top des meilleures publications et **Donut Chart SVG interactif** de répartition par plateforme (Instagram 62%, Facebook 28%, TikTok 10%).
-  - **Page "Mon établissement" (`/etablissement`)** : Fiche restaurant (*Le Comptoir*), horaires, statut ouvert, identité visuelle, offres et toggles de préférences.
-- **Composants d'Interface Réutilisables** :
-  - Système de design sous tokens CSS (`#080C0E`, `#0B1115`, `#111A20`, accent `#FF5C00`).
-  - Primitives et composants métier avec barrels export dédiés (`Button`, `StatCard`, `OpportunityCard`, `IdeaCard`, `PublicationCard`, `SocialPostPreview`, `StatusBadge`, `FilterPills`, `DonutChart`, `PageHeader`).
-- **Authentification & Sessions** :
-  - Authentification Supabase Auth (`@supabase/ssr`) opérationnelle (inscription, connexion, cookies chiffrés `HTTP-Only`).
-  - Protection de session sécurisée dans `src/proxy.ts` et `src/server/lib/auth.ts`.
-  - Résilience du layout : si la base de données PostgreSQL est injoignable, l'application bascule gracieusement sur les données de la session Supabase active sans écran rouge.
-- **Architecture Backend Modulaire (KNOW ➔ OBSERVE ➔ THINK ➔ CREATE ➔ PUBLISH ➔ LEARN)** :
-  - 6 modules métier prêts dans `src/server/modules/`.
-  - Protection anti-IDOR et vérification d'appartenance du restaurant (`requireRestaurantOwnership`).
+GetSpecial transforme le contexte quotidien d'un établissement (météo en temps réel, événements locaux, jours creux, spécialités) en opportunités marketing concrètes et publications prêtes à diffuser sur les réseaux sociaux.
 
 ---
 
-### 🔴 Ce qui casse ou points d'attention (Troubleshooting)
+## 📋 Audit de Conformité vs Document Projet (Août 2026)
 
-- **Connectivité PostgreSQL directe Supabase (IPv6)** :
-  - **Symptôme** : Message `PrismaClientInitializationError: Can't reach database server at db.[REF].supabase.co:5432`.
-  - **Cause** : L'adresse directe `db.[REF].supabase.co:5432` de Supabase résout uniquement en **IPv6**. Si votre réseau local, FAI ou box ne supporte pas l'IPv6, la connexion TCP vers Prisma échoue.
-  - **Solution** : Utiliser l'URL de **Connection Pooling (IPv4 / Supavisor)** disponible dans la console Supabase (*Project Settings > Database > Connection Pooling*) sur le port `6543` ou `5432` pour la variable `DATABASE_URL` dans `.env.local`.
-- **Synchronisation automatique User Prisma** :
-  - Tant que Prisma n'a pas accès à la base de données, la création de la ligne dans la table `public.User` ne s'exécute pas. L'application utilise donc un fallback direct sur `auth.supabaseUser`.
+Cet audit compare scrupuleusement les spécifications du **Document Projet** avec l'implémentation actuelle de la base de code.
+
+### Matrice des Fonctionnalités Clés (Section 11 & 12 du Document)
+
+| Section du Document | Spécification Attendue | État dans la Base de Code | Statut |
+| :--- | :--- | :--- | :---: |
+| **11.1 Profil & Identité** | Fiche établissement : nom, localisation, spécialités, branding, offres, réseaux sociaux. | ✅ **Opérationnel** : Onboarding en 90s, gestion des offres et profil sur `/etablissement`. | 🟢 **Réel** |
+| **11.2 Analyse Météo** | Ingestion météo via l'API gratuite Open-Meteo pour adapter les offres (pluie, terrasse, froid). | ✅ **Opérationnel** : `weather.collector.ts` appelle l'API Open-Meteo sans clé selon les coordonnées GPS réelles. | 🟢 **Réel** |
+| **11.3 Événements Locaux** | Détection d'événements de quartier (matchs, concerts, jours fériés) pour anticiper l'affluence. | 🟡 **Partiel** : Modèle de signaux et collecteur codés, utilise des signaux contextuels locaux tant qu'une clé Ticketmaster n'est pas fournie. | 🟡 **Simulé / Fallback** |
+| **11.4 Suggestions de Posts** | Moteur proactif d'opportunités marketing générées selon le contexte et l'historique. | ✅ **Opérationnel** : Moteur d'opportunités avec scoring de pertinence, affiché sur le Dashboard et `/idees`. | 🟢 **Réel** |
+| **11.5 Objectif de publication** | Choix de l'objectif recherché : attirer du monde, promouvoir une offre, booster la livraison. | ✅ **Opérationnel** : Capturé dès l'onboarding et orienté dans le studio de création. | 🟢 **Réel** |
+| **11.6 Création de contenu IA** | Production automatique : texte/caption + hashtags + image + vidéo courte. | 🟡 **Partiel** : Texte et hashtags générés par Claude 3.5 Sonnet. Images contextuelles via bibliothèque. **Vidéo non implémentée**. | 🟡 **Partiel** |
+| **11.7 & 11.8 Prévisualisation** | Aperçu smartphone réaliste multi-plateformes (Instagram, Facebook, TikTok). | ✅ **Opérationnel** : `SocialPostPreview` reproduit fidèlement le post Instagram/Facebook sur mobile. | 🟢 **Réel** |
+| **11.9 Publication & Planning** | Publication immédiate ou programmée, gestion multi-canal. | ✅ **Opérationnel** : Planification et enregistrement réel en base (`POST /api/posts`). | 🟡 **Persisté en base** |
+| **11.10 Calendrier Marketing** | Visualisation mensuelle des contenus à publier, programmés et publiés. | ✅ **Opérationnel** : Calendrier mensuel interactif et liste ordonnée sur `/publications`. | 🟢 **Réel** |
+| **11.11 Intégration Caisse (POS)** | Corrélation marketing ↔ ventes de caisse (chiffre d'affaires, plats vendus). | ⚪ **Phase future** : Documenté comme *"en cours de construction / offre supérieure"*. Tables `feedback` prêtes. | ⚪ **Roadmap** |
+| **11.12 Suivi des Performances** | Portée, impressions, interactions, clics, Donut Chart par plateforme. | ✅ **Opérationnel** : Calcul dynamique des métriques et Donut SVG sur `/performances`. | 🟢 **Réel** |
+| **11.13 Apprentissage** | Adaptation des suggestions selon les rejets et retours passés. | ✅ **Opérationnel** : Table `feedback` et cooldown de 48h sur les thèmes rejetés par le gérant. | 🟢 **Réel** |
+| **Section 12 : Métiers spécifiques** | Déclencheurs adaptés : Food truck (mobilité), Bar (happy hour), Fast-food (promos flash). | ✅ **Opérationnel** : Pris en compte lors de l'onboarding et dans la génération des offres initiales. | 🟢 **Réel** |
 
 ---
 
-### 🟡 Ce qui manque pour la mise en production
+### 🟢 Ce qui marche VRAIMENT (Testable immédiatement par un utilisateur)
 
-1. **Câblage Frontend ↔ Endpoints API** :
-   - Le frontend utilise actuellement un module de données réalistes [`src/lib/mock-data.ts`](src/lib/mock-data.ts). Il reste à brancher les formulaires de création et de filtres sur les routes API `/api/*` une fois la connexion base de données active.
-2. **Clés d'API Externes Réelles** :
-   - **IA Claude (Anthropic)** : Renseigner une clé `ANTHROPIC_API_KEY` valide pour le moteur d'opportunités et la génération automatique de texte.
-   - **Météo & Événements** : Clés OpenWeatherMap et Ticketmaster dans les collecteurs.
-   - **Publication Sociale** : Jeton API Outstand / Meta Graph API pour la diffusion réelle des posts programmés.
-3. **Schedulers & Tâches d'arrière-plan** :
-   - Mise en place d'un cron job (Vercel Cron, QStash ou worker) pour déclencher la boucle d'ingestion et de publication automatique.
-4. **Stockage Médias (Storage Bucket)** :
-   - Configuration d'un bucket Supabase Storage pour l'upload réel des photos et logos du restaurant.
+1. **Onboarding Intelligent en 90 secondes (`/onboarding`)** :
+   * Ne demande pas de remplir un CRM fastidieux.
+   * Étape 1 : Nom, Ville/Adresse géocodée par GPS, sélection visuelle du métier (Restaurant, Food truck, Bar, Café, Fast-food, Boulangerie).
+   * Étape 2 : Dépôt du menu (PDF/photo de la carte), comptes sociaux et sélection du ton (*Convivial*, *Festif*, *Gourmet*).
+   * Étape 3 : Coche rapide des priorités (*Attirer du monde*, *Remplir les jours creux*, *Livraison*) et sélection des jours calmes.
+   * Étape 4 : Écran d'apprentissage IA avec séquence d'ingestion et redirection automatique vers le Dashboard.
+2. **Dashboard dynamique (`/dashboard`)** :
+   * Salutation personnalisée avec le nom du restaurant.
+   * Affichage des opportunités du jour générées en temps réel selon la météo et le contexte.
+   * Statistiques hebdomadaires d'impact (Portée, Interactions, Clics) et dernières publications.
+3. **Flux d'Idées & Filtres (`/idees`)** :
+   * Liste complète des opportunités triables par pilules (*Aujourd'hui*, *Cette semaine*, *Météo*, *Événements*, *Tendances*, *Saisonnalité*).
+4. **Studio de Création (`/creer`)** :
+   * Stepper interactif en 3 étapes avec pré-remplissage depuis une opportunité.
+   * **Aperçu smartphone en direct** (visuel, texte, horaires, badges).
+   * **Enregistrement réel** dans PostgreSQL (`POST /api/posts`) avec gestion de statut (*Programmé*, *À publier*).
+5. **Calendrier des Publications (`/publications`)** :
+   * Vue calendrier mensuelle et grille des posts passés et à venir.
+6. **Fiche Établissement & Pause d'urgence (`/etablissement`)** :
+   * Consultation du profil, des offres actives et des réseaux sociaux.
+   * **Bouton d'action fonctionnel** : mise en pause globale / reprise de l'activité commerciale (`POST /api/restaurants/pause`).
+7. **Performances & Donut Chart (`/performances`)** :
+   * Synthèse de visibilité et répartition graphique SVG Donut par réseau social.
+8. **Sécurité & Sessions** :
+   * Authentification Supabase Auth (`@supabase/ssr`) avec cookies chiffrés `HttpOnly`.
+   * Auto-provisioning automatique de l'utilisateur dans PostgreSQL.
+   * Couche DTOs stricte garantissant qu'aucune valeur `null` ou format invalide ne casse l'interface.
+
+---
+
+### 🟡 Ce qui est SIMULÉ ou en mode FALLBACK
+
+1. **Diffusion vers les vraies API Sociales (Meta / Outstand)** :
+   * Les posts sont enregistrés et planifiés avec succès dans la base PostgreSQL (`gs_mvp`).
+   * Cependant, ils ne partent pas encore sur une vraie page Facebook ou un vrai compte Instagram d'entreprise sans jeton API Outstand ou Meta Graph configuré.
+2. **Génération de texte Claude 3.5 Sonnet** :
+   * Le service `content-generator.service.ts` appelle l'API Anthropic officielle. Si la variable `ANTHROPIC_API_KEY` n'est pas renseignée dans `.env.local`, un moteur de template structuré prend le relais sans bloquer l'interface.
+3. **Statistiques sociales réelles (Meta Insights)** :
+   * Les données de portée (42,6K) et d'interactions sont actuellement initialisées lors du seed et enrichies par les actions en base, en attente de synchronisation directe avec les statistiques Instagram/Facebook.
+
+---
+
+### 🔴 Ce qui MANQUE par rapport aux promesses du Document Projet
+
+1. **Le module Vidéo (Sections 11.6 et 11.8)** :
+   * Le document promet la création de **vidéos courtes** (formats TikTok / Reels / Stories). L'application ne gère actuellement que les formats images fixes.
+2. **Génération d'images personnalisées & Upload direct de photos de plats** :
+   * Les images sont actuellement sélectionnées via une galerie thématique Unsplash. L'upload de photos réelles depuis le smartphone du restaurateur nécessite un bucket de stockage (ex: Supabase Storage).
+3. **Intégration Caisse (POS) (Section 11.11)** :
+   * Conforme à la feuille de route du document (prévu pour les offres supérieures ultérieures). Aucun connecteur réel (Square, Lightspeed) n'est encore branché.
+4. **Modales d'édition directe sur `/etablissement`** :
+   * Les boutons "Modifier" sur la fiche établissement n'ouvrent pas encore de formulaire modal d'édition (les routes API `PATCH` existent déjà).
 
 ---
 
 ## 🛠️ Stack Technique
 
-- **Framework** : [Next.js 16](https://nextjs.org/) (App Router, Turbopack, React 19)
-- **Langage** : TypeScript (mode strict)
-- **Authentification & Sessions** : [Supabase Auth](https://supabase.com/docs/guides/auth) via `@supabase/ssr` (sessions cookies `HTTP-Only`)
-- **Base de données & ORM** : PostgreSQL (Supabase) + [Prisma ORM](https://www.prisma.io/)
-- **Sécurité Base de Données** : Row Level Security (RLS) PostgreSQL & triggers SQL
-- **Styling** : CSS Modules natifs + Design Tokens centralisés (`src/styles/tokens.css`), Dark SaaS theme par défaut
-- **Icônes** : [Lucide React](https://lucide.dev/)
-- **IA Générative** : Anthropic Claude 3.5 Sonnet (`@anthropic-ai/sdk`)
-- **Validation** : [Zod](https://zod.dev/)
+* **Framework** : [Next.js 16](https://nextjs.org/) (App Router, Turbopack, React 19)
+* **Langage** : TypeScript (mode strict avec DTOs centralisés dans `src/types/dto.ts`)
+* **Base de données & ORM** : PostgreSQL (local ou Supabase) + [Prisma ORM](https://www.prisma.io/)
+* **Authentification** : [Supabase Auth](https://supabase.com/docs/guides/auth) (`@supabase/ssr`, sessions cookies `HttpOnly`)
+* **Météo en direct** : Open-Meteo API (100% gratuit, sans clé, prévisions mondiales par coordonnées GPS)
+* **IA Générative** : Anthropic Claude 3.5 Sonnet (`@anthropic-ai/sdk`)
+* **Design & Styling** : CSS Modules natifs + Tokens de design centralisés (`#080C0E`, `#0B1115`, `#111A20`, accent `#FF5C00`)
+* **Icônes** : [Lucide React](https://lucide.dev/)
+* **Validation des schémas** : [Zod](https://zod.dev/)
 
 ---
 
-## 📂 Architecture du Projet
+## 📂 Architecture des Dossiers
 
 ```text
 src/
-├── app/                          # Frontend — Next.js App Router
+├── app/                          # Next.js App Router
 │   ├── (auth)/                   # Pages d'authentification (login, register)
-│   ├── (dashboard)/              # Espace gérant connecté (Design de référence)
+│   ├── (dashboard)/              # Espace gérant connecté
 │   │   ├── dashboard/            # 1. Page "Aujourd'hui" (Opportunités, stats, publications)
-│   │   ├── idees/                # 2. Page "Idées" (Filtres, cartes opportunités)
-│   │   ├── creer/                # 3. Page "Créer une publication" (Stepper & Live Preview)
-│   │   ├── publications/         # 4. Page "Publications" (Calendrier & Galerie)
+│   │   ├── idees/                # 2. Page "Idées" (Filtres, cartes d'opportunités)
+│   │   ├── creer/                # 3. Studio "Créer une publication" (Stepper & Live Preview)
+│   │   ├── publications/         # 4. Page "Publications" (Calendrier mensuel & Liste)
 │   │   ├── performances/         # 5. Page "Performances" (Top posts, Donut SVG)
-│   │   └── etablissement/        # 6. Page "Mon établissement" (Profil, offres, toggles)
+│   │   └── etablissement/        # 6. Page "Mon établissement" (Profil, offres, pause)
+│   ├── onboarding/               # Parcours d'onboarding immersif en 90s
 │   ├── api/                      # Route Handlers REST sécurisés
-│   │   ├── audit/                # Logs d'audit traçabilité
+│   │   ├── onboarding/           # Ingestion complète établissement & signaux
+│   │   ├── restaurants/          # Lecture, profil et pause d'urgence
 │   │   ├── opportunities/        # Moteur d'opportunités IA
-│   │   ├── posts/                # Validation et génération des posts
-│   │   ├── publications/         # Planification et diffusion
-│   │   └── restaurants/          # Paramètres et profil restaurant
-│   ├── layout.tsx                # Shell racine (meta PWA, polices Poppins)
-│   └── globals.css               # Point d'entrée CSS global
+│   │   ├── posts/                # Création, validation et mise à jour des posts
+│   │   ├── publications/         # Liste des publications planifiées
+│   │   └── performances/         # Agrégation des métriques d'impact
+│   ├── layout.tsx                # Shell racine
+│   └── globals.css               # Styles globaux
 │
-├── components/                   # Composants d'interface
-│   ├── ui/                       # Primitives UI (Button, StatCard, OpportunityCard,
-│   │                             # IdeaCard, PublicationCard, SocialPostPreview,
-│   │                             # DonutChart, StatusBadge, FilterPills, PageHeader)
+├── components/                   # Composants UI
+│   ├── ui/                       # Primitives (Button, StatCard, OpportunityCard, IdeaCard,
+│   │                             # PublicationCard, SocialPostPreview, DonutChart, StatusBadge)
 │   └── layout/                   # Layout responsive (Sidebar, Header, BottomNav)
 │
-├── lib/                          # Clients & Données partagées
-│   ├── mock-data.ts              # Données réalistes pour l'affichage frontend
-│   └── supabase/                 # Clients Supabase SSR (server.ts, client.ts)
+├── types/                        # Contrats de données & DTOs
+│   └── dto.ts                    # DTOs stricts partagés (Restaurant, Opportunity, Publication, Performance)
 │
-├── styles/                       # Système de design
-│   ├── tokens.css                # Variables CSS (Palette dark, orange vif, radius, typo)
-│   ├── reset.css                 # Reset CSS moderne
-│   └── animations.css            # Transitions et micro-interactions
-│
-└── server/                       # Backend & Logique Métier
-    ├── db/                       # Singletons Prisma Client & Supabase Admin
-    ├── lib/                      # Helpers d'authentification & ownership restaurant
-    └── modules/                  # Modules métier (context, signal, opportunity, content, publisher, feedback)
+├── server/                       # Backend & Logique Métier
+│   ├── db/                       # Singletons Prisma Client & Supabase Admin
+│   ├── lib/                      # Auth, Géocodage, Seed de démarrage, Réponses API
+│   ├── transformers/             # Mappers Prisma ➔ DTOs frontend formatés
+│   └── modules/                  # Modules métier (context, signal, opportunity, content, publisher, feedback)
 ```
 
 ---
@@ -125,27 +153,45 @@ cd GetSpecial-mvp
 npm install
 ```
 
-### 2. Configuration (`.env.local`)
+### 2. Configuration des variables d'environnement (`.env` et `.env.local`)
+
+Pour faire tourner l'application avec votre base PostgreSQL locale (gérée via **pgAdmin**) et l'authentification Supabase :
 
 ```env
-# Base de données PostgreSQL (Recommandé : Pooler Supabase IPv4 port 6543 ou 5432)
-DATABASE_URL="postgresql://postgres.[REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?pgbouncer=true"
+# Base de données PostgreSQL locale (pgAdmin)
+DATABASE_URL="postgresql://postgres:VOTRE_MOT_DE_PASSE@localhost:5432/gs_mvp"
 
-# Supabase Auth
-NEXT_PUBLIC_SUPABASE_URL="https://[REF].supabase.co"
+# Supabase Auth (Cloud)
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGci..."
 SUPABASE_SERVICE_ROLE_KEY="eyJhbGci..."
 
-# Anthropic Claude
+# Anthropic Claude 3.5 Sonnet (Optionnel pour génération live)
 ANTHROPIC_API_KEY="sk-ant-..."
 ```
 
-### 3. Lancer l'application en développement
+### 3. Synchronisation de la base de données
+
+```bash
+npx prisma db push
+```
+
+### 4. Lancer le serveur de développement
 
 ```bash
 npm run dev
 ```
 
-- Inscription : [http://localhost:3000/register](http://localhost:3000/register)
-- Connexion : [http://localhost:3000/login](http://localhost:3000/login)
-- Dashboard : [http://localhost:3000/dashboard](http://localhost:3000/dashboard)
+* **Inscription** : [http://localhost:3000/register](http://localhost:3000/register) *(redirige automatiquement vers l'Onboarding)*
+* **Onboarding** : [http://localhost:3000/onboarding](http://localhost:3000/onboarding)
+* **Connexion** : [http://localhost:3000/login](http://localhost:3000/login)
+* **Dashboard** : [http://localhost:3000/dashboard](http://localhost:3000/dashboard)
+
+---
+
+## 🎯 Prochaines Étapes Prioritaires
+
+1. **Module Vidéo & Stories (Sections 11.6 & 11.8)** : intégrer un template visuel vertical 9:16 pour les stories Instagram / TikTok.
+2. **Upload d'images réelles** : configurer un bucket Supabase Storage pour permettre l'import de vraies photos de plats dans le studio de création.
+3. **Modales d'édition sur `/etablissement`** : permettre la modification en direct des horaires, de l'adresse et des offres.
+4. **Connexion Meta Developers** : finaliser l'OAuth Facebook/Instagram pour la diffusion automatique sur les vrais comptes sociaux.
