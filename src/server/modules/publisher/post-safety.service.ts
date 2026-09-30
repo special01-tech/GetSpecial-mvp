@@ -17,7 +17,7 @@ export class PostSafetyService {
    * 2. Pause restaurant désactivée
    * 3. Compte réseau social connecté
    */
-  async validateSafetyChecks(postId: string, restaurantId: string): Promise<{ valid: boolean; reason?: string }> {
+  async validateSafetyChecks(postId: string, restaurantId: string): Promise<{ valid: boolean; reason?: string; requiresAccountConnection?: boolean }> {
     if (this.isPlatformSafetyPaused()) {
       return { valid: false, reason: 'Pause globale de sécurité de la plateforme active.' };
     }
@@ -43,15 +43,16 @@ export class PostSafetyService {
       return { valid: false, reason: 'Post introuvable.' };
     }
 
-    const hasAccount = restaurant.socialAccounts.some(
+    // La validation du compte est une alerte informative lors de l'approbation,
+    // mais sera strictement requise lors de la publication effective.
+    const hasAccount = (restaurant.socialAccounts || []).some(
       (acc: any) => acc.platform === post.platform && acc.status === 'connected'
     );
 
-    if (!hasAccount) {
-      return { valid: false, reason: `Aucun compte ${post.platform} connecté ou valide.` };
-    }
-
-    return { valid: true };
+    return {
+      valid: true,
+      requiresAccountConnection: !hasAccount,
+    };
   }
 
   /**

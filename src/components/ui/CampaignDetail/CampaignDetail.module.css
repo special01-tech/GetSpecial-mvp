@@ -1,0 +1,231 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+/* Image Card */
+.imageCard {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-primary-subtle);
+}
+
+.mainImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imageGradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(22, 29, 26, 0.1) 0%, rgba(22, 29, 26, 0.65) 100%);
+}
+
+.imageBadges {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.discountBadge {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  font-family: var(--font-family);
+  font-size: 13px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.timeSlotBadge {
+  background-color: rgba(255, 255, 255, 0.94);
+  color: var(--color-text-primary);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+/* Content Block */
+.contentBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  font-family: var(--font-family);
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+  line-height: 1.25;
+}
+
+.description {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+/* Platforms Section */
+.platformsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.subHeading {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.pillsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.platformPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--color-bg-app);
+  border: 1px solid var(--color-border);
+  padding: 6px 12px;
+  border-radius: var(--radius-lg);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.dotInstagram {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #F58529, #DD2A7B, #8134AF);
+}
+
+.dotFacebook {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #1877F2;
+}
+
+.pinGoogle {
+  color: #34A853;
+}
+
+.checkIcon {
+  color: var(--color-primary);
+  margin-left: 2px;
+}
+
+/* Explanation Block */
+.explanationBlock {
+  background-color: var(--color-primary-subtle);
+  border: 1px solid rgba(27, 67, 50, 0.15);
+  border-radius: var(--radius-xl);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.explanationHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-primary);
+  letter-spacing: -0.01em;
+}
+
+.sparkleIcon {
+  color: var(--color-primary);
+}
+
+.explanationText {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+/* Publish Time Card */
+.publishTimeCard {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.publishHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.clockIcon {
+  color: var(--color-primary);
+}
+
+.publishLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.timeDisplay {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.timeValue {
+  font-family: var(--font-family);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.timeContext {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}

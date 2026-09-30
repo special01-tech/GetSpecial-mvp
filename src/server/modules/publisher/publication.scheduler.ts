@@ -1,5 +1,6 @@
 import { prisma } from '@/server/db/prisma.client';
 import { outstandService } from './outstand.service';
+import { zernioService } from './zernio.service';
 import { postSafetyService } from './post-safety.service';
 
 export class PublicationScheduler {
@@ -35,7 +36,11 @@ export class PublicationScheduler {
 
     for (const post of duePosts) {
       try {
-        const result = await outstandService.publishPost(post.id);
+        // Priorité à Zernio si configuré, sinon Outstand
+        const result = process.env.ZERNIO_API_KEY
+          ? await zernioService.publishPost(post.id)
+          : await outstandService.publishPost(post.id);
+
         if (result.success) {
           executed++;
         } else {

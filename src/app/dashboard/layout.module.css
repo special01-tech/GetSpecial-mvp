@@ -16,8 +16,8 @@
 .main {
   flex: 1;
   margin-left: var(--sidebar-width);
-  padding: var(--space-8);
-  background-color: var(--color-bg-secondary);
+  padding: var(--space-6);
+  background-color: var(--color-bg-app);
 }
 
 /* Sur mobile : pas de margin sidebar, padding top/bottom pour header/bottomnav */

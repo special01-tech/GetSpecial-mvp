@@ -1,0 +1,140 @@
+.card {
+  width: 100%;
+  position: relative;
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  transition: all var(--transition-fast);
+}
+
+.card:hover {
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.leftAccent {
+  width: 6px;
+  background: linear-gradient(180deg, var(--color-primary) 0%, #2D6A4F 100%);
+  flex-shrink: 0;
+}
+
+.mainContent {
+  flex: 1;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.badgeGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.discountBadge {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 6px;
+  letter-spacing: -0.01em;
+}
+
+.itemTypeBadge {
+  background-color: var(--color-primary-subtle);
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.timeTag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background-color: var(--color-bg-app);
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+}
+
+.clockIcon {
+  color: var(--color-primary);
+}
+
+.title {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.description {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.actionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--color-border);
+}
+
+.activeIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-primary);
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+}
+
+.boostBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--color-primary-subtle);
+  color: var(--color-primary);
+  border: 1px solid rgba(27, 67, 50, 0.2);
+  border-radius: var(--radius-md);
+  padding: 5px 10px;
+  font-family: var(--font-family);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.boostBtn:hover {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+}

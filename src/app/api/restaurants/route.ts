@@ -8,9 +8,27 @@ import { z } from 'zod';
 const CreateRestaurantApiSchema = z.object({
   name: z.string().min(2),
   type: z.string(),
-  address: z.string().min(5),
-  userId: z.string(),
+  address: z.string().min(3),
+  userId: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  timezone: z.string().optional(),
+  country: z.string().optional(),
+  openingHours: z.any().optional(),
+  specialties: z.array(z.string()).optional(),
+  tone: z.string().optional(),
+  hasTerrace: z.boolean().optional(),
+  hasDelivery: z.boolean().optional(),
+  offPeakDays: z.array(z.string()).optional(),
+  constraints: z.array(z.string()).optional(),
 });
+
+function deduceUsTimezone(lon: number): string {
+  if (lon <= -114.5) return 'America/Los_Angeles';
+  if (lon <= -102.0) return 'America/Denver';
+  if (lon <= -85.5) return 'America/Chicago';
+  return 'America/New_York';
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -38,26 +56,78 @@ export async function POST(req: NextRequest) {
     const validated = CreateRestaurantApiSchema.safeParse(body);
 
     if (!validated.success) {
-      return error(validated.error.issues[0]?.message ?? 'Données invalides', 400);
+      return error(validated.error.issues[0]?.message ?? 'Invalid restaurant payload', 400);
     }
 
-    const { name, type, address, userId } = validated.data;
+    const {
+      name,
+      type,
+      address,
+      latitude,
+      longitude,
+      timezone,
+      country,
+      openingHours,
+      specialties = [],
+      tone = 'friendly',
+      hasTerrace = true,
+      hasDelivery = false,
+      offPeakDays = [],
+      constraints = [],
+    } = validated.data;
 
-    // Géocodage automatique de l'adresse
-    const geo = await geocodeAddress(address);
+    let targetUserId = validated.data.userId;
+
+    // Assurer qu'un utilisateur valide est lié
+    if (!targetUserId || targetUserId === 'demo') {
+      const existingUser = await prisma.user.findFirst();
+      if (existingUser) {
+        targetUserId = existingUser.id;
+      } else {
+        const newUser = await prisma.user.create({
+          data: {
+            email: 'owner@brasspelican.com',
+            name: 'Restaurant Owner',
+            passwordHash: '$2a$12$demo1234567890abcdefghijklm',
+          },
+        });
+        targetUserId = newUser.id;
+      }
+    }
+
+    // Coordonnées géographiques et pays
+    let lat = latitude;
+    let lon = longitude;
+    let detectedCountry = country;
+
+    if (lat === undefined || lon === undefined || !detectedCountry) {
+      const geo = await geocodeAddress(address);
+      if (lat === undefined) lat = geo.latitude;
+      if (lon === undefined) lon = geo.longitude;
+      if (!detectedCountry) detectedCountry = geo.countryCode;
+    }
+
+    const calculatedTimezone = timezone || deduceUsTimezone(lon);
 
     const restaurant = await (prisma as any).restaurant.create({
       data: {
         name,
         type,
         address,
-        latitude: geo.latitude,
-        longitude: geo.longitude,
-        userId,
+        latitude: lat,
+        longitude: lon,
+        timezone: calculatedTimezone,
+        country: (detectedCountry || 'US').toUpperCase(),
+        openingHours: openingHours || null,
+        specialties,
+        userId: targetUserId,
         profile: {
           create: {
-            tone: 'chaleureux',
-            hasTerrace: false,
+            tone,
+            hasTerrace,
+            offPeakDays,
+            constraints,
+            customRules: { hasDelivery },
           },
         },
       },
@@ -66,11 +136,18 @@ export async function POST(req: NextRequest) {
 
     await logAudit({
       restaurantId: restaurant.id,
-      userId,
+      userId: targetUserId,
       action: 'restaurant.create',
       entityType: 'restaurant',
       entityId: restaurant.id,
-      details: { name, type, address, latitude: geo.latitude, longitude: geo.longitude },
+      details: {
+        name,
+        type,
+        address,
+        latitude: lat,
+        longitude: lon,
+        timezone: calculatedTimezone,
+      },
     });
 
     return success(restaurant, 201);

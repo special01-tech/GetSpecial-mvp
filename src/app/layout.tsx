@@ -11,9 +11,9 @@ import './globals.css';
  * ============================================================================= */
 
 export const metadata: Metadata = {
-  title: 'GetSpecial — Marketing intelligent pour restaurants',
+  title: 'GetSpecial — Marketing IA pour Restaurants',
   description:
-    'La plateforme centralisée pour les restaurants et leur marketing. Transformez le quotidien en opportunités.',
+    'La plateforme intelligente qui transforme chaque événement, météo et moment en opportunités de chiffre d\'affaires pour votre restaurant.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -26,7 +26,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#FF5A00',
+  themeColor: '#1B4332',
 };
 
 export default function RootLayout({

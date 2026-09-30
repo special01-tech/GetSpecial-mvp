@@ -1,0 +1,92 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  background: var(--color-bg-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+.segmentedBar {
+  display: flex;
+  height: 12px;
+  width: 100%;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  background: var(--color-bg-app);
+  border: 1px solid var(--color-border);
+}
+
+.segment {
+  height: 100%;
+  transition: width 0.4s ease-out;
+}
+
+.platformsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.platformRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+}
+
+.platformRow:not(:last-child) {
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.leftCol {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.name {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-text-main);
+  display: block;
+}
+
+.interactionsText {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  display: block;
+}
+
+.rightCol {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.viewsCount {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-text-main);
+}
+
+.percentagePill {
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--color-bg-app);
+  color: var(--color-text-muted);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  min-width: 32px;
+  text-align: center;
+}

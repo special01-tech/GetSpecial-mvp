@@ -1,0 +1,107 @@
+.screenWrapper {
+  min-height: 100vh;
+  background-color: var(--color-bg-app);
+  display: flex;
+  justify-content: center;
+  font-family: var(--font-body);
+}
+
+.container {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4) var(--space-3);
+  gap: var(--space-4);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--space-2);
+}
+
+.backBtn,
+.shareIconBtn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-main);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+}
+
+.backBtn:hover,
+.shareIconBtn:hover {
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.headerTitleGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.pageTitle {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.statusLive {
+  font-size: 10px;
+  color: var(--color-primary);
+  font-weight: 600;
+  background: var(--color-primary-subtle);
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  margin-top: 2px;
+}
+
+.noticeBanner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: #E8F5E9;
+  color: #1B5E20;
+  border: 1px solid #A5D6A7;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mainContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.bottomSpacer {
+  height: 70px;
+  flex-shrink: 0;
+}

@@ -1,0 +1,154 @@
+.dayRow {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 12px 14px;
+  transition: all var(--transition-fast);
+}
+
+.dayRow:hover {
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+.dayClosed {
+  background-color: #FAFAF8;
+  opacity: 0.85;
+}
+
+.dayInfo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dayBadge {
+  display: flex;
+  align-items: center;
+}
+
+.dayLabel {
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.toggleClosedBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background-color: var(--color-primary-subtle);
+  color: var(--color-primary);
+  border: 1px solid rgba(27, 67, 50, 0.15);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.toggleClosedActive {
+  background-color: #FDF2F2;
+  color: var(--color-error);
+  border-color: #F8D7DA;
+}
+
+.slotsArea {
+  width: 100%;
+}
+
+.closedNotice {
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background-color: #F5F5F0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-style: italic;
+  text-align: center;
+}
+
+.servicesGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.serviceSlot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background-color: var(--color-bg-app);
+  border-radius: var(--radius-lg);
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+}
+
+.serviceHeader {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.sunIcon {
+  color: #D97706;
+}
+
+.moonIcon {
+  color: #6366F1;
+}
+
+.timeInputs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.timeInput {
+  flex: 1;
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 4px 6px;
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--color-text-primary);
+  text-align: center;
+}
+
+.timeInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.timeDash {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+@media (min-width: 500px) {
+  .dayRow {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .dayInfo {
+    width: 110px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .slotsArea {
+    flex: 1;
+  }
+}

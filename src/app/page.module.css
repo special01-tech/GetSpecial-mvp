@@ -1,0 +1,115 @@
+.screenWrapper {
+  min-height: 100dvh;
+  background-color: var(--color-bg-app);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.container {
+  width: 100%;
+  max-width: 480px;
+  background-color: var(--color-bg-surface);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-bottom: var(--space-2);
+}
+
+/* Contenu Principal */
+.mainContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.visualSection {
+  width: 100%;
+}
+
+.heroSection {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.slogan {
+  font-family: var(--font-family);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.subtext {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+/* Grille des 3 Bénéfices */
+.benefitsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+/* Footer / CTA */
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.disclaimer {
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+/* Animation douce d'apparition */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Desktop : Présentation centrée aérée */
+@media (min-width: 768px) {
+  .screenWrapper {
+    padding: var(--space-10) var(--space-6);
+    background: radial-gradient(circle at 50% 10%, #F1F4F2 0%, var(--color-bg-app) 100%);
+  }
+
+  .container {
+    max-width: 520px;
+    padding: var(--space-8);
+  }
+
+  .slogan {
+    font-size: 1.55rem;
+  }
+}

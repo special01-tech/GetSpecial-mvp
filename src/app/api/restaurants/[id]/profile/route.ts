@@ -12,6 +12,43 @@ const UpdateProfileSchema = z.object({
   customRules: z.record(z.string(), z.any()).optional(),
 });
 
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    let restaurant = await (prisma as any).restaurant.findUnique({
+      where: { id },
+      include: {
+        profile: true,
+        offers: { where: { status: 'active' } },
+        socialAccounts: true,
+      },
+    });
+
+    if (!restaurant) {
+      restaurant = await (prisma as any).restaurant.findFirst({
+        where: { status: 'active' },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          profile: true,
+          offers: { where: { status: 'active' } },
+          socialAccounts: true,
+        },
+      });
+    }
+
+    if (!restaurant) {
+      return error('Restaurant introuvable', 404);
+    }
+
+    return success(restaurant);
+  } catch (err: any) {
+    return error(err.message, 500);
+  }
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

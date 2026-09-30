@@ -1,0 +1,631 @@
+.screenWrapper {
+  min-height: 100vh;
+  background-color: var(--color-bg-app);
+  display: flex;
+  justify-content: center;
+  font-family: var(--font-body);
+}
+
+.container {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4) var(--space-3);
+  gap: var(--space-4);
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--space-2);
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.storeAvatar {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-subtle);
+  border: 1.5px solid var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.storeIcon {
+  color: var(--color-primary);
+}
+
+.headerTitle {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.headerSubtitle {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin: 2px 0 0 0;
+}
+
+.themeToggleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-bg-surface);
+  border: 1.5px solid var(--color-border);
+  color: var(--color-text-main);
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+}
+
+.themeToggleBtn:hover {
+  background: var(--color-primary-subtle);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.sunIcon {
+  color: #F59E0B;
+}
+
+.moonIcon {
+  color: var(--color-primary);
+}
+
+.savedNotice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary-light);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Internal Tabs */
+.tabsNav {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  background: var(--color-bg-surface);
+  border: 1.5px solid var(--color-border);
+  padding: 4px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.tabBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  padding: 8px 6px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.tabBtn:hover {
+  color: var(--color-text-main);
+  background: var(--color-bg-app);
+}
+
+.tabActive {
+  background: var(--color-primary) !important;
+  color: var(--color-white) !important;
+  box-shadow: 0 2px 4px rgba(27, 67, 50, 0.2);
+}
+
+/* Main Content */
+.mainContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Edit button inside section header */
+.editToggleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+  border: 1px solid rgba(27, 67, 50, 0.2);
+  padding: 5px 10px;
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.editToggleBtn:hover {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+/* Section 1 : Fields Grid */
+.fieldsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.fieldItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fieldLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.fieldValue {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.textInput,
+.selectInput {
+  background: var(--color-bg-app);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 8px var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-main);
+  outline: none;
+  font-family: inherit;
+  transition: border-color var(--transition-fast);
+}
+
+.textInput:focus,
+.selectInput:focus {
+  border-color: var(--color-primary);
+}
+
+.tonePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  width: fit-content;
+}
+
+.toneIcon {
+  color: var(--color-primary);
+}
+
+.colorPalette {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.colorSwatch {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-bg-surface);
+  box-shadow: 0 0 0 1px var(--color-border);
+}
+
+/* Section 2 : Toggles */
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+}
+
+.toggleRow:not(:last-child) {
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.toggleInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.toggleIconCircle {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-app);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+}
+
+.toggleTitle {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-main);
+  display: block;
+}
+
+.toggleSubtitle {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin: 1px 0 0 0;
+  line-height: 1.35;
+}
+
+/* iOS Style Switch */
+.switchBtn {
+  width: 44px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: background-color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.switchOn {
+  background-color: var(--color-primary);
+}
+
+.switchOff {
+  background-color: var(--color-border-hover);
+}
+
+.switchHandle {
+  width: 20px;
+  height: 20px;
+  background-color: var(--color-white);
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform var(--transition-fast);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.switchOn .switchHandle {
+  transform: translateX(20px);
+}
+
+/* Section 3 : Opening Hours */
+.hoursList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.hourRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-app);
+  border: 1px solid var(--color-border);
+}
+
+.hourRowClosed {
+  opacity: 0.7;
+}
+
+.dayCol {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 90px;
+}
+
+.dayName {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-text-main);
+}
+
+.closedPill {
+  font-size: 9px;
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-error);
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+}
+
+.slotsCol {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.slotText {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.slotDivider {
+  color: var(--color-border);
+  font-size: 10px;
+}
+
+.closedText {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.editHoursGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.openCloseToggle {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  font-size: 10px;
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--color-text-muted);
+}
+
+.inputsPair {
+  display: flex;
+  gap: 4px;
+}
+
+.timeSlotInput {
+  width: 90px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  padding: 3px 6px;
+  color: var(--color-text-main);
+}
+
+/* Tabs Placeholder */
+.tabPlaceholderCard {
+  background: var(--color-bg-surface);
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.placeholderTitle {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin: 0;
+}
+
+.placeholderSubtitle {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.backToProfileBtn {
+  margin-top: var(--space-2);
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+  border: 1px solid rgba(27, 67, 50, 0.2);
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bottomSpacer {
+  height: 70px;
+  flex-shrink: 0;
+}
+
+/* ÉCRAN 15 : Styles spécifiques Onglet Offres */
+.offersHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 0 var(--space-1);
+}
+
+.tabSectionTitle {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin: 0;
+  line-height: 1.25;
+}
+
+.tabSectionSubtitle {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin: 2px 0 0 0;
+}
+
+.addOfferBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(27, 67, 50, 0.2);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.addOfferBtn:hover {
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
+}
+
+.offersList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* ÉCRAN 17 : Modale de Confirmation de Déconnexion */
+.confirmModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(18, 29, 24, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  padding: var(--space-4);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.confirmModalCard {
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-xl);
+  max-width: 400px;
+  width: 100%;
+  padding: var(--space-5);
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.confirmIconCircle {
+  width: 50px;
+  height: 50px;
+  border-radius: var(--radius-full);
+  background: rgba(239, 68, 68, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-error);
+}
+
+.alertIcon {
+  color: var(--color-error);
+}
+
+.confirmTitle {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin: 0;
+}
+
+.confirmMessage {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.confirmActionsRow {
+  display: flex;
+  gap: var(--space-2);
+  width: 100%;
+  margin-top: var(--space-2);
+}
+
+.cancelConfirmBtn {
+  flex: 1;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  padding: 10px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.cancelConfirmBtn:hover {
+  background: var(--color-bg-app);
+  color: var(--color-text-main);
+}
+
+.destructiveBtn {
+  flex: 1.2;
+  background: var(--color-error);
+  border: none;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-white);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.destructiveBtn:hover {
+  opacity: 0.9;
+}
+

@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 const GeneratePostSchema = z.object({
   restaurantId: z.string(),
-  platform: z.enum(['instagram', 'facebook']).default('instagram'),
+  platform: z.enum(['instagram', 'facebook', 'tiktok', 'google_business']).default('instagram'),
 });
 
 export async function POST(

@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { prisma } from '@/server/db/prisma.client';
 import { logAudit } from '@/server/lib/audit';
+import { getCountryConfig } from '@/server/lib/country-config';
 
 export class ContentGeneratorService {
   private anthropic: Anthropic | null = null;
@@ -15,7 +16,11 @@ export class ContentGeneratorService {
    * Génère le texte d'un post à partir d'une opportunité validée
    * Seuls les faits vérifiés de l'opportunité et du restaurant sont autorisés.
    */
-  async generatePostForOpportunity(opportunityId: string, restaurantId: string, platform: 'instagram' | 'facebook' = 'instagram') {
+  async generatePostForOpportunity(
+    opportunityId: string,
+    restaurantId: string,
+    platform: 'instagram' | 'facebook' | 'tiktok' | 'google_business' = 'instagram'
+  ) {
     const opp = await (prisma as any).opportunity.findUnique({
       where: { id: opportunityId },
       include: {
@@ -27,19 +32,31 @@ export class ContentGeneratorService {
 
     const restaurant = opp.restaurant;
     const facts = (opp.factsCited as string[]) || [];
+    const config = getCountryConfig(restaurant.country);
+    const cleanName = restaurant.name.replace(/[^a-zA-Z0-9]/g, '');
 
     let postText = '';
 
     if (!this.anthropic) {
-      postText = `✨ ${opp.title} !\n\n${opp.description}\n\n📍 Rendez-vous chez ${restaurant.name}, ${restaurant.address}.\n\n#restaurant #${restaurant.type.replace('-', '')} #food`;
+      if (config.language === 'fr') {
+        postText = `✨ ${opp.title} !\n\n${opp.description}\n\n📍 Rendez-vous chez ${restaurant.name}, ${restaurant.address}.\n\n#${cleanName} #restaurant #gastronomie`;
+      } else if (config.language === 'es') {
+        postText = `🔥 ${opp.title}!\n\n${opp.description}\n\n📍 Te esperamos en ${restaurant.name}, ${restaurant.address}.\n\n#${cleanName} #restaurante #gastronomia`;
+      } else if (config.language === 'de') {
+        postText = `✨ ${opp.title}!\n\n${opp.description}\n\n📍 Besucht uns bei ${restaurant.name}, ${restaurant.address}.\n\n#${cleanName} #restaurant #lecker`;
+      } else {
+        postText = `🔥 ${opp.title}!\n\n${opp.description}\n\n📍 Visit us at ${restaurant.name}, ${restaurant.address}.\n\n#${cleanName} #foodie #dining`;
+      }
     } else {
-      const prompt = `Rédige un post percutant pour ${platform} pour le restaurant "${restaurant.name}".
-Thème : ${opp.title} (${opp.description}).
-Ton souhaité : ${opp.recommendedTone || restaurant.profile?.tone || 'chaleureux'}.
-Faits autorisés (stricte interdiction d'en inventer d'autres) :
+      const prompt = `Write an engaging, high-converting social media post for ${platform} for the restaurant "${restaurant.name}" located in ${restaurant.city || config.name}, ${config.name}.
+Target Language: Write naturally in the primary language of ${config.name} (${config.language.toUpperCase()}).
+Currency: Use ${config.currencySymbol} (${config.currencyCode}) for any pricing references.
+Theme: ${opp.title} (${opp.description}).
+Tone: ${opp.recommendedTone || restaurant.profile?.toneOfVoice || 'Welcoming, authentic hospitality'}.
+Strictly authorized facts (DO NOT invent anything outside these):
 ${facts.map((f: string) => `- ${f}`).join('\n')}
 
-Format : Texte prêt à être publié avec émojis adaptés et 3 hashtags. Aucun commentaire hors du texte du post.`;
+Format: Ready-to-publish copy with natural local phrasing, emojis, and 3 relevant hashtags. No meta-commentary.`;
 
       const response = await this.anthropic.messages.create({
         model: 'claude-3-5-sonnet-20241022',
@@ -50,6 +67,27 @@ Format : Texte prêt à être publié avec émojis adaptés et 3 hashtags. Aucun
       postText = response.content[0]?.type === 'text' ? response.content[0].text.trim() : '';
     }
 
+    // Fallback template image based on opportunity facts / type
+    const factsStr = facts.join(' ').toLowerCase();
+    let imageUrl: string | null = null;
+    if (factsStr.includes('weather') || factsStr.includes('sunny') || factsStr.includes('terrasse') || factsStr.includes('patio')) {
+      imageUrl = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80';
+    } else if (factsStr.includes('event') || factsStr.includes('match') || factsStr.includes('nfl') || factsStr.includes('concert')) {
+      imageUrl = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80';
+    } else if (factsStr.includes('holiday') || factsStr.includes('fête') || factsStr.includes('day')) {
+      imageUrl = 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80';
+    } else {
+      imageUrl = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80';
+    }
+
+    // Safety: Remove or flag forbidden terms / legal check
+    const FORBIDDEN_WORDS = ['100% garanti', 'meilleur du monde', 'gratuit sans condition', 'cure miracle'];
+    for (const badWord of FORBIDDEN_WORDS) {
+      if (postText.toLowerCase().includes(badWord)) {
+        postText = postText.replace(new RegExp(badWord, 'gi'), '');
+      }
+    }
+
     // Création du post en statut 'pending_approval' (Machine à états)
     const post = await (prisma as any).post.create({
       data: {
@@ -57,6 +95,7 @@ Format : Texte prêt à être publié avec émojis adaptés et 3 hashtags. Aucun
         opportunityId,
         platform,
         text: postText,
+        imageUrl,
         status: 'pending_approval',
         verifiedFacts: facts,
       },

@@ -2,31 +2,36 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import {
+  LayoutDashboard,
+  Lightbulb,
+  Calendar,
+  BarChart3,
+  Store,
+  HelpCircle,
+  LucideIcon,
+} from 'lucide-react';
 import styles from './Sidebar.module.css';
 
 /** Élément de navigation dans la sidebar */
 interface NavItem {
-  /** Label affiché */
   label: string;
-  /** Route Next.js */
   href: string;
-  /** Emoji (sera remplacé par de vraies icônes SVG plus tard) */
-  icon: string;
+  icon: LucideIcon;
 }
 
-/** Liens de navigation principaux — conformes aux maquettes */
+/** Liens de navigation principaux */
 const NAV_ITEMS: NavItem[] = [
-  { label: "Aujourd'hui", href: '/dashboard', icon: '📅' },
-  { label: 'Idées', href: '/ideas', icon: '💡' },
-  { label: 'Créer', href: '/create', icon: '✍️' },
-  { label: 'Publications', href: '/publications', icon: '📣' },
-  { label: 'Performances', href: '/performance', icon: '📊' },
-  { label: 'Mon restaurant', href: '/restaurant', icon: '🏪' },
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { label: 'AI Assistant', href: '/dashboard/chat', icon: Lightbulb },
+  { label: 'Planning', href: '/dashboard/planning', icon: Calendar },
+  { label: 'Analytics', href: '/dashboard/insights', icon: BarChart3 },
+  { label: 'My Restaurant', href: '/dashboard/restaurant', icon: Store },
 ];
 
 /** Lien secondaire (bas de sidebar) */
 const BOTTOM_ITEMS: NavItem[] = [
-  { label: 'Aide', href: '/help', icon: '❓' },
+  { label: 'Marketing Rules', href: '/dashboard/rules', icon: HelpCircle },
 ];
 
 /**
@@ -40,10 +45,15 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   /** Construit les classes CSS d'un lien selon son état actif */
-  const linkClasses = (href: string) =>
-    [styles.navLink, pathname.startsWith(href) ? styles.navLinkActive : '']
+  const linkClasses = (href: string) => {
+    const isActive =
+      href === '/dashboard'
+        ? pathname === '/dashboard'
+        : pathname.startsWith(href);
+    return [styles.navLink, isActive ? styles.navLinkActive : '']
       .filter(Boolean)
       .join(' ');
+  };
 
   return (
     <aside className={styles.sidebar}>
@@ -55,22 +65,32 @@ export default function Sidebar() {
 
       {/* Navigation principale */}
       <nav className={styles.nav}>
-        {NAV_ITEMS.map((item) => (
-          <Link key={item.href} href={item.href} className={linkClasses(item.href)}>
-            <span className={styles.navIcon}>{item.icon}</span>
-            <span>{item.label}</span>
-          </Link>
-        ))}
+        {NAV_ITEMS.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link key={item.label} href={item.href} className={linkClasses(item.href)}>
+              <span className={styles.navIcon}>
+                <Icon size={18} strokeWidth={2} />
+              </span>
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
       </nav>
 
       {/* Navigation secondaire (Aide) */}
       <div className={styles.navBottom}>
-        {BOTTOM_ITEMS.map((item) => (
-          <Link key={item.href} href={item.href} className={linkClasses(item.href)}>
-            <span className={styles.navIcon}>{item.icon}</span>
-            <span>{item.label}</span>
-          </Link>
-        ))}
+        {BOTTOM_ITEMS.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link key={item.label} href={item.href} className={linkClasses(item.href)}>
+              <span className={styles.navIcon}>
+                <Icon size={18} strokeWidth={2} />
+              </span>
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
       </div>
     </aside>
   );

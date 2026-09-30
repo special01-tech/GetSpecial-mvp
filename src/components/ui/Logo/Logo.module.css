@@ -1,0 +1,87 @@
+.logoContainer {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-primary);
+  border-radius: 10px;
+  color: #FFFFFF;
+  box-shadow: 0 4px 10px rgba(27, 67, 50, 0.18);
+  flex-shrink: 0;
+}
+
+.lettermark {
+  font-family: var(--font-family);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.textWrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.brandName {
+  font-family: var(--font-family);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-primary);
+  line-height: 1.1;
+}
+
+.brandAccent {
+  color: var(--color-primary-hover);
+  font-weight: 600;
+}
+
+.tagline {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* Tailles */
+.sm .iconWrapper {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+.sm .lettermark {
+  font-size: 16px;
+}
+.sm .brandName {
+  font-size: 18px;
+}
+
+.md .iconWrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+.md .lettermark {
+  font-size: 20px;
+}
+.md .brandName {
+  font-size: 22px;
+}
+
+.lg .iconWrapper {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+}
+.lg .lettermark {
+  font-size: 26px;
+}
+.lg .brandName {
+  font-size: 28px;
+}

@@ -1,6 +1,7 @@
 import { prisma } from '@/server/db/prisma.client';
 import { weatherCollector } from './weather.collector';
 import { ticketmasterCollector } from './ticketmaster.collector';
+import { calendarificCollector } from './calendarific.collector';
 import { NormalizedSignal } from './signal.types';
 import { logAudit } from '@/server/lib/audit';
 
@@ -20,22 +21,31 @@ export class SignalSyncScheduler {
     }
 
     const { latitude, longitude } = restaurant;
+    const country = (restaurant.country || 'US').toUpperCase();
     const allSignals: NormalizedSignal[] = [];
 
-    // 1. Météo
+    // 1. Météo adaptée au pays (°F pour US, °C pour FR)
     try {
-      const weatherSignals = await weatherCollector.collect(latitude, longitude);
+      const weatherSignals = await weatherCollector.collect(latitude, longitude, country);
       allSignals.push(...weatherSignals);
     } catch (err) {
       console.error(`[SYNC_WEATHER_ERROR] Restaurant ${restaurantId}`, err);
     }
 
-    // 2. Événements Ticketmaster
+    // 2. Événements Ticketmaster dans le rayon et pays du restaurant
     try {
-      const eventSignals = await ticketmasterCollector.collect(latitude, longitude);
+      const eventSignals = await ticketmasterCollector.collect(latitude, longitude, 15, country);
       allSignals.push(...eventSignals);
     } catch (err) {
       console.error(`[SYNC_TICKETMASTER_ERROR] Restaurant ${restaurantId}`, err);
+    }
+
+    // 3. Jours fériés & célébrations Calendarific spécifiques au pays
+    try {
+      const holidaySignals = await calendarificCollector.collect(country);
+      allSignals.push(...holidaySignals);
+    } catch (err) {
+      console.error(`[SYNC_CALENDARIFIC_ERROR] Restaurant ${restaurantId}`, err);
     }
 
     // 3. Persistance dans la table signals sans doublons (vérification d'unicité basée sur type + timestamp)

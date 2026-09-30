@@ -29,11 +29,14 @@
 
 .primary {
   background-color: var(--color-primary);
-  color: var(--color-text-inverse);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(27, 67, 50, 0.2);
 }
 
 .primary:hover:not(:disabled) {
   background-color: var(--color-primary-hover);
+  box-shadow: 0 6px 18px rgba(27, 67, 50, 0.28);
+  transform: translateY(-1px);
 }
 
 .secondary {

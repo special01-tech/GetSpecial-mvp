@@ -4,8 +4,8 @@
   "description": "Marketing intelligent pour restaurants — La plateforme centralisée.",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#0D0D0D",
-  "theme_color": "#FF5A00",
+  "background_color": "#FAFAF7",
+  "theme_color": "#1B4332",
   "orientation": "portrait-primary",
   "icons": [
     {

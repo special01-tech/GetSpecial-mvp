@@ -1,0 +1,121 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--color-bg-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+.chartHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.legendGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+}
+
+.viewsDot {
+  background: var(--color-primary);
+}
+
+.interactionsDot {
+  background: #E1306C;
+}
+
+.periodLabel {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.barsContainer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 140px;
+  padding-top: var(--space-3);
+  gap: var(--space-2);
+}
+
+.barCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  height: 100%;
+}
+
+.barTrack {
+  flex: 1;
+  width: 24px;
+  background: var(--color-bg-app);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: flex-end;
+  overflow: visible;
+  position: relative;
+}
+
+.barFill {
+  width: 100%;
+  background: linear-gradient(180deg, #2D6A4F 0%, var(--color-primary) 100%);
+  border-radius: var(--radius-md);
+  position: relative;
+  transition: height 0.5s ease-out;
+  cursor: pointer;
+}
+
+.barFill:hover {
+  background: #1B4332;
+}
+
+.tooltip {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-text-main);
+  color: #FFFFFF;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+
+.barFill:hover .tooltip {
+  opacity: 1;
+}
+
+.colLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}

@@ -7,7 +7,7 @@ import { z } from 'zod';
  * ============================================================================= */
 
 /** Types de signaux supportés */
-export const SignalTypeEnum = z.enum(['weather', 'event', 'holiday', 'custom']);
+export const SignalTypeEnum = z.enum(['weather', 'event', 'holiday', 'manual']);
 export type SignalType = z.infer<typeof SignalTypeEnum>;
 
 /** Schéma de création d'un signal collecté */

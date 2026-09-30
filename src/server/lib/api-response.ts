@@ -22,8 +22,8 @@ export function notFound(resource = 'Ressource') {
 }
 
 /** Réponse 401 */
-export function unauthorized() {
-  return error('Non autorisé.', 401);
+export function unauthorized(message = 'Non autorisé.') {
+  return error(message, 401);
 }
 
 /** Réponse 500 */
