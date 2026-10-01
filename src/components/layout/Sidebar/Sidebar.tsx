@@ -9,6 +9,7 @@ import {
   Store,
   Settings,
   BarChart3,
+  PenTool,
   LucideIcon,
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
@@ -23,6 +24,7 @@ interface NavItem {
 /** Liens de navigation principaux */
 const NAV_ITEMS: NavItem[] = [
   { label: 'Today', href: '/dashboard', icon: Sparkles },
+  { label: 'Studio IA', href: '/dashboard/create', icon: PenTool },
   { label: 'Chat', href: '/dashboard/chat', icon: MessageSquare },
   { label: 'Planning', href: '/dashboard/planning', icon: Calendar },
   { label: 'Restaurant', href: '/dashboard/restaurant', icon: Store },

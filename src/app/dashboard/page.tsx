@@ -283,6 +283,59 @@ export default function DashboardPage() {
           </p>
         </div>
 
+        {/* Accès rapide au Studio Créatif IA */}
+        <div
+          onClick={() => router.push('/dashboard/create')}
+          style={{
+            background: 'linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%)',
+            border: '1px solid #FFEDD5',
+            borderRadius: 14,
+            padding: '12px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(255, 107, 74, 0.08)',
+            marginBottom: 14,
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              background: '#FF6B4A',
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 6px rgba(255, 107, 74, 0.3)',
+            }}>
+              <Sparkles size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#0F172A' }}>
+                Studio Créatif : Générer une affiche & légende à la demande
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
+                Choisissez votre offre, votre soirée ou tapez une idée libre pour créer un post en 3s.
+              </div>
+            </div>
+          </div>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            color: '#FF6B4A',
+          }}>
+            <span>Créer</span>
+            <ChevronRight size={16} />
+          </div>
+        </div>
+
         {/* Bannière de notification */}
         {bannerNotice && (
           <div className={styles.noticeBanner}>

@@ -7,6 +7,7 @@ import {
   MessageSquare,
   Calendar,
   Store,
+  PenTool,
   MoreHorizontal,
   LucideIcon,
 } from 'lucide-react';
@@ -22,10 +23,10 @@ interface NavItem {
 /** Liens de navigation mobile conformes à la maquette */
 const NAV_ITEMS: NavItem[] = [
   { label: 'Today', href: '/dashboard', icon: Home },
+  { label: 'Studio', href: '/dashboard/create', icon: PenTool },
   { label: 'Chat', href: '/dashboard/chat', icon: MessageSquare },
   { label: 'Planning', href: '/dashboard/planning', icon: Calendar },
   { label: 'Restaurant', href: '/dashboard/restaurant', icon: Store },
-  { label: 'Settings', href: '/dashboard/settings', icon: MoreHorizontal },
 ];
 
 /**

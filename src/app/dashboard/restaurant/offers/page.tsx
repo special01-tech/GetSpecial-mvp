@@ -150,14 +150,36 @@ export default function RestaurantOffersPage() {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setIsOfferModalOpen(true)}
-              className={styles.addOfferBtn}
-            >
-              <Plus size={15} />
-              <span>+ Ajouter une offre</span>
-            </button>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <Link
+                href="/dashboard/create?type=offer"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '8px 12px',
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  backgroundColor: '#FFF7ED',
+                  border: '1px solid #FFEDD5',
+                  color: '#EA580C',
+                  textDecoration: 'none',
+                }}
+              >
+                <Sparkles size={14} />
+                <span>🎨 Studio Affiche & Légende</span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => setIsOfferModalOpen(true)}
+                className={styles.addOfferBtn}
+              >
+                <Plus size={15} />
+                <span>+ Ajouter une offre</span>
+              </button>
+            </div>
           </div>
 
           {/* Liste des offres existantes */}
