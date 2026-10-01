@@ -107,13 +107,34 @@ export default function RestaurantEventsPage() {
   };
 
   // 1. Création ou Édition
-  const handleSaveEvent = (savedEvent: RestaurantEvent) => {
+  const handleSaveEvent = async (savedEvent: RestaurantEvent) => {
     if (editingEvent) {
       const updated = events.map((e) => (e.id === savedEvent.id ? savedEvent : e));
       saveEventsList(updated, `✨ Événement "${savedEvent.title}" mis à jour.`);
     } else {
       const updated = [savedEvent, ...events];
       saveEventsList(updated, `🎉 Événement "${savedEvent.title}" ajouté avec succès.`);
+
+      // Synchronisation immédiate avec le moteur de signaux & opportunités IA
+      try {
+        const restaurantId = localStorage.getItem('getspecial_restaurant_id') || 'rest_demo_austin_1';
+        await fetch('/api/events/manual', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            restaurantId,
+            title: savedEvent.title,
+            description:
+              savedEvent.description && savedEvent.description.length >= 5
+                ? savedEvent.description
+                : `Événement ${savedEvent.title} organisé à l'établissement.`,
+            dateTime: savedEvent.date + ' ' + (savedEvent.time || '20:00'),
+            intensity: 1.0,
+          }),
+        });
+      } catch (err) {
+        console.warn('[MANUAL_EVENT_API_ERROR]', err);
+      }
     }
     setIsModalOpen(false);
     setEditingEvent(null);

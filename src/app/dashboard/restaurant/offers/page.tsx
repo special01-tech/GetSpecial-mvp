@@ -64,11 +64,28 @@ export default function RestaurantOffersPage() {
     }
   }, []);
 
-  const handleAddOffer = (newOffer: RestaurantOffer) => {
+  const handleAddOffer = async (newOffer: RestaurantOffer) => {
     const updated = [newOffer, ...offers];
     setOffers(updated);
     if (typeof window !== 'undefined') {
       localStorage.setItem('getspecial_restaurant_offers', JSON.stringify(updated));
+      const restaurantId = localStorage.getItem('getspecial_restaurant_id') || 'rest_demo_austin_1';
+      try {
+        await fetch('/api/offers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            restaurantId,
+            title: newOffer.name,
+            description: newOffer.description,
+            discountValue: newOffer.discountValue || 'Offre Spéciale',
+            recurrence: 'daily',
+            recurrenceDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+          }),
+        });
+      } catch (err) {
+        console.warn('[OFFER_API_SYNC_ERROR]', err);
+      }
     }
     setIsOfferModalOpen(false);
     setSavedNotice(`🎉 Offre "${newOffer.name}" créée et enregistrée avec succès.`);

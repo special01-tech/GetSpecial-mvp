@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Store, MapPin, ArrowRight, Utensils, Phone, Globe, Info, Sparkles } from 'lucide-react';
+import { Store, MapPin, ArrowRight, Utensils, Phone, Globe, Info, Sparkles, Navigation, Loader2 } from 'lucide-react';
 import Logo from '@/components/ui/Logo/Logo';
 import PrimaryButton from '@/components/ui/PrimaryButton/PrimaryButton';
 import RestaurantVisual from '@/components/ui/RestaurantVisual/RestaurantVisual';
@@ -62,6 +62,9 @@ export default function OnboardingRestaurantProfilePage() {
   const [country, setCountry] = useState('US');
   const [phone, setPhone] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const [detectedGpsInfo, setDetectedGpsInfo] = useState<string | null>(null);
+  const [customCoords, setCustomCoords] = useState<{ lat: number; lon: number } | null>(null);
 
   // Restaurer les informations déjà enregistrées si l'utilisateur revient en arrière
   useEffect(() => {
@@ -77,6 +80,10 @@ export default function OnboardingRestaurantProfilePage() {
         if (parsed.postalCode) setPostalCode(parsed.postalCode);
         if (parsed.country) setCountry(parsed.country);
         if (parsed.phone) setPhone(parsed.phone);
+        if (parsed.latitude && parsed.longitude) {
+          setCustomCoords({ lat: parsed.latitude, lon: parsed.longitude });
+          setDetectedGpsInfo(`Coordonnées : ${parsed.latitude.toFixed(4)}, ${parsed.longitude.toFixed(4)}`);
+        }
       } else {
         // Préremplir par défaut avec une structure de départ américaine élégante
         setName('The Brass Pelican');
@@ -92,7 +99,58 @@ export default function OnboardingRestaurantProfilePage() {
     }
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleDetectLocation = () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setErrorMsg("La géolocalisation n'est pas supportée par votre navigateur.");
+      return;
+    }
+
+    setIsLocating(true);
+    setErrorMsg(null);
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        setCustomCoords({ lat, lon });
+
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`,
+            { headers: { 'User-Agent': 'GetSpecial-App/1.0 (contact@getspecial.dev)' } }
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const addr = data.address || {};
+            const street = [addr.house_number, addr.road].filter(Boolean).join(' ') || data.name || address;
+            const detCity = addr.city || addr.town || addr.village || addr.municipality || city;
+            const detPost = addr.postcode || postalCode;
+            const detCountry = (addr.country_code || country).toUpperCase();
+
+            if (street) setAddress(street);
+            if (detCity) setCity(detCity);
+            if (detPost) setPostalCode(detPost);
+            if (detCountry) setCountry(detCountry);
+
+            setDetectedGpsInfo(`GPS détecté : ${lat.toFixed(4)}, ${lon.toFixed(4)} (${detCity})`);
+          } else {
+            setDetectedGpsInfo(`GPS détecté : ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+          }
+        } catch {
+          setDetectedGpsInfo(`GPS détecté : ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+        } finally {
+          setIsLocating(false);
+        }
+      },
+      (err) => {
+        setIsLocating(false);
+        setErrorMsg("Accès GPS non disponible ou refusé. Vous pouvez saisir votre adresse manuellement ci-dessous.");
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name.trim()) {
@@ -118,15 +176,41 @@ export default function OnboardingRestaurantProfilePage() {
       country: country || 'US',
     };
 
+    let finalLat = customCoords ? customCoords.lat : cityCoord.lat;
+    let finalLon = customCoords ? customCoords.lon : cityCoord.lon;
+    let finalCountry = country || 'US';
+
+    if (!customCoords) {
+      try {
+        const searchQuery = `${address.trim()} ${city.trim()}`;
+        const searchRes = await fetch(
+          `/api/restaurants/search?name=${encodeURIComponent(name.trim())}&city=${encodeURIComponent(searchQuery)}`
+        );
+        if (searchRes.ok) {
+          const json = await searchRes.json();
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            const topMatch = json.data[0];
+            if (topMatch.latitude && topMatch.longitude) {
+              finalLat = topMatch.latitude;
+              finalLon = topMatch.longitude;
+              if (topMatch.country) finalCountry = topMatch.country;
+            }
+          }
+        }
+      } catch (geoErr) {
+        console.warn('[GEOCODING_CLIENT_FALLBACK]', geoErr);
+      }
+    }
+
     const restaurantData: RestaurantSearchResult = {
       id: `rest_user_${Date.now()}`,
       name: name.trim(),
       address: address.trim(),
       city: city.trim(),
       postalCode: postalCode.trim() || (country === 'US' ? '78701' : '75001'),
-      country: country.toUpperCase(),
-      latitude: cityCoord.lat,
-      longitude: cityCoord.lon,
+      country: finalCountry.toUpperCase(),
+      latitude: finalLat,
+      longitude: finalLon,
       rating: 4.8,
       reviewsCount: 120,
       cuisineType: cuisineType.trim() || 'Restaurant & Bar',
@@ -217,9 +301,16 @@ export default function OnboardingRestaurantProfilePage() {
 
             {/* Adresse */}
             <div className={styles.fieldGroup}>
-              <label htmlFor="address" className={styles.label}>
-                Adresse de l&apos;établissement *
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label htmlFor="address" className={styles.label}>
+                  Adresse de l&apos;établissement *
+                </label>
+                {detectedGpsInfo && (
+                  <span className={styles.gpsSuccessBadge}>
+                    ✓ {detectedGpsInfo}
+                  </span>
+                )}
+              </div>
               <div className={styles.inputWrapper}>
                 <MapPin size={18} className={styles.inputIcon} />
                 <input
@@ -232,6 +323,25 @@ export default function OnboardingRestaurantProfilePage() {
                   required
                 />
               </div>
+              <button
+                type="button"
+                onClick={handleDetectLocation}
+                disabled={isLocating}
+                className={styles.gpsDetectBtn}
+                title="Utiliser ma position GPS"
+              >
+                {isLocating ? (
+                  <>
+                    <Loader2 size={13} className="spin" style={{ animation: 'spin 1s linear infinite' }} />
+                    <span>Détection GPS en cours...</span>
+                  </>
+                ) : (
+                  <>
+                    <Navigation size={13} />
+                    <span>📍 Détecter ma position GPS actuelle</span>
+                  </>
+                )}
+              </button>
             </div>
 
             {/* Ville & Code Postal */}
