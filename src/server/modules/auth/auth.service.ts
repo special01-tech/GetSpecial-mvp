@@ -119,12 +119,19 @@ export class AuthService {
       }
     }
 
+    const userRestaurant = await (prisma as any).restaurant.findFirst({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
     return {
       id: user.id,
       email: user.email,
       name: user.name,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      restaurantId: userRestaurant?.id ?? null,
+      restaurantName: userRestaurant?.name ?? null,
     };
   }
 }

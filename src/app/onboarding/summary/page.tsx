@@ -33,13 +33,13 @@ interface RecapState {
 }
 
 const DEFAULT_RECAP: RecapState = {
-  restaurantName: 'The Brass Pelican',
-  type: 'Restaurant & American Bistro',
-  specialties: 'Seafood & Craft Cocktails',
-  hours: '11:30 AM - 10:00 PM • Mon - Sun',
+  restaurantName: 'Mon Établissement',
+  type: 'Restaurant',
+  specialties: 'Spécialités de la maison',
+  hours: '11:30 - 23:00 • Lun - Dim',
   hasTerrace: true,
   hasDelivery: false,
-  ambiance: 'Warm & Welcoming',
+  ambiance: 'Convivial & Chaleureux',
 };
 
 export default function OnboardingSummaryPage() {
@@ -134,9 +134,13 @@ export default function OnboardingSummaryPage() {
       const parsedHours = storedHours ? JSON.parse(storedHours) : null;
       const parsedUser = storedUser ? JSON.parse(storedUser) : null;
 
-      const formattedAddress = parsedRest?.address
-        ? `${parsedRest.address}, ${parsedRest.city || 'Austin'}, ${parsedRest.state || 'TX'} ${parsedRest.postalCode || '78701'}`
-        : '412 Congress Ave, Austin, TX 78701';
+      const addressParts = [
+        parsedRest?.address,
+        parsedRest?.city,
+        parsedRest?.postalCode,
+        parsedRest?.country,
+      ].filter(Boolean);
+      const formattedAddress = addressParts.length > 0 ? addressParts.join(', ') : 'Adresse du restaurant';
 
       // 1. Sauvegarde réelle en base via POST /api/restaurants
       const response = await fetch('/api/restaurants', {
@@ -146,9 +150,9 @@ export default function OnboardingSummaryPage() {
           name: recap.restaurantName,
           type: parsedTypes[0] || 'restaurant',
           address: formattedAddress,
-          latitude: parsedRest?.latitude || 30.2672,
-          longitude: parsedRest?.longitude || -97.7431,
-          country: parsedRest?.country || 'US',
+          latitude: parsedRest?.latitude || 48.8566,
+          longitude: parsedRest?.longitude || 2.3522,
+          country: parsedRest?.country || 'FR',
           userId: parsedUser?.id || undefined,
           openingHours: parsedHours || { general: recap.hours },
           specialties: [recap.specialties],

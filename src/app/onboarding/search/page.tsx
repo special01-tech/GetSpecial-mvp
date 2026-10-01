@@ -85,14 +85,30 @@ export default function OnboardingRestaurantProfilePage() {
           setDetectedGpsInfo(`Coordonnées : ${parsed.latitude.toFixed(4)}, ${parsed.longitude.toFixed(4)}`);
         }
       } else {
-        // Préremplir par défaut avec une structure de départ américaine élégante
-        setName('The Brass Pelican');
-        setCuisineType('American Bistro & Seafood');
-        setAddress('412 Congress Ave');
-        setCity('Austin');
-        setPostalCode('78701');
-        setCountry('US');
-        setPhone('+1 (512) 472-8800');
+        // Nouveau compte : récupérer le nom saisi lors de l'inscription
+        const newRestName = localStorage.getItem('getspecial_new_restaurant_name');
+        const authUserStr = localStorage.getItem('getspecial_auth_user');
+        let fallbackName = '';
+        try {
+          if (authUserStr) {
+            const parsedAuth = JSON.parse(authUserStr);
+            fallbackName = parsedAuth.name || '';
+          }
+        } catch {
+          // Ignorer
+        }
+        if (newRestName) {
+          setName(newRestName);
+        } else if (fallbackName) {
+          setName(fallbackName);
+        }
+        // Laisser les champs d'adresse vierges pour que le gérant saisisse sa vraie localisation
+        setCuisineType('');
+        setAddress('');
+        setCity('');
+        setPostalCode('');
+        setCountry('FR');
+        setPhone('');
       }
     } catch {
       // Ignorer

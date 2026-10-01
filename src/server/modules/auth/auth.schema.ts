@@ -31,4 +31,6 @@ export interface SafeUser {
   name?: string | null;
   createdAt: Date;
   updatedAt: Date;
+  restaurantId?: string | null;
+  restaurantName?: string | null;
 }

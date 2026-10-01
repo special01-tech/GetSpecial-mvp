@@ -34,32 +34,26 @@ export default function ConfirmRestaurantPage() {
       if (stored) {
         setRestaurant(JSON.parse(stored));
       } else {
-        // Fallback intelligent pour test direct ou démonstration
-        const defaultDemo: RestaurantSearchResult = {
-          id: 'place_brass_pelican_1',
-          name: 'The Brass Pelican',
-          address: '412 Congress Ave',
-          city: 'Austin',
-          state: 'TX',
-          postalCode: '78701',
-          country: 'USA',
-          latitude: 30.2672,
-          longitude: -97.7431,
-          rating: 4.8,
-          reviewsCount: 342,
-          cuisineType: 'American Bistro & Seafood',
-          phone: '+1 (512) 472-8800',
-          openingHours: '11:30 AM - 11:00 PM • Tue - Sun',
-          isOpenNow: true,
-          photoUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
-          photoGallery: [
-            'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=400&q=80',
-            'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80',
-            'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80',
-          ],
-          googlePlaceId: 'ChIJb6e8JjK1RIYRO5tZ9aQ6WJ0',
-        };
-        setRestaurant(defaultDemo);
+        const newRestName = localStorage.getItem('getspecial_new_restaurant_name');
+        if (newRestName) {
+          setRestaurant({
+            id: `rest_user_${Date.now()}`,
+            name: newRestName,
+            address: 'Adresse en cours de saisie',
+            city: 'France',
+            country: 'FR',
+            latitude: 48.8566,
+            longitude: 2.3522,
+            cuisineType: 'Restaurant & Bar',
+            openingHours: '11:30 - 23:00 • Lun - Dim',
+            isOpenNow: true,
+            photoUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
+            photoGallery: [],
+          });
+        } else {
+          router.replace('/onboarding/search');
+          return;
+        }
       }
     } catch {
       setErrorMsg('Impossible de charger les données du restaurant.');

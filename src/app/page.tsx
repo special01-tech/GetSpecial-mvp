@@ -23,16 +23,16 @@ import styles from './page.module.css';
 export default function SplashPage() {
   const router = useRouter();
 
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState(false);
+
   React.useEffect(() => {
     try {
       const isCompleted = localStorage.getItem('getspecial_onboarding_completed') === 'true';
-      if (isCompleted) {
-        router.replace('/dashboard');
-      }
+      setHasCompletedOnboarding(isCompleted);
     } catch {
       // Ignorer
     }
-  }, [router]);
+  }, []);
 
   const handleStart = () => {
     // Navigation vers le flux d'onboarding / authentification
@@ -93,8 +93,29 @@ export default function SplashPage() {
             onClick={handleStart}
             icon={<ArrowRight size={18} />}
           >
-            Commencer
+            {hasCompletedOnboarding ? 'Créer un nouveau restaurant' : 'Commencer'}
           </PrimaryButton>
+
+          {hasCompletedOnboarding && (
+            <button
+              type="button"
+              onClick={() => router.push('/dashboard')}
+              style={{
+                marginTop: '12px',
+                background: 'transparent',
+                border: '1px solid #E5E7EB',
+                borderRadius: '10px',
+                padding: '10px 18px',
+                color: '#1B4332',
+                fontWeight: 600,
+                fontSize: '14px',
+                cursor: 'pointer',
+                width: '100%',
+              }}
+            >
+              Accéder à mon tableau de bord actif →
+            </button>
+          )}
 
           <p className={styles.disclaimer}>
             Sans engagement • Configuration en 2 minutes

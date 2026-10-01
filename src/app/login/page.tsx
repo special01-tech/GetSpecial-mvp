@@ -36,15 +36,15 @@ export default function AuthPage() {
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
 
   React.useEffect(() => {
-    try {
-      const isCompleted = localStorage.getItem('getspecial_onboarding_completed') === 'true';
-      if (isCompleted) {
-        router.replace('/dashboard');
+    // Vérifier si l'utilisateur arrive avec un paramètre pour forcer une nouvelle inscription
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('mode') === 'register' || urlParams.get('new') === 'true') {
+        setMode('email_form');
+        authClientService.logout();
       }
-    } catch {
-      // Ignorer
     }
-  }, [router]);
+  }, []);
 
   // Authentification Google
   const handleGoogleAuth = async () => {
