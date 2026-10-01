@@ -110,30 +110,31 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 2. Extraire la météo réelle depuis les signaux OpenWeatherMap
+    // 2. Extraire la météo réelle depuis les signaux (Open-Meteo ou OpenWeatherMap)
     const weatherSignal = signals.find((s: any) => s.type === 'weather');
     const weatherData = weatherSignal?.data || {};
     const rawWeather = weatherData.raw || {};
-    const weatherMain = rawWeather.weather?.[0]?.main?.toLowerCase() || '';
 
     const isImperial = config.units === 'imperial';
-    const currentTemp = Math.round(rawWeather.main?.temp ?? (isImperial ? 78 : 22));
-    const tempFahrenheit = isImperial ? currentTemp : Math.round((currentTemp * 9) / 5 + 32);
+    const currentTemp = weatherData.temperature ?? Math.round(rawWeather.main?.temp ?? (isImperial ? 78 : 22));
+    const tempFahrenheit = weatherData.tempFahrenheit ?? (isImperial ? currentTemp : Math.round((currentTemp * 9) / 5 + 32));
 
-    const isRain = weatherMain.includes('rain') || weatherMain.includes('drizzle');
-    const iconType = isRain ? 'rain' : weatherMain.includes('clear') ? 'sun' : 'cloud-sun';
+    const isRain = weatherData.isRain || false;
+    const isSunny = weatherData.isSunny || false;
+    const iconType = isRain ? 'rain' : isSunny ? 'sun' : 'cloud-sun';
+    const condition = weatherData.condition || weatherData.title || (isRain ? 'Pluie légère' : 'Ciel dégagé');
 
     const liveWeather = {
       isReal: Boolean(weatherSignal),
-      source: 'OpenWeatherMap API',
-      condition: rawWeather.weather?.[0]?.description || weatherData.title || (isRain ? 'Light Rain' : 'Clear Sky'),
+      source: weatherSignal?.source === 'open-meteo' ? 'Open-Meteo API' : 'OpenWeatherMap API',
+      condition,
       temperature: currentTemp,
       tempFahrenheit,
-      tempUnit: config.tempUnit,
+      tempUnit: weatherData.tempUnit || config.tempUnit,
       iconType,
-      terraceAdvice: isRain
+      terraceAdvice: weatherData.terraceAdvice || (isRain
         ? (config.language === 'fr' ? 'Prévoyez le service en salle ou sous abri.' : 'Focus on indoor seating or covered patio areas.')
-        : (config.language === 'fr' ? 'Conditions idéales pour le service en terrasse ce midi.' : `Ideal patio dining conditions today (${currentTemp}${config.tempUnit}).`),
+        : (config.language === 'fr' ? 'Conditions idéales pour le service en terrasse ce midi.' : `Ideal patio dining conditions today (${currentTemp}${config.tempUnit}).`)),
     };
 
     // 3. Extraire le vrai événement local depuis les signaux Ticketmaster

@@ -35,7 +35,7 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(validated.data.password, 12);
 
-    const user = await prisma.user.create({
+    const user = await (prisma.user as any).create({
       data: {
         email: validated.data.email.toLowerCase(),
         passwordHash,
@@ -69,7 +69,7 @@ export class AuthService {
       throw new UnauthorizedError('Email ou mot de passe incorrect.');
     }
 
-    const isValid = await bcrypt.compare(validated.data.password, user.passwordHash);
+    const isValid = await bcrypt.compare(validated.data.password, (user as any).passwordHash);
     if (!isValid) {
       throw new UnauthorizedError('Email ou mot de passe incorrect.');
     }

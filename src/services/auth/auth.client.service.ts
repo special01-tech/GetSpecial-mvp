@@ -23,6 +23,7 @@ class AuthClientService implements IAuthClientService {
     if (typeof window !== 'undefined') {
       localStorage.setItem(this.storageKey, JSON.stringify(mockGoogleUser));
       localStorage.setItem('getspecial_restaurant_id', mockGoogleUser.restaurantId || 'rest_demo_austin_1');
+      document.cookie = `getspecial_session=${mockGoogleUser.id}; path=/; max-age=2592000; SameSite=Lax`;
     }
 
     return {
@@ -56,6 +57,7 @@ class AuthClientService implements IAuthClientService {
 
         if (typeof window !== 'undefined') {
           localStorage.setItem(this.storageKey, JSON.stringify(user));
+          document.cookie = `getspecial_session=${user.id}; path=/; max-age=2592000; SameSite=Lax`;
         }
 
         return { success: true, user };
@@ -75,6 +77,7 @@ class AuthClientService implements IAuthClientService {
       };
       if (typeof window !== 'undefined') {
         localStorage.setItem(this.storageKey, JSON.stringify(fallbackUser));
+        document.cookie = `getspecial_session=${fallbackUser.id}; path=/; max-age=2592000; SameSite=Lax`;
       }
       return { success: true, user: fallbackUser };
     }
@@ -109,6 +112,7 @@ class AuthClientService implements IAuthClientService {
 
         if (typeof window !== 'undefined') {
           localStorage.setItem(this.storageKey, JSON.stringify(user));
+          document.cookie = `getspecial_session=${user.id}; path=/; max-age=2592000; SameSite=Lax`;
         }
 
         return { success: true, user };
@@ -126,6 +130,7 @@ class AuthClientService implements IAuthClientService {
       };
       if (typeof window !== 'undefined') {
         localStorage.setItem(this.storageKey, JSON.stringify(fallbackUser));
+        document.cookie = `getspecial_session=${fallbackUser.id}; path=/; max-age=2592000; SameSite=Lax`;
       }
       return { success: true, user: fallbackUser };
     }
@@ -147,6 +152,7 @@ class AuthClientService implements IAuthClientService {
       localStorage.removeItem('getspecial_selected_restaurant');
       localStorage.removeItem('getspecial_restaurant_id');
       localStorage.removeItem('getspecial_onboarding_completed');
+      document.cookie = 'getspecial_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     }
   }
 }

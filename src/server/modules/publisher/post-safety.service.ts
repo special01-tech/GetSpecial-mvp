@@ -1,5 +1,6 @@
 import { prisma } from '@/server/db/prisma.client';
 import { logAudit } from '@/server/lib/audit';
+import { preflightService } from './preflight.service';
 
 export type PostStatus = 'draft' | 'pending_approval' | 'approved' | 'scheduled' | 'published' | 'failed';
 
@@ -62,6 +63,11 @@ export class PostSafetyService {
     const safety = await this.validateSafetyChecks(postId, restaurantId);
     if (!safety.valid) {
       throw new Error(`Contrôle de sécurité échoué : ${safety.reason}`);
+    }
+
+    const preflight = await preflightService.runPreflight(postId, restaurantId);
+    if (!preflight.canPublish) {
+      throw new Error(`Preflight bloqué : ${preflight.blockReason}`);
     }
 
     const status: PostStatus = scheduledAt ? 'scheduled' : 'approved';

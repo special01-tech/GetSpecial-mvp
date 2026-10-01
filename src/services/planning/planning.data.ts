@@ -1,4 +1,4 @@
-export type PlanningStatus = 'programmed' | 'approved' | 'to_validate';
+export type PlanningStatus = 'published' | 'programmed' | 'approved' | 'to_validate';
 
 export type PlanningEventType = 'weather' | 'sport' | 'commercial' | 'culture' | 'holiday';
 
@@ -15,12 +15,14 @@ export interface PlanningItem {
   platforms: PlatformType[];
   impactEstimate?: string;
   campaignId?: string;
+  isHighImpact?: boolean;
 }
 
 export const PLANNING_STATUS_LABELS: Record<PlanningStatus, string> = {
-  programmed: 'Scheduled',
-  approved: 'Approved',
-  to_validate: 'Pending Review',
+  published: 'Publié',
+  programmed: 'Programmé',
+  approved: 'Approuvé',
+  to_validate: 'À valider',
 };
 
 export const MOCK_PLANNING_ITEMS: PlanningItem[] = [

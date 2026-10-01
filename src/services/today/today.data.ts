@@ -33,6 +33,7 @@ export interface TodayOpportunity {
   targetAudience: string;
   potentialCovers: string;
   status?: string;
+  verifiedFacts?: string[];
 }
 
 export interface TodayOffer {

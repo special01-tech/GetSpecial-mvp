@@ -3,12 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard,
-  Lightbulb,
+  Sparkles,
+  MessageSquare,
   Calendar,
-  BarChart3,
   Store,
-  HelpCircle,
+  Settings,
+  BarChart3,
   LucideIcon,
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
@@ -22,16 +22,16 @@ interface NavItem {
 
 /** Liens de navigation principaux */
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'AI Assistant', href: '/dashboard/chat', icon: Lightbulb },
+  { label: 'Today', href: '/dashboard', icon: Sparkles },
+  { label: 'Chat', href: '/dashboard/chat', icon: MessageSquare },
   { label: 'Planning', href: '/dashboard/planning', icon: Calendar },
-  { label: 'Analytics', href: '/dashboard/insights', icon: BarChart3 },
-  { label: 'My Restaurant', href: '/dashboard/restaurant', icon: Store },
+  { label: 'Restaurant', href: '/dashboard/restaurant', icon: Store },
+  { label: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 
 /** Lien secondaire (bas de sidebar) */
 const BOTTOM_ITEMS: NavItem[] = [
-  { label: 'Marketing Rules', href: '/dashboard/rules', icon: HelpCircle },
+  { label: 'Analytics', href: '/dashboard/insights', icon: BarChart3 },
 ];
 
 /**

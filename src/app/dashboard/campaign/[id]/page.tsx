@@ -142,12 +142,50 @@ export default function CampaignDetailPage() {
     setIsLoading(false);
     setFeedback({
       type: 'success',
-      message: '🎉 Campaign successfully approved and queued for publishing!',
+      message: '🎉 Campagne approuvée et mise en file d\'attente !',
     });
 
     setTimeout(() => {
       router.push('/dashboard');
     }, 1200);
+  };
+
+  // Publication immédiate avec déclencheur de publication
+  const handlePublishNow = async () => {
+    setIsLoading(true);
+    const restaurantId = typeof window !== 'undefined'
+      ? localStorage.getItem('getspecial_restaurant_id') || 'rest_demo_austin_1'
+      : 'rest_demo_austin_1';
+
+    try {
+      const approveRes = await fetch(`/api/posts/${campaign.id}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurantId }),
+      });
+      const approveJson = await approveRes.json();
+      if (!approveJson.success) {
+        throw new Error(approveJson.error || 'Erreur lors de la validation preflight');
+      }
+
+      await fetch('/api/publications/run', { method: 'POST' });
+
+      setCampaign((prev) => ({ ...prev, status: 'published' }));
+      setFeedback({
+        type: 'success',
+        message: '🚀 Campagne publiée avec succès sur vos canaux !',
+      });
+      setTimeout(() => {
+        router.push('/dashboard/planning');
+      }, 1500);
+    } catch (err: any) {
+      setFeedback({
+        type: 'info',
+        message: `Alerte : ${err.message || 'Contrôle preflight actif'}`,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // 2. Ouvrir le sélecteur de programmation
@@ -279,21 +317,41 @@ export default function CampaignDetailPage() {
 
           {/* Grille des 4 Boutons d'Action */}
           <div className={styles.actionsGrid}>
-            {/* Bouton Principal : Approuver */}
-            <PrimaryButton
-              onClick={handleApprove}
-              disabled={isLoading || campaign.status === 'approved'}
-              icon={
-                isLoading ? (
-                  <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-                ) : (
-                  <Check size={18} strokeWidth={2.5} />
-                )
-              }
-              className={styles.approveBtn}
-            >
-              {campaign.status === 'approved' ? 'Campagne Approuvée' : 'Approuver'}
-            </PrimaryButton>
+            {/* Bouton Principal : Approuver & Publier Immédiatement */}
+            <div style={{ display: 'flex', gap: '0.75rem', width: '100%', flexDirection: 'column' }}>
+              <PrimaryButton
+                onClick={handlePublishNow}
+                disabled={isLoading || campaign.status === 'published'}
+                icon={
+                  isLoading ? (
+                    <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                  ) : (
+                    <Check size={18} strokeWidth={2.5} />
+                  )
+                }
+                className={styles.approveBtn}
+              >
+                {campaign.status === 'published' ? 'Campagne Déjà Publiée' : 'Publier Maintenant'}
+              </PrimaryButton>
+
+              <button
+                type="button"
+                onClick={handleApprove}
+                disabled={isLoading || campaign.status === 'approved' || campaign.status === 'published'}
+                style={{
+                  padding: '0.65rem',
+                  borderRadius: '12px',
+                  border: '1px solid var(--color-border)',
+                  background: 'var(--color-bg-card)',
+                  color: 'var(--color-text-primary)',
+                  fontWeight: 600,
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                }}
+              >
+                {campaign.status === 'approved' ? '✓ Approuvée (En attente)' : 'Approuver uniquement'}
+              </button>
+            </div>
 
             {/* Boutons Secondaires : Programmer & Régénérer */}
             <div className={styles.secondaryRow}>

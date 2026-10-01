@@ -43,16 +43,19 @@ export default function PlanningPage() {
             const text = p.text || p.content || 'Campaign post';
             return {
               id: p.id,
+              campaignId: p.id,
               title: text.slice(0, 48) + (text.length > 48 ? '...' : ''),
               description: text,
-              date: p.scheduledAt
-                ? new Date(p.scheduledAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                : 'Today',
+              date: p.publishedAt
+                ? 'Publié aujourd\'hui'
+                : p.scheduledAt
+                ? new Date(p.scheduledAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+                : 'Aujourd\'hui',
               time: p.scheduledAt
-                ? new Date(p.scheduledAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-                : '5:30 PM',
+                ? new Date(p.scheduledAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+                : '18:00',
               type: 'special_offer',
-              status: p.status === 'scheduled' ? 'programmed' : p.status === 'approved' ? 'approved' : 'to_validate',
+              status: p.status === 'published' ? 'published' : p.status === 'scheduled' ? 'programmed' : p.status === 'approved' ? 'approved' : 'to_validate',
               platforms: [p.platform ? p.platform.toLowerCase() : 'instagram'],
               isHighImpact: true,
             };
@@ -74,6 +77,7 @@ export default function PlanningPage() {
   const counts = useMemo(() => {
     return {
       all: events.length,
+      published: events.filter((e) => e.status === 'published').length,
       programmed: events.filter((e) => e.status === 'programmed').length,
       approved: events.filter((e) => e.status === 'approved').length,
       to_validate: events.filter((e) => e.status === 'to_validate').length,
@@ -159,6 +163,18 @@ export default function PlanningPage() {
               <Clock size={12} />
               <span>Programmé</span>
               <span className={styles.filterBadge}>{counts.programmed}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedFilter('published')}
+              className={`${styles.filterButton} ${styles.filterApproved} ${
+                selectedFilter === 'published' ? styles.filterActive : ''
+              }`}
+            >
+              <CheckCircle2 size={12} />
+              <span>Publié</span>
+              <span className={styles.filterBadge}>{counts.published}</span>
             </button>
           </div>
         </section>

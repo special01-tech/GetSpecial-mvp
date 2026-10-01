@@ -1,5 +1,5 @@
 import { prisma } from '@/server/db/prisma.client';
-import { weatherCollector } from './weather.collector';
+import { weatherService } from './weather/weather.service';
 import { ticketmasterCollector } from './ticketmaster.collector';
 import { calendarificCollector } from './calendarific.collector';
 import { NormalizedSignal } from './signal.types';
@@ -24,9 +24,9 @@ export class SignalSyncScheduler {
     const country = (restaurant.country || 'US').toUpperCase();
     const allSignals: NormalizedSignal[] = [];
 
-    // 1. Météo adaptée au pays (°F pour US, °C pour FR)
+    // 1. Météo adaptée au pays (°F pour US, °C pour FR) via WeatherService (Open-Meteo prioritaire)
     try {
-      const weatherSignals = await weatherCollector.collect(latitude, longitude, country);
+      const weatherSignals = await weatherService.getSignals(latitude, longitude, country);
       allSignals.push(...weatherSignals);
     } catch (err) {
       console.error(`[SYNC_WEATHER_ERROR] Restaurant ${restaurantId}`, err);

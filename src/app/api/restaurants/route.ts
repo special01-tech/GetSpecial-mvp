@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
       if (existingUser) {
         targetUserId = existingUser.id;
       } else {
-        const newUser = await prisma.user.create({
+        const newUser = await (prisma.user as any).create({
           data: {
             email: 'owner@brasspelican.com',
             name: 'Restaurant Owner',

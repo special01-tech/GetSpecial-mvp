@@ -6,4 +6,5 @@ export interface NormalizedSignal {
   title: string;     // Titre court et factuel
   summary: string;   // Description factuelle sans extrapolation
   rawPayload: Record<string, unknown>;
+  data?: any;
 }
