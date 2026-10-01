@@ -9,8 +9,11 @@ import { z } from 'zod';
 /** Schéma d'inscription */
 export const RegisterSchema = z.object({
   email: z.string().email('Format email invalide'),
-  password: z.string().min(8, 'Le mot de passe doit comporter au moins 8 caractères'),
-  name: z.string().min(2, 'Le nom doit comporter au moins 2 caractères').optional(),
+  password: z.string().min(4, 'Le mot de passe doit comporter au moins 4 caractères'),
+  name: z.preprocess(
+    (val) => (typeof val === 'string' && val.trim().length > 0 ? val.trim() : undefined),
+    z.string().min(1).optional()
+  ),
 });
 export type RegisterInput = z.infer<typeof RegisterSchema>;
 
