@@ -9,7 +9,8 @@ import {
   Send, 
   BarChart2, 
   Store, 
-  HelpCircle 
+  HelpCircle,
+  Sparkles
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
@@ -23,6 +24,7 @@ const PRIMARY_NAV: NavItem[] = [
   { label: "Aujourd'hui", href: '/dashboard', icon: Home },
   { label: 'Idées', href: '/idees', icon: Lightbulb },
   { label: 'Créer', href: '/creer', icon: PlusCircle },
+  { label: 'Assistant IA', href: '/chat', icon: Sparkles },
   { label: 'Publications', href: '/publications', icon: Send },
   { label: 'Performances', href: '/performances', icon: BarChart2 },
 ];

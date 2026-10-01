@@ -86,6 +86,30 @@ function CreatePublicationForm() {
   const [tone, setTone] = useState<string>('Convivial');
   const [isPublishedSuccess, setIsPublishedSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [socialAccounts, setSocialAccounts] = useState<Array<{ platform: string; username: string; status: string }>>([]);
+  const [restaurantId, setRestaurantId] = useState<string | null>(null);
+
+  // Charger les comptes sociaux réels au montage
+  React.useEffect(() => {
+    async function loadRestaurant() {
+      try {
+        const res = await fetch('/api/restaurants');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data && json.data.length > 0) {
+            const rest = json.data[0];
+            setRestaurantId(rest.id);
+            if (rest.socialAccounts && rest.socialAccounts.length > 0) {
+              setSocialAccounts(rest.socialAccounts);
+            }
+          }
+        }
+      } catch {
+        // Ignorer
+      }
+    }
+    loadRestaurant();
+  }, []);
 
   const selectedChoice = IDEA_CHOICES.find((c) => c.id === selectedIdeaId) || IDEA_CHOICES[0];
 
@@ -102,23 +126,23 @@ function CreatePublicationForm() {
     } else {
       setIsSubmitting(true);
       try {
-        const restRes = await fetch('/api/restaurants');
-        if (restRes.ok) {
-          const restJson = await restRes.json();
-          if (restJson.success && restJson.data && restJson.data.length > 0) {
-            const restId = restJson.data[0].id;
-            await fetch('/api/posts', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                restaurantId: restId,
-                text: `${promoText}\n\n${descriptionText}\n\n📍 Horaires: ${hoursText} • Ambiance ${tone}`,
-                imageUrl: selectedChoice.image,
-                platform: 'instagram',
-                status: 'scheduled',
-              }),
-            });
-          }
+        const restIdToUse = restaurantId || (() => {
+          // Dernier recours : chercher en direct
+          return null;
+        })();
+
+        if (restIdToUse) {
+          await fetch('/api/posts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              restaurantId: restIdToUse,
+              text: `${promoText}\n\n${descriptionText}\n\n📍 Horaires: ${hoursText} • Ambiance ${tone}`,
+              imageUrl: selectedChoice.image,
+              platform: 'instagram',
+              status: 'scheduled',
+            }),
+          });
         }
       } catch (err) {
         console.error('Erreur création post:', err);
@@ -303,29 +327,26 @@ function CreatePublicationForm() {
                 <>
                   <h3 className={styles.stepTitle}>3. Canaux de diffusion & planification</h3>
                   <div className={styles.channelsList}>
-                    <div className={styles.channelItem}>
-                      <div className={styles.channelInfo}>
-                        <span>📸 Instagram</span>
-                        <span style={{ fontSize: '0.72rem', color: '#22C55E' }}>● Connecté (@lecomptoir)</span>
+                    {socialAccounts.length > 0 ? (
+                      socialAccounts.map((acc) => (
+                        <div key={acc.platform} className={styles.channelItem}>
+                          <div className={styles.channelInfo}>
+                            <span>
+                              {acc.platform === 'instagram' ? '📸 Instagram' : acc.platform === 'facebook' ? '📘 Facebook' : '🎵 TikTok'}
+                              {acc.username ? ` (${acc.username})` : ''}
+                            </span>
+                            <span style={{ fontSize: '0.72rem', color: acc.status === 'connected' ? '#22C55E' : '#94A3B8' }}>
+                              ● {acc.status === 'connected' ? 'Connecté' : 'Déconnecté'}
+                            </span>
+                          </div>
+                          <input type="checkbox" defaultChecked={acc.status === 'connected'} />
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ color: '#94A3B8', fontSize: '0.85rem', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', textAlign: 'center' }}>
+                        Aucun compte social connecté. <a href="/etablissement" style={{ color: '#FF5C00' }}>Connectez vos réseaux →</a>
                       </div>
-                      <input type="checkbox" defaultChecked />
-                    </div>
-
-                    <div className={styles.channelItem}>
-                      <div className={styles.channelInfo}>
-                        <span>📘 Facebook</span>
-                        <span style={{ fontSize: '0.72rem', color: '#22C55E' }}>● Connecté (Page Le Comptoir)</span>
-                      </div>
-                      <input type="checkbox" defaultChecked />
-                    </div>
-
-                    <div className={styles.channelItem}>
-                      <div className={styles.channelInfo}>
-                        <span>🎵 TikTok</span>
-                        <span style={{ fontSize: '0.72rem', color: '#38BDF8' }}>● Connecté</span>
-                      </div>
-                      <input type="checkbox" defaultChecked />
-                    </div>
+                    )}
                   </div>
 
                   <div className={styles.fieldGroup} style={{ marginTop: '16px' }}>

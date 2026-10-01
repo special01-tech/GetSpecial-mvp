@@ -17,8 +17,7 @@ export class OutstandService {
    */
   async getConnectUrl(platform: 'facebook' | 'instagram', restaurantId: string): Promise<string> {
     if (!this.apiKey) {
-      // Mock d'URL locale pour développement sans clé Outstand
-      return `/api/social/mock-callback?platform=${platform}&restaurantId=${restaurantId}`;
+      throw new Error('Clé API Outstand non configurée dans .env.');
     }
 
     const res = await fetch(`${this.baseUrl}/oauth/connect`, {
@@ -46,7 +45,7 @@ export class OutstandService {
    * Publie un post approuvé sur Facebook ou Instagram avec idempotence et verrouillage
    */
   async publishPost(postId: string): Promise<{ success: boolean; publicationId: string; error?: string }> {
-    const post = await (prisma as any).post.findUnique({
+    const post = await prisma.post.findUnique({
       where: { id: postId },
       include: { restaurant: { include: { socialAccounts: true } } },
     });
@@ -56,19 +55,15 @@ export class OutstandService {
       throw new Error(`Le statut du post (${post.status}) ne permet pas la publication.`);
     }
 
-    const account = post.restaurant.socialAccounts.find(
+    const account = post.restaurant?.socialAccounts?.find(
       (acc: any) => acc.platform === post.platform && acc.status === 'connected'
     );
-
-    if (!account) {
-      throw new Error(`Compte ${post.platform} non connecté.`);
-    }
 
     // Clé d'idempotence unique par envoi
     const sendIdempotencyKey = `pub_${post.id}_${Date.now()}`;
 
     // Créer la ligne publication avec verrou initial
-    const publication = await (prisma as any).publication.create({
+    const publication = await prisma.publication.create({
       data: {
         restaurantId: post.restaurantId,
         postId: post.id,
@@ -79,6 +74,18 @@ export class OutstandService {
       },
     });
 
+    if (!this.apiKey) {
+      const errNotice = 'Clé API Outstand non configurée dans .env. Publication externe suspendue.';
+      await prisma.publication.update({
+        where: { id: publication.id },
+        data: {
+          status: 'failed',
+          lastError: errNotice,
+        },
+      });
+      return { success: false, publicationId: publication.id, error: errNotice };
+    }
+
     let maxAttempts = 3;
     let attempt = 0;
     let published = false;
@@ -88,34 +95,28 @@ export class OutstandService {
     while (attempt < maxAttempts && !published) {
       attempt++;
       try {
-        if (!this.apiKey) {
-          // Simulation réussie en mode mock
-          outstandPostId = `mock_outstand_${Date.now()}`;
-          published = true;
-        } else {
-          const res = await fetch(`${this.baseUrl}/posts`, {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${this.apiKey}`,
-              'Content-Type': 'application/json',
-              'Idempotency-Key': sendIdempotencyKey,
-            },
-            body: JSON.stringify({
-              account_id: account.outstandAccountId,
-              text: post.text,
-              media_urls: post.imageUrl ? [post.imageUrl] : [],
-            }),
-          });
+        const res = await fetch(`${this.baseUrl}/posts`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+            'Idempotency-Key': sendIdempotencyKey,
+          },
+          body: JSON.stringify({
+            account_id: account?.outstandAccountId || undefined,
+            text: post.text,
+            media_urls: post.imageUrl ? [post.imageUrl] : [],
+          }),
+        });
 
-          if (!res.ok) {
-            const errData = await res.text();
-            throw new Error(`HTTP ${res.status}: ${errData}`);
-          }
-
-          const resData = await res.json();
-          outstandPostId = resData.id;
-          published = true;
+        if (!res.ok) {
+          const errData = await res.text();
+          throw new Error(`HTTP ${res.status}: ${errData}`);
         }
+
+        const resData = await res.json();
+        outstandPostId = resData.id;
+        published = true;
       } catch (err: any) {
         lastError = err.message || 'Erreur inconnue lors de la publication';
         console.warn(`[OUTSTAND_PUBLISH] Tentative ${attempt}/${maxAttempts} échouée :`, lastError);
@@ -126,7 +127,7 @@ export class OutstandService {
     }
 
     if (published) {
-      await (prisma as any).publication.update({
+      await prisma.publication.update({
         where: { id: publication.id },
         data: {
           status: 'published',
@@ -136,7 +137,7 @@ export class OutstandService {
         },
       });
 
-      await (prisma as any).post.update({
+      await prisma.post.update({
         where: { id: post.id },
         data: {
           status: 'published',
@@ -154,7 +155,7 @@ export class OutstandService {
 
       return { success: true, publicationId: publication.id };
     } else {
-      await (prisma as any).publication.update({
+      await prisma.publication.update({
         where: { id: publication.id },
         data: {
           status: 'failed',
@@ -163,7 +164,7 @@ export class OutstandService {
         },
       });
 
-      await (prisma as any).post.update({
+      await prisma.post.update({
         where: { id: post.id },
         data: { status: 'failed' },
       });

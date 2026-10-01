@@ -48,11 +48,15 @@ export interface TopPerformanceItem {
   image: string;
 }
 
-export const MOCK_RESTAURANT = {
+import type { RestaurantDTO } from '@/types/dto';
+
+export const MOCK_RESTAURANT: RestaurantDTO = {
+  id: 'mock-restaurant-1',
   name: 'Le Comptoir',
   subtitle: 'Restaurant • 1 min',
   category: 'Restaurant • Cuisine française',
   status: 'Ouvert',
+  isPaused: false,
   avatar: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80',
   coverImage: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80',
   logoText: 'LC',
@@ -62,14 +66,21 @@ export const MOCK_RESTAURANT = {
   posStatus: 'Actif',
   communicationTone: 'Convivial',
   targetAudience: 'Tout public',
-  offers: ['Happy Hour', 'Menu du jour', 'Événement'],
+  offers: [
+    { id: 'off-1', title: 'Happy Hour', description: 'Cocktails à prix réduit', discountValue: '-20%', recurrence: 'daily', status: 'active' },
+    { id: 'off-2', title: 'Menu du terroir', description: 'Entrée + Plat + Dessert', discountValue: 'Formule Midi', recurrence: 'weekly', status: 'active' },
+  ],
+  socialAccounts: [
+    { id: 'soc-1', platform: 'instagram', username: '@lecomptoir_restaurant', status: 'connected', lastSyncAt: null },
+    { id: 'soc-2', platform: 'facebook', username: 'Le Comptoir', status: 'connected', lastSyncAt: null },
+  ],
   stats: {
-    reach: '42,6K',
-    reachGrowth: '+18%',
-    interactions: '1,3K',
-    interactionsGrowth: '+24%',
-    clicks: '892',
-    clicksGrowth: '+12%',
+    reach: '0',
+    reachGrowth: '0%',
+    interactions: '0',
+    interactionsGrowth: '0%',
+    clicks: '0',
+    clicksGrowth: '0%',
   },
   photos: [
     'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=400&q=80',

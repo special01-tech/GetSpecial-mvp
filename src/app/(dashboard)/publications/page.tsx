@@ -47,13 +47,27 @@ export default function PublicationsPage() {
 
   const allPosts = publications.length > 0 ? publications : MOCK_PUBLICATIONS;
 
-  // Simulation jours du mois courant
-  const emptyDays = [null];
-  const daysOfMonth = Array.from({ length: 30 }, (_, i) => i + 1);
+  // Calendrier dynamique basé sur le mois courant
+  const now = new Date();
+  const currentMonthLabel = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+  // Décalage ISO : Lundi=0..Dimanche=6
+  const offsetDays = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
+  const emptyDays = Array.from({ length: offsetDays }, (_, i) => null);
+  const daysOfMonth = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const calendarCells = [...emptyDays, ...daysOfMonth];
 
-  // Jours avec publications
-  const eventDays = [16, 18, 20, 22];
+  // Jours avec publications (basés sur les données réelles ou mock)
+  const eventDays = allPosts
+    .map((p) => {
+      const d = p.date ? new Date(p.date) : null;
+      return d && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+        ? d.getDate()
+        : null;
+    })
+    .filter(Boolean) as number[];
 
   const upcomingPosts = allPosts.slice(0, 3);
 
@@ -101,7 +115,7 @@ export default function PublicationsPage() {
           {/* Calendar Card */}
           <div className={styles.cardPanel}>
             <div className={styles.calendarHeader}>
-              <span className={styles.calendarMonth}>Avril 2025</span>
+              <span className={styles.calendarMonth}>{currentMonthLabel.charAt(0).toUpperCase() + currentMonthLabel.slice(1)}</span>
               <div className={styles.calendarNavBtns}>
                 <button type="button" className={styles.navArrowBtn} aria-label="Mois précédent">
                   <ChevronLeft size={16} />
@@ -179,7 +193,7 @@ export default function PublicationsPage() {
           Toutes vos publications
         </h3>
         <div className={styles.publicationsGrid}>
-          {MOCK_PUBLICATIONS.map((pub) => (
+          {allPosts.map((pub) => (
             <PublicationCard key={pub.id} publication={pub} />
           ))}
         </div>

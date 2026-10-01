@@ -11,9 +11,7 @@ import {
   Croissant,
   UploadCloud,
   CheckCircle2,
-  ArrowRight,
   ArrowLeft,
-  Sparkles,
 } from 'lucide-react';
 import styles from './onboarding.module.css';
 
@@ -34,12 +32,12 @@ const RESTAURANT_TYPES: RestaurantTypeChoice[] = [
 ];
 
 const GOAL_OPTIONS = [
-  { id: 'more_clients', label: '🎯 Attirer plus de clients au quotidien' },
-  { id: 'off_peak', label: '📉 Remplir certains jours creux' },
-  { id: 'delivery', label: '🛵 Développer la livraison & à emporter' },
-  { id: 'happy_hour', label: '🍸 Booster l’Happy Hour & les soirées' },
-  { id: 'promote_dishes', label: '🍲 Faire découvrir de nouveaux plats' },
-  { id: 'brand_awareness', label: '✨ Augmenter la notoriété sur Instagram/Facebook' },
+  { id: 'more_clients', label: "🎯 Attirer plus de clients au quotidien" },
+  { id: 'off_peak', label: "📉 Remplir certains jours creux" },
+  { id: 'delivery', label: "🛵 Développer la livraison & à emporter" },
+  { id: 'happy_hour', label: "🍸 Booster l'Happy Hour & les soirées" },
+  { id: 'promote_dishes', label: "🍲 Faire découvrir de nouveaux plats" },
+  { id: 'brand_awareness', label: "✨ Augmenter la notoriété sur Instagram/Facebook" },
 ];
 
 const DAYS_OF_WEEK = [
@@ -47,6 +45,8 @@ const DAYS_OF_WEEK = [
   { id: 'tuesday', label: 'Mardi' },
   { id: 'wednesday', label: 'Mercredi' },
   { id: 'thursday', label: 'Jeudi' },
+  { id: 'friday', label: 'Vendredi' },
+  { id: 'saturday', label: 'Samedi' },
   { id: 'sunday', label: 'Dimanche' },
 ];
 
@@ -87,11 +87,11 @@ export default function OnboardingPage() {
 
   const handleNext = () => {
     if (step === 1 && !name.trim()) {
-      setErrorMsg('Veuillez renseigner le nom de votre établissement.');
+      setErrorMsg("Veuillez renseigner le nom de votre établissement.");
       return;
     }
     if (step === 1 && !address.trim()) {
-      setErrorMsg('Veuillez renseigner la ville ou l’adresse de votre établissement.');
+      setErrorMsg("Veuillez renseigner la ville ou l'adresse de votre établissement.");
       return;
     }
 
@@ -122,7 +122,8 @@ export default function OnboardingPage() {
       });
 
       if (!res.ok) {
-        throw new Error('Erreur lors de l’enregistrement');
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Erreur lors de l'enregistrement");
       }
 
       // Séquence d'animation montrant le travail d'ingestion de l'IA
@@ -135,7 +136,8 @@ export default function OnboardingPage() {
       }, 3500);
     } catch (err: any) {
       console.error('Erreur onboarding:', err);
-      setTimeout(() => router.push('/dashboard'), 2000);
+      setErrorMsg(err.message || "Une erreur est survenue. Veuillez réessayer.");
+      setStep(3);
     }
   };
 
@@ -188,8 +190,8 @@ export default function OnboardingPage() {
               </p>
 
               {errorMsg && (
-                <div style={{ color: '#EF4444', fontSize: '0.85rem', marginBottom: '16px' }}>
-                  {errorMsg}
+                <div style={{ color: '#EF4444', fontSize: '0.85rem', marginBottom: '16px', padding: '10px 14px', background: 'rgba(239,68,68,0.08)', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.2)' }}>
+                  ⚠️ {errorMsg}
                 </div>
               )}
 
@@ -260,7 +262,9 @@ export default function OnboardingPage() {
                     {menuFileName ? `Fichier prêt : ${menuFileName}` : 'Glissez votre menu ou cliquez pour importer'}
                   </span>
                   <span className={styles.dropzoneHint}>
-                    {menuFileName ? 'L’IA analysera vos spécialités dès la validation' : 'PDF, JPG ou PNG • GetSpecial en extrait vos plats phares'}
+                    {menuFileName
+                      ? "L'IA analysera vos spécialités dès la validation"
+                      : 'PDF, JPG ou PNG • GetSpecial en extrait vos plats phares'}
                   </span>
                 </label>
               </div>
@@ -312,6 +316,12 @@ export default function OnboardingPage() {
               <p className={styles.subtitle}>
                 Cochez ce qui compte pour vous. Votre copilote calibrera ses opportunités en priorité dessus.
               </p>
+
+              {errorMsg && (
+                <div style={{ color: '#EF4444', fontSize: '0.85rem', marginBottom: '16px', padding: '10px 14px', background: 'rgba(239,68,68,0.08)', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.2)' }}>
+                  ⚠️ {errorMsg}
+                </div>
+              )}
 
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Vos objectifs actuels (cliquez pour sélectionner)</label>

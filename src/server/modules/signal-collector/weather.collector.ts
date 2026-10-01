@@ -41,71 +41,89 @@ export class WeatherCollector {
     const temp = Math.round(current?.temperature_2m ?? 22);
     const code = current?.weather_code ?? 0;
     const precip = current?.precipitation ?? 0;
+    const nowIso = new Date().toISOString();
 
     const signals: NormalizedSignal[] = [];
 
     // Détection Pluie / Averses
     if (code >= 51 || precip > 0.5) {
+      const desc = code >= 95 ? 'Orages violents' : 'Pluie continue';
+      const summary = `Pluie et ${temp}°C : forte incitation à la livraison et aux plats réconfortants.`;
       signals.push({
         source: 'open-meteo',
         type: 'weather',
-        timestamp: new Date(),
+        timestamp: nowIso,
+        title: 'Météo pluvieuse',
+        summary,
         intensity: code >= 63 || precip > 2 ? 0.95 : 0.75,
         payload: {
           condition: 'rain',
-          description: code >= 95 ? 'Orages violents' : 'Pluie continue',
+          description: desc,
           temperature: temp,
-          summary: `Pluie et ${temp}°C : forte incitation à la livraison et aux plats réconfortants.`,
+          summary,
           actionHint: 'Mettez en avant vos plats chauds, vos soupes ou une offre livraison offerte.',
         },
+        rawPayload: { code, temperature: temp, precipitation: precip, lat, lon },
       });
     }
     // Détection Forte Chaleur / Beau temps
     else if (temp >= 28) {
+      const summary = `Forte chaleur (${temp}°C) : forte demande de boissons fraîches et terrasse ombragée.`;
       signals.push({
         source: 'open-meteo',
         type: 'weather',
-        timestamp: new Date(),
+        timestamp: nowIso,
+        title: 'Forte chaleur',
+        summary,
         intensity: 0.9,
         payload: {
           condition: 'heat',
           description: 'Forte chaleur et soleil',
           temperature: temp,
-          summary: `Forte chaleur (${temp}°C) : forte demande de boissons fraîches et terrasse ombragée.`,
+          summary,
           actionHint: 'Proposez des cocktails glacés, glaces ou salades fraîches.',
         },
+        rawPayload: { code, temperature: temp, precipitation: precip, lat, lon },
       });
     }
     // Détection Froid
     else if (temp <= 10) {
+      const summary = `Temps froid (${temp}°C) : recherche d'ambiance cosy et de boissons chaudes.`;
       signals.push({
         source: 'open-meteo',
         type: 'weather',
-        timestamp: new Date(),
+        timestamp: nowIso,
+        title: 'Temps froid',
+        summary,
         intensity: 0.85,
         payload: {
           condition: 'cold',
           description: 'Froid hivernal',
           temperature: temp,
-          summary: `Temps froid (${temp}°C) : recherche d'ambiance cosy et de boissons chaudes.`,
+          summary,
           actionHint: 'Mettez en avant le chocolat chaud maison, cafés gourmands et gratins.',
         },
+        rawPayload: { code, temperature: temp, precipitation: precip, lat, lon },
       });
     }
     // Beau temps tempéré (Terrasse)
     else {
+      const summary = `Météo idéale (${temp}°C) : opportunité terrasse et déjeuners à l'extérieur.`;
       signals.push({
         source: 'open-meteo',
         type: 'weather',
-        timestamp: new Date(),
+        timestamp: nowIso,
+        title: 'Météo clémente',
+        summary,
         intensity: 0.8,
         payload: {
           condition: 'clear',
           description: 'Ciel dégagé et température agréable',
           temperature: temp,
-          summary: `Météo idéale (${temp}°C) : opportunité terrasse et déjeuners à l'extérieur.`,
+          summary,
           actionHint: 'Invitez votre communauté à profiter de la terrasse pour le déjeuner.',
         },
+        rawPayload: { code, temperature: temp, precipitation: precip, lat, lon },
       });
     }
 
@@ -113,19 +131,24 @@ export class WeatherCollector {
   }
 
   private getFallbackSignals(lat: number, lon: number): NormalizedSignal[] {
+    const nowIso = new Date().toISOString();
+    const summary = 'Pluie prévue ce soir : opportunité livraison et plats chauds réconfortants.';
     return [
       {
         source: 'open-meteo-fallback',
         type: 'weather',
-        timestamp: new Date(),
+        timestamp: nowIso,
+        title: 'Pluie prévue',
+        summary,
         intensity: 0.8,
         payload: {
           condition: 'rain',
           description: 'Pluie prévue ce soir',
           temperature: 24,
-          summary: 'Pluie prévue ce soir : opportunité livraison et plats chauds réconfortants.',
+          summary,
           actionHint: 'Proposez une offre spéciale livraison ou un plat gourmand de saison.',
         },
+        rawPayload: { simulated: true, lat, lon },
       },
     ];
   }

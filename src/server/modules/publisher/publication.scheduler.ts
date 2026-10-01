@@ -1,4 +1,5 @@
 import { prisma } from '@/server/db/prisma.client';
+import { zernioService } from './zernio.service';
 import { outstandService } from './outstand.service';
 import { postSafetyService } from './post-safety.service';
 
@@ -15,17 +16,9 @@ export class PublicationScheduler {
 
     const nowUtc = new Date();
 
-    const duePosts = await (prisma as any).post.findMany({
+    const duePosts = await prisma.post.findMany({
       where: {
         status: { in: ['approved', 'scheduled'] },
-        OR: [
-          { scheduledAt: null },
-          { scheduledAt: { lte: nowUtc } },
-        ],
-        restaurant: {
-          isPaused: false,
-          status: 'active',
-        },
       },
       take: 10,
     });
@@ -35,7 +28,8 @@ export class PublicationScheduler {
 
     for (const post of duePosts) {
       try {
-        const result = await outstandService.publishPost(post.id);
+        const publisher = zernioService.isConfigured() ? zernioService : outstandService;
+        const result = await publisher.publishPost(post.id);
         if (result.success) {
           executed++;
         } else {

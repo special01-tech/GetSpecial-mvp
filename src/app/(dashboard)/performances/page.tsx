@@ -119,13 +119,13 @@ export default function PerformancesPage() {
           </div>
 
           <div className={styles.rankList}>
-            {MOCK_TOP_PERFORMANCES.map((item) => (
-              <div key={item.rank} className={styles.rankItem}>
+            {topList.map((item, idx) => (
+              <div key={item.rank ?? idx} className={styles.rankItem}>
                 <div className={styles.rankLeft}>
                   <img src={item.image} alt={item.title} className={styles.rankThumb} />
                   <div className={styles.rankInfo}>
                     <span className={styles.rankTitle}>
-                      {item.rank}. {item.title}
+                      {item.rank ?? idx + 1}. {item.title}
                     </span>
                     <span className={styles.rankMeta}>
                       {item.reach} • {item.interactions}
