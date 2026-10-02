@@ -12,6 +12,8 @@ import {
   Sparkles,
   ArrowUpRight,
   Filter,
+  CheckCircle2,
+  Info,
 } from 'lucide-react';
 import MetricCard from '@/components/ui/MetricCard/MetricCard';
 import PlatformStats from '@/components/ui/PlatformStats/PlatformStats';
@@ -115,10 +117,18 @@ export default function InsightsPage() {
           color: isReal ? '#15803d' : '#a16207',
           border: `1px solid ${isReal ? '#86efac' : '#fde047'}`,
         }}>
-          <span>
-            {isReal
-              ? `🟢 REAL ANALYTICS — Source: Zernio Unified API (${analyticsData?.platform?.toUpperCase()} @${analyticsData?.accountUsername})`
-              : '🟡 MOCK / DEMO ANALYTICS — Connect Instagram, Facebook or Google Business to pull real live data'}
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isReal ? (
+              <>
+                <CheckCircle2 size={16} strokeWidth={1.75} />
+                <span>REAL ANALYTICS — Source: Zernio Unified API ({analyticsData?.platform?.toUpperCase()} @{analyticsData?.accountUsername})</span>
+              </>
+            ) : (
+              <>
+                <Info size={16} strokeWidth={1.75} />
+                <span>MOCK / DEMO ANALYTICS — Connect Instagram, Facebook or Google Business to pull real live data</span>
+              </>
+            )}
           </span>
           <span style={{ fontSize: '11px', textTransform: 'uppercase', opacity: 0.8 }}>
             {isReal ? 'Verified Feed' : 'Simulated Preview'}

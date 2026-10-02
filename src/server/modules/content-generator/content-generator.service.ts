@@ -39,13 +39,13 @@ export class ContentGeneratorService {
 
     if (!this.anthropic) {
       if (config.language === 'fr') {
-        postText = `✨ ${opp.title} !\n\n${opp.description}\n\n📍 Rendez-vous chez ${restaurant.name}, ${restaurant.address}.\n\n#${cleanName} #restaurant #gastronomie`;
+        postText = `${opp.title} !\n\n${opp.description}\n\nRendez-vous chez ${restaurant.name}, ${restaurant.address}.\n\n#${cleanName} #restaurant #gastronomie`;
       } else if (config.language === 'es') {
-        postText = `🔥 ${opp.title}!\n\n${opp.description}\n\n📍 Te esperamos en ${restaurant.name}, ${restaurant.address}.\n\n#${cleanName} #restaurante #gastronomia`;
+        postText = `${opp.title}!\n\n${opp.description}\n\nTe esperamos en ${restaurant.name}, ${restaurant.address}.\n\n#${cleanName} #restaurante #gastronomia`;
       } else if (config.language === 'de') {
-        postText = `✨ ${opp.title}!\n\n${opp.description}\n\n📍 Besucht uns bei ${restaurant.name}, ${restaurant.address}.\n\n#${cleanName} #restaurant #lecker`;
+        postText = `${opp.title}!\n\n${opp.description}\n\nBesucht uns bei ${restaurant.name}, ${restaurant.address}.\n\n#${cleanName} #restaurant #lecker`;
       } else {
-        postText = `🔥 ${opp.title}!\n\n${opp.description}\n\n📍 Visit us at ${restaurant.name}, ${restaurant.address}.\n\n#${cleanName} #foodie #dining`;
+        postText = `${opp.title}!\n\n${opp.description}\n\nVisit us at ${restaurant.name}, ${restaurant.address}.\n\n#${cleanName} #foodie #dining`;
       }
     } else {
       const prompt = `Write an engaging, high-converting social media post for ${platform} for the restaurant "${restaurant.name}" located in ${restaurant.city || config.name}, ${config.name}.

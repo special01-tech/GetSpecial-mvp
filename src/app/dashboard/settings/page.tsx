@@ -55,8 +55,8 @@ export default function SettingsPage() {
     }
     setNotice(
       newState
-        ? '🚨 Emergency Pause active. Toutes les publications sont suspendues.'
-        : '🟢 Automatisation active. GetSpecial surveille vos signaux et prépare vos posts.'
+        ? 'Emergency Pause active. Toutes les publications sont suspendues.'
+        : 'Automatisation active. GetSpecial surveille vos signaux et prépare vos posts.'
     );
     setTimeout(() => setNotice(null), 4000);
   };

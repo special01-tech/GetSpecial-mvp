@@ -68,7 +68,7 @@ export default function PostDetailPage() {
   }, [postId]);
 
   const handleViewPost = () => {
-    setNotice(`🔗 Redirection vers la publication en direct sur ${post.platform.toUpperCase()}...`);
+    setNotice(`Redirection vers la publication en direct sur ${post.platform.toUpperCase()}...`);
     setTimeout(() => {
       window.open(post.postUrl, '_blank');
       setNotice(null);

@@ -89,8 +89,8 @@ export default function RulesPage() {
     saveRules(
       updated,
       updated.globalPause
-        ? '🚨 Mode pause globale activé. Aucune publication automatique ne sera émise.'
-        : '🟢 Mode automatique réactivé.'
+        ? 'Mode pause globale activé. Aucune publication automatique ne sera émise.'
+        : 'Mode automatique réactivé.'
     );
   };
 
@@ -102,7 +102,7 @@ export default function RulesPage() {
     saveRules(
       updated,
       updated.deleteAllScheduledOnPause
-        ? '🗑️ Option activée : les publications en attente seront purgées en cas de pause.'
+        ? 'Option activée : les publications en attente seront purgées en cas de pause.'
         : 'Option désactivée.'
     );
   };
@@ -135,7 +135,7 @@ export default function RulesPage() {
       ...rules,
       excludedTopics: [...rules.excludedTopics, tag],
     };
-    saveRules(updated, `🚫 Sujet "${tag}" ajouté aux exclusions de l’IA.`);
+    saveRules(updated, `Sujet "${tag}" ajouté aux exclusions de l’IA.`);
     setNewExcludedTopic('');
     setIsAddingTag(false);
   };

@@ -1,9 +1,20 @@
 'use client';
 
 import React from 'react';
-import { Sparkles, Sliders, CheckCircle2 } from 'lucide-react';
+import {
+  Sparkles,
+  Sliders,
+  CheckCircle2,
+  Sun,
+  HeartHandshake,
+  UtensilsCrossed,
+  PartyPopper,
+  Smile,
+  LucideIcon,
+} from 'lucide-react';
 import {
   BrandProfileData,
+  BrandToneId,
   AVAILABLE_BRAND_TONES,
   AVAILABLE_EDITORIAL_STYLES,
 } from '@/services/onboarding/brand-profile.types';
@@ -14,6 +25,15 @@ interface BrandProfileProps {
   onCustomizeClick: () => void;
   isCustomizing?: boolean;
 }
+
+const TONE_ICONS: Record<BrandToneId, LucideIcon> = {
+  chaleureux: Sun,
+  convivial: HeartHandshake,
+  gourmand: UtensilsCrossed,
+  festif: PartyPopper,
+  chic_elegant: Sparkles,
+  decontracte: Smile,
+};
 
 export default function BrandProfile({
   profile,
@@ -59,13 +79,18 @@ export default function BrandProfile({
         </div>
 
         <div className={styles.tonesList}>
-          {selectedToneObjects.map((tone) => (
-            <div key={tone.id} className={styles.tonePill}>
-              <span className={styles.toneEmoji}>{tone.emoji}</span>
-              <span className={styles.toneLabel}>{tone.label}</span>
-              <CheckCircle2 size={13} className={styles.checkIcon} />
-            </div>
-          ))}
+          {selectedToneObjects.map((tone) => {
+            const IconComp = TONE_ICONS[tone.id] || Sparkles;
+            return (
+              <div key={tone.id} className={styles.tonePill}>
+                <span className={styles.toneIconBox}>
+                  <IconComp size={14} strokeWidth={1.75} />
+                </span>
+                <span className={styles.toneLabel}>{tone.label}</span>
+                <CheckCircle2 size={13} className={styles.checkIcon} />
+              </div>
+            );
+          })}
         </div>
 
         {selectedEditorialObject && (

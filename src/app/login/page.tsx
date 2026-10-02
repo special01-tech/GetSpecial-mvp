@@ -90,7 +90,7 @@ export default function AuthPage() {
           message: isLogin ? 'Connexion réussie !' : 'Compte créé avec succès !',
         });
         setTimeout(() => {
-          router.push(isLogin ? '/dashboard' : '/onboarding/search');
+          router.push(isLogin ? '/dashboard' : '/onboarding');
         }, 700);
       } else {
         setFeedback({ type: 'error', message: res.error || 'Une erreur est survenue.' });

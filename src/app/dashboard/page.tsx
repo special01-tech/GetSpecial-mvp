@@ -43,7 +43,7 @@ import styles from './dashboard.module.css';
  * - Bouton Pause d'urgence
  *
  * Message de bienvenue :
- * - "Bonjour ! 👋"
+ * - "Bonjour !"
  * - "Voici ce que j'ai trouvé pour vous aujourd'hui."
  *
  * Cartes en direct :
@@ -210,8 +210,8 @@ export default function DashboardPage() {
     }
     setBannerNotice(
       newState
-        ? '🚨 Emergency Pause active. No automated campaigns will be published.'
-        : '🟢 Live automation active. AI is monitoring signals and scheduling posts.'
+        ? 'Emergency Pause active. No automated campaigns will be published.'
+        : 'Live automation active. AI is monitoring signals and scheduling posts.'
     );
     setTimeout(() => setBannerNotice(null), 4000);
   };
@@ -277,9 +277,9 @@ export default function DashboardPage() {
 
         {/* Message d'accueil personnalisé */}
         <div className={styles.welcomeSection}>
-          <h2 className={styles.greetingTitle}>Good morning! 👋</h2>
+          <h2 className={styles.greetingTitle}>Bonjour !</h2>
           <p className={styles.greetingSubtext}>
-            Here is what we discovered for your restaurant today.
+            Voici ce que nous avons découvert pour votre restaurant aujourd&apos;hui.
           </p>
         </div>
 

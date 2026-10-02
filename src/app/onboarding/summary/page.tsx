@@ -15,10 +15,12 @@ import {
   Rocket,
   Loader2,
   AlertCircle,
+  Globe,
 } from 'lucide-react';
 import Logo from '@/components/ui/Logo/Logo';
 import PrimaryButton from '@/components/ui/PrimaryButton/PrimaryButton';
 import SummaryItem from '@/components/ui/SummaryItem/SummaryItem';
+import { getCountryDisplayName } from '@/services/country/countries.data';
 import { RestaurantSearchResult } from '@/services/restaurant-search/restaurant-search.types';
 import styles from './summary.module.css';
 
@@ -27,6 +29,7 @@ interface RecapState {
   type: string;
   specialties: string;
   hours: string;
+  country: string;
   hasTerrace: boolean;
   hasDelivery: boolean;
   ambiance: string;
@@ -37,6 +40,7 @@ const DEFAULT_RECAP: RecapState = {
   type: 'Restaurant',
   specialties: 'Spécialités de la maison',
   hours: '11:30 - 23:00 • Lun - Dim',
+  country: 'France',
   hasTerrace: true,
   hasDelivery: false,
   ambiance: 'Convivial & Chaleureux',
@@ -63,12 +67,14 @@ export default function OnboardingSummaryPage() {
       let currentType = DEFAULT_RECAP.type;
       let currentAmbiance = DEFAULT_RECAP.ambiance;
       let currentHours = DEFAULT_RECAP.hours;
+      let currentCountry = DEFAULT_RECAP.country;
 
       if (storedRestaurant) {
         const parsed: RestaurantSearchResult = JSON.parse(storedRestaurant);
         if (parsed.name) currentName = parsed.name;
         if (parsed.cuisineType) currentSpecialties = parsed.cuisineType;
         if (parsed.openingHours) currentHours = parsed.openingHours;
+        if (parsed.country) currentCountry = getCountryDisplayName(parsed.country);
       }
 
       if (storedTypes) {
@@ -108,6 +114,7 @@ export default function OnboardingSummaryPage() {
         type: currentType,
         specialties: currentSpecialties,
         hours: currentHours,
+        country: currentCountry,
         hasTerrace: true,
         hasDelivery: false,
         ambiance: currentAmbiance,
@@ -231,6 +238,11 @@ export default function OnboardingSummaryPage() {
                 icon={Store}
                 label="Restaurant"
                 value={recap.restaurantName}
+              />
+              <SummaryItem
+                icon={Globe}
+                label="Country / Region"
+                value={recap.country}
               />
               <SummaryItem
                 icon={Tag}

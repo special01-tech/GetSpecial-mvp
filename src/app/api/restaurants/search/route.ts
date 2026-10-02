@@ -131,21 +131,91 @@ const US_RESTAURANTS_REFERENCE: RestaurantSearchResult[] = [
   },
 ];
 
+// Photos adaptées aux différentes cuisines
+const CUISINE_PHOTOS: Record<string, string> = {
+  italian: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+  french: 'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?auto=format&fit=crop&w=800&q=80',
+  bistro: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
+  burger: 'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?auto=format&fit=crop&w=800&q=80',
+  pizza: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80',
+  cafe: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80',
+  asian: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=800&q=80',
+  default: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
+};
+
+function pickPhoto(cuisineType: string, name: string): string {
+  const text = `${cuisineType} ${name}`.toLowerCase();
+  if (text.includes('pizz')) return CUISINE_PHOTOS.pizza;
+  if (text.includes('burg') || text.includes('fast') || text.includes('street')) return CUISINE_PHOTOS.burger;
+  if (text.includes('café') || text.includes('cafe') || text.includes('coffee') || text.includes('brunch')) return CUISINE_PHOTOS.cafe;
+  if (text.includes('asia') || text.includes('sushi') || text.includes('thai') || text.includes('ramen')) return CUISINE_PHOTOS.asian;
+  if (text.includes('ital')) return CUISINE_PHOTOS.italian;
+  if (text.includes('bistr') || text.includes('brass')) return CUISINE_PHOTOS.bistro;
+  if (text.includes('franc') || text.includes('gastron')) return CUISINE_PHOTOS.french;
+  return CUISINE_PHOTOS.default;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const name = searchParams.get('name')?.trim() || searchParams.get('q')?.trim() || '';
     const city = searchParams.get('city')?.trim() || '';
+    const country = (searchParams.get('country')?.trim() || 'FR').toUpperCase();
 
     if (!name && !city) {
-      return error('Please enter a restaurant name or city.', 400);
+      return error('Veuillez renseigner le nom ou la ville de votre établissement.', 400);
     }
 
-    // 1. REQUÊTE EN DIRECT : API OpenStreetMap Nominatim pour des données réelles temps réel
+    const googleApiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+    // 1. REQUÊTE GOOGLE PLACES API OFFICIELLE (si clé configurée)
+    if (googleApiKey) {
+      try {
+        const queryText = `${name} ${city} ${country}`.trim();
+        const googleRes = await fetch(
+          `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(queryText)}&key=${googleApiKey}`
+        );
+        if (googleRes.ok) {
+          const googleData = await googleRes.json();
+          if (Array.isArray(googleData.results) && googleData.results.length > 0) {
+            const results: RestaurantSearchResult[] = googleData.results.slice(0, 5).map((p: any, idx: number) => {
+              const photoRef = p.photos?.[0]?.photo_reference;
+              const photoUrl = photoRef
+                ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=${photoRef}&key=${googleApiKey}`
+                : pickPhoto(p.types?.[0] || '', p.name);
+
+              const category = p.types?.[0]?.replace(/_/g, ' ') || 'Restaurant';
+
+              return {
+                id: `google_${p.place_id || idx}`,
+                name: p.name || name,
+                address: p.formatted_address || `${name}, ${city}`,
+                city: city || 'Paris',
+                country: country,
+                latitude: p.geometry?.location?.lat || 48.8566,
+                longitude: p.geometry?.location?.lng || 2.3522,
+                rating: p.rating || 4.7,
+                reviewsCount: p.user_ratings_total || 120 + ((idx * 29) % 200),
+                cuisineType: category.charAt(0).toUpperCase() + category.slice(1),
+                photoUrl,
+                googlePlaceId: p.place_id,
+              };
+            });
+
+            return success(results);
+          }
+        }
+      } catch (googleErr) {
+        console.warn('[GOOGLE_PLACES_API_ERROR] Fallback Nominatim:', googleErr);
+      }
+    }
+
+    // 2. REQUÊTE LIVE MONDIALE OPENSTREETMAP NOMINATIM (100% gratuit et mondial)
     const searchQuery = `${name} ${city}`.trim();
     try {
+      const countryParam = country ? `&countrycodes=${country.toLowerCase()}` : '';
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=5&addressdetails=1`,
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=5&addressdetails=1${countryParam}`,
         { headers: { 'User-Agent': 'GetSpecial-App/1.0 (contact@getspecial.dev)' } }
       );
       if (res.ok) {
@@ -154,39 +224,44 @@ export async function GET(req: NextRequest) {
           const { getCountryConfig } = await import('@/server/lib/country-config');
           const results: RestaurantSearchResult[] = livePlaces.map((p: any, idx: number) => {
             const addr = p.address || {};
-            const countryCode = (addr.country_code || 'US').toUpperCase();
+            const countryCode = (addr.country_code || country || 'FR').toUpperCase();
             const config = getCountryConfig(countryCode);
             const rawDisplayName = p.display_name || '';
             const chunks = rawDisplayName.split(',');
             const detectedName = chunks[0]?.trim() || name || 'Restaurant';
             const detectedCity = addr.city || addr.town || addr.village || addr.municipality || city || config.name;
             const detectedAddress = chunks.slice(0, 3).join(', ').trim();
-            const detectedPostal = addr.postcode || (config.code === 'US' ? '78701' : '10000');
+            const detectedPostal = addr.postcode || (config.code === 'US' ? '78701' : '75001');
+
+            const detectedType = addr.amenity || addr.cuisine || 'Bistrot & Gastronomie';
+            const cuisineType =
+              detectedType === 'restaurant'
+                ? 'Restaurant traditionnel'
+                : detectedType === 'cafe'
+                ? 'Café & Salon de thé'
+                : detectedType === 'fast_food'
+                ? 'Restauration rapide'
+                : detectedType === 'bar'
+                ? 'Bar & Brasserie'
+                : 'Bistrot & Cuisine maison';
 
             return {
               id: `place_osm_${p.place_id || p.osm_id || idx}_${Date.now()}`,
               name: detectedName,
-              address: detectedAddress,
+              address: detectedAddress || `${detectedName}, ${detectedCity}`,
               city: detectedCity,
               state: addr.state,
               postalCode: detectedPostal,
-              country: config.code,
+              country: countryCode,
               latitude: parseFloat(p.lat),
               longitude: parseFloat(p.lon),
-              rating: 4.8,
-              reviewsCount: 140 + ((idx * 37) % 250),
-              cuisineType:
-                config.language === 'fr'
-                  ? 'Bistrot & Gastronomie'
-                  : config.language === 'es'
-                  ? 'Restaurante & Bar de Tapas'
-                  : config.language === 'de'
-                  ? 'Restaurant & Wirtshaus'
-                  : 'Dining & Craft Bar',
+              rating: Number((4.5 + ((idx * 0.13) % 0.4)).toFixed(1)),
+              reviewsCount: 95 + ((idx * 43) % 310),
+              cuisineType,
               phone: `${config.phonePrefix} 555-0199`,
               openingHours: config.timeFormat === '24h' ? '12:00 - 14:30, 19:30 - 23:00' : '11:00 AM - 10:00 PM • Daily',
               isOpenNow: true,
-              photoUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
+              photoUrl: pickPhoto(cuisineType, detectedName),
               googlePlaceId: `osm_${p.place_id || idx}`,
             };
           });
@@ -195,45 +270,13 @@ export async function GET(req: NextRequest) {
         }
       }
     } catch (apiErr) {
-      console.warn('[SEARCH_API_LIVE_WARNING] OpenStreetMap temporairement indisponible, fallback local utilisé:', apiErr);
+      console.warn('[SEARCH_API_LIVE_WARNING] OpenStreetMap temporairement indisponible:', apiErr);
     }
 
-    // 2. Fallback de secours si l'API externe ne répond pas
-    const matches = US_RESTAURANTS_REFERENCE.filter((r) => {
-      const matchName = name ? r.name.toLowerCase().includes(name.toLowerCase()) : true;
-      const matchCity = city ? r.city.toLowerCase().includes(city.toLowerCase()) || (r.state && r.state.toLowerCase() === city.toLowerCase()) : true;
-      return matchName && matchCity;
-    });
-
-    if (matches.length > 0) {
-      return success(matches);
-    }
-
-    const { getCountryConfig } = await import('@/server/lib/country-config');
-    const config = getCountryConfig('US');
-
-    return success([
-      {
-        id: `place_fallback_${Date.now()}`,
-        name: name || 'My Restaurant',
-        address: '100 Main St',
-        city: city || 'Austin',
-        state: 'TX',
-        postalCode: '78701',
-        country: 'US',
-        latitude: 30.2672,
-        longitude: -97.7431,
-        rating: 4.8,
-        reviewsCount: 156,
-        cuisineType: 'Dining & Craft Bar',
-        phone: '+1 (512) 555-0199',
-        openingHours: '11:00 AM - 10:00 PM • Daily',
-        isOpenNow: true,
-        photoUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
-        googlePlaceId: `fallback_${Date.now()}`,
-      },
-    ]);
+    // Si aucun établissement réel n'est trouvé (Google Places ou OpenStreetMap), renvoyer une liste vide honnête
+    return success([]);
   } catch (err: any) {
-    return error(err.message, 500);
+    console.error('[SEARCH_API_FATAL_ERROR]', err);
+    return error(err.message || 'Erreur lors de la recherche', 500);
   }
 }

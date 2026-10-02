@@ -1,7 +1,16 @@
 'use client';
 
 import React from 'react';
-import { Check } from 'lucide-react';
+import {
+  Check,
+  Sun,
+  HeartHandshake,
+  UtensilsCrossed,
+  PartyPopper,
+  Sparkles,
+  Smile,
+  LucideIcon,
+} from 'lucide-react';
 import {
   BrandToneId,
   AVAILABLE_BRAND_TONES,
@@ -14,6 +23,15 @@ interface BrandToneSelectorProps {
   maxTones?: number;
 }
 
+const TONE_ICONS: Record<BrandToneId, LucideIcon> = {
+  chaleureux: Sun,
+  convivial: HeartHandshake,
+  gourmand: UtensilsCrossed,
+  festif: PartyPopper,
+  chic_elegant: Sparkles,
+  decontracte: Smile,
+};
+
 export default function BrandToneSelector({
   selectedTones,
   onToggleTone,
@@ -25,6 +43,7 @@ export default function BrandToneSelector({
         {AVAILABLE_BRAND_TONES.map((tone) => {
           const isSelected = selectedTones.includes(tone.id);
           const isDisabled = !isSelected && selectedTones.length >= maxTones;
+          const IconComp = TONE_ICONS[tone.id] || Sparkles;
 
           return (
             <button
@@ -38,7 +57,9 @@ export default function BrandToneSelector({
               aria-pressed={isSelected}
             >
               <div className={styles.cardHeader}>
-                <span className={styles.emoji}>{tone.emoji}</span>
+                <span className={styles.iconWrapper}>
+                  <IconComp size={18} strokeWidth={1.75} />
+                </span>
                 <div className={`${styles.checkCircle} ${isSelected ? styles.checkActive : ''}`}>
                   {isSelected && <Check size={11} strokeWidth={3} />}
                 </div>

@@ -20,6 +20,9 @@ import {
   Loader2,
   Layers,
   ArrowRight,
+  UtensilsCrossed,
+  PartyPopper,
+  Zap,
 } from 'lucide-react';
 import { INITIAL_RESTAURANT_OFFERS, RestaurantOffer } from '@/services/restaurant/restaurant-offers.data';
 import { INITIAL_RESTAURANT_EVENTS, RestaurantEvent } from '@/services/restaurant/restaurant-events.data';
@@ -126,7 +129,7 @@ function StudioCreateContent() {
       const firstOffer = availableOffers[0];
       setGeneratedPost({
         title: firstOffer.name,
-        caption: `🔥 OFFRE SPÉCIALE : ${firstOffer.name} !\n\n${firstOffer.description}\n\n🏷️ Formule exclusive : ${firstOffer.discount || 'Offre du jour'}\n\n📍 Rendez-vous au restaurant ce soir !\n👉 Réservez votre table dès maintenant.\n\n#restaurant #foodie #bonneadresse #faitmaison`,
+        caption: `OFFRE SPÉCIALE : ${firstOffer.name} !\n\n${firstOffer.description}\n\nFormule exclusive : ${firstOffer.discount || 'Offre du jour'}\n\nRendez-vous au restaurant ce soir !\nRéservez votre table dès maintenant.\n\n#restaurant #foodie #bonneadresse #faitmaison`,
         imageUrl: firstOffer.image || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80',
         alternativeImages: [
           'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80',
@@ -189,7 +192,7 @@ function StudioCreateContent() {
           discountValue: d.discountValue || discountToUse,
         });
         setActiveImgIndex(0);
-        setNotice('✨ Affiche & Légende générées avec succès !');
+        setNotice('Affiche & Légende générées avec succès !');
         setTimeout(() => setNotice(null), 3500);
       }
     } catch (err) {
@@ -214,16 +217,16 @@ function StudioCreateContent() {
   const handleRegenerateCaption = () => {
     if (!generatedPost) return;
     const variations = [
-      `✨ ${generatedPost.title} à l'honneur chez ${restaurantName} !\n\nUne expérience culinaire unique à partager sans modération.\n\n📍 ${restaurantName}\n👉 Réservez votre table en quelques clics ou venez directement !\n\n#restaurant #foodie #lepetitbistrot #bonneadresse`,
-      `🔥 ALERTE GOURMANDE chez ${restaurantName} !\n\n${generatedPost.title} est disponible dès aujourd'hui.\n${generatedPost.discountValue ? `🏷️ Formule exclusive : ${generatedPost.discountValue}\n` : ''}\n👉 Envie de vous régaler ? On vous garde une table !\n\n#foodlover #restaurant #tapas #gastronomie`,
-      `🎉 Ne manquez pas : ${generatedPost.title} !\n\nAmbiance chaleureuse, produits frais et moments de partage garantis chez ${restaurantName}.\n\n📍 Venez nous rendre visite ce midi ou ce soir.\n👉 Plus d'infos en message ou sur place !\n\n#foodies #restau #paris #faitmaison`,
+      `${generatedPost.title} à l'honneur chez ${restaurantName} !\n\nUne expérience culinaire unique à partager sans modération.\n\n${restaurantName}\nRéservez votre table en quelques clics ou venez directement !\n\n#restaurant #foodie #lepetitbistrot #bonneadresse`,
+      `ALERTE GOURMANDE chez ${restaurantName} !\n\n${generatedPost.title} est disponible dès aujourd'hui.\n${generatedPost.discountValue ? `Formule exclusive : ${generatedPost.discountValue}\n` : ''}\nEnvie de vous régaler ? On vous garde une table !\n\n#foodlover #restaurant #tapas #gastronomie`,
+      `Ne manquez pas : ${generatedPost.title} !\n\nAmbiance chaleureuse, produits frais et moments de partage garantis chez ${restaurantName}.\n\nVenez nous rendre visite ce midi ou ce soir.\nPlus d'infos en message ou sur place !\n\n#foodies #restau #paris #faitmaison`,
     ];
     const newCaption = variations[Math.floor(Math.random() * variations.length)];
     setGeneratedPost({
       ...generatedPost,
       caption: newCaption,
     });
-    setNotice('🔄 Légende reformulée avec succès.');
+    setNotice('Légende reformulée avec succès.');
     setTimeout(() => setNotice(null), 2500);
   };
 
@@ -239,12 +242,12 @@ function StudioCreateContent() {
           body: JSON.stringify({ postId: generatedPost.id, channel: platform }),
         });
       }
-      setNotice(`🚀 Publication diffusée en direct sur ${platform.toUpperCase()} avec succès !`);
+      setNotice(`Publication diffusée en direct sur ${platform.toUpperCase()} avec succès !`);
       setTimeout(() => {
         router.push('/dashboard/planning');
       }, 1200);
     } catch {
-      setNotice('⚠️ Post validé et ajouté au calendrier.');
+      setNotice('Post validé et ajouté au calendrier.');
     } finally {
       setIsGenerating(false);
     }
@@ -254,7 +257,7 @@ function StudioCreateContent() {
   const handleScheduleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsScheduleOpen(false);
-    setNotice(`📅 Affiche programmée pour diffusion le ${scheduledDate} à ${scheduledTime}.`);
+    setNotice(`Affiche programmée pour diffusion le ${scheduledDate} à ${scheduledTime}.`);
     setTimeout(() => {
       router.push('/dashboard/planning');
     }, 1200);
@@ -428,20 +431,25 @@ function StudioCreateContent() {
               <label className={styles.label}>Ambiance visuelle de l&apos;affiche :</label>
               <div className={styles.stylesGrid}>
                 {[
-                  { id: 'gourmet', label: '🍔 Gourmand & Chaleureux' },
-                  { id: 'festive', label: '🎉 Festif & Soirée' },
-                  { id: 'chic', label: '✨ Chic & Épuré' },
-                  { id: 'deal', label: '⚡ Promo Choc & Deal' },
-                ].map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => setVisualStyle(s.id as VisualStyle)}
-                    className={`${styles.styleCard} ${visualStyle === s.id ? styles.styleCardActive : ''}`}
-                  >
-                    <span>{s.label}</span>
-                  </button>
-                ))}
+                  { id: 'gourmet', label: 'Gourmand & Chaleureux', icon: UtensilsCrossed },
+                  { id: 'festive', label: 'Festif & Soirée', icon: PartyPopper },
+                  { id: 'chic', label: 'Chic & Épuré', icon: Sparkles },
+                  { id: 'deal', label: 'Promo Choc & Deal', icon: Zap },
+                ].map((s) => {
+                  const StyleIcon = s.icon;
+                  const isSelected = visualStyle === s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => setVisualStyle(s.id as VisualStyle)}
+                      className={`${styles.styleCard} ${isSelected ? styles.styleCardActive : ''}`}
+                    >
+                      <StyleIcon size={16} strokeWidth={1.75} />
+                      <span>{s.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

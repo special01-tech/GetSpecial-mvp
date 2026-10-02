@@ -14,7 +14,7 @@ export type BrandToneId =
 export interface BrandToneOption {
   id: BrandToneId;
   label: string;
-  emoji: string;
+  emoji?: string;
   description: string;
 }
 
@@ -42,37 +42,31 @@ export const AVAILABLE_BRAND_TONES: BrandToneOption[] = [
   {
     id: 'chaleureux',
     label: 'Chaleureux',
-    emoji: '☀️',
     description: 'Accueillant, authentique et proche des clients',
   },
   {
     id: 'convivial',
     label: 'Convivial',
-    emoji: '🤝',
     description: 'Partage, bonne humeur et esprit de tablée',
   },
   {
     id: 'gourmand',
     label: 'Gourmand',
-    emoji: '🍴',
     description: 'Focus sur les saveurs, textures et produits frais',
   },
   {
     id: 'festif',
     label: 'Festif',
-    emoji: '🎉',
     description: 'Énergie haute, apéros animés et soirées',
   },
   {
     id: 'chic_elegant',
     label: 'Chic & Raffiné',
-    emoji: '✨',
     description: 'Gastronomie soignée, vocabulaire élégant',
   },
   {
     id: 'decontracte',
     label: 'Décontracté',
-    emoji: '😎',
     description: 'Simple, direct, sans chichis',
   },
 ];

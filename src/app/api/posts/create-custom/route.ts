@@ -87,22 +87,22 @@ function generateCopywriting(params: {
   const cleanRestTag = '#' + restaurantName.replace(/[^a-zA-Z0-9]/g, '');
 
   let hook = '';
-  let cta = `👉 Rendez-vous chez ${restaurantName} (${address}).`;
+  let cta = `Rendez-vous chez ${restaurantName} (${address}).`;
 
   if (sourceType === 'offer') {
     const discountText = discountValue ? ` avec ${discountValue}` : '';
-    hook = `🔥 OFFRE DU JOUR : ${title} !`;
-    cta = `👉 Offre valable aujourd'hui ! Réservez votre table ou venez directement au comptoir chez ${restaurantName}.`;
+    hook = `OFFRE DU JOUR : ${title} !`;
+    cta = `Offre valable aujourd'hui ! Réservez votre table ou venez directement au comptoir chez ${restaurantName}.`;
   } else if (sourceType === 'event') {
-    hook = `🎉 ÉVÉNEMENT : ${title} !`;
-    cta = `👉 Les places partent vite ! Réservez votre table dès maintenant chez ${restaurantName} (${address}).`;
+    hook = `ÉVÉNEMENT : ${title} !`;
+    cta = `Les places partent vite ! Réservez votre table dès maintenant chez ${restaurantName} (${address}).`;
   } else {
-    hook = `✨ Coup de cœur du chef : ${title} !`;
-    cta = `👉 Venez déguster cette spécialité ce midi ou ce soir chez ${restaurantName}.`;
+    hook = `Coup de cœur du chef : ${title} !`;
+    cta = `Venez déguster cette spécialité ce midi ou ce soir chez ${restaurantName}.`;
   }
 
   const details = description ? `\n\n${description}` : '';
-  const discountLine = discountValue ? `\n\n🏷️ Formule exclusive : ${discountValue}` : '';
+  const discountLine = discountValue ? `\n\nFormule exclusive : ${discountValue}` : '';
 
   const hashtags = [
     cleanRestTag,
@@ -112,7 +112,7 @@ function generateCopywriting(params: {
     style === 'festive' ? '#soiree' : '#faitmaison',
   ];
 
-  const fullCaption = `${hook}${details}${discountLine}\n\n📍 ${address}\n${cta}\n\n${hashtags.join(' ')}`;
+  const fullCaption = `${hook}${details}${discountLine}\n\nAdresse : ${address}\n${cta}\n\n${hashtags.join(' ')}`;
 
   return {
     caption: fullCaption,

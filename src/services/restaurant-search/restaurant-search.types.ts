@@ -28,6 +28,7 @@ export interface RestaurantSearchResult {
 export interface RestaurantSearchQuery {
   name: string;
   city: string;
+  country?: string;
 }
 
 export interface RestaurantSearchResponse {

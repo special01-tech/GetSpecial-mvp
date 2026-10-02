@@ -142,14 +142,14 @@ CRITICAL RULES:
     let mediaPrompt = 'Delicious high-definition food photography on rustic wood table';
 
     if (platform === 'tiktok') {
-      headline = `Run, don't walk: ${offerTitle} at ${restaurant.name}! 🔥`;
-      caption = `Looking for the best deal in town? ${offerTitle} is live! Grab ${offerPrice} from ${timeFormatted}. Who are you bringing? 👇`;
+      headline = `Run, don't walk: ${offerTitle} at ${restaurant.name}!`;
+      caption = `Looking for the best deal in town? ${offerTitle} is live! Grab ${offerPrice} from ${timeFormatted}. Who are you bringing?`;
       hashtags = ['#FoodTok', '#RestaurantHacks', '#HappyHour', '#AustinEats'];
       cta = 'Tap for directions!';
       mediaPrompt = 'Fast-paced appetizing video shot of sizzling food and cold craft drinks';
     } else if (platform === 'instagram') {
-      headline = `Today's Feature: ${offerTitle} ✨`;
-      caption = `Elevate your day at ${restaurant.name}.\n\n🔥 ${offerTitle}: ${offer?.description || 'Made fresh to order.'}\n⏰ Available: ${timeFormatted}\n📍 ${restaurant.address}\n\nTag your crew and join us on the patio!`;
+      headline = `Today's Feature: ${offerTitle}`;
+      caption = `Elevate your day at ${restaurant.name}.\n\nFeature: ${offerTitle} (${offer?.description || 'Made fresh to order.'})\nHours: ${timeFormatted}\nAddress: ${restaurant.address}\n\nTag your crew and join us on the patio!`;
       hashtags = ['#AustinFood', '#PatioSeason', '#CraftFood', '#HappyHourVibes'];
       cta = 'Link in bio for reservations!';
       mediaPrompt = 'Atmospheric golden-hour photo of patio dining with cocktails and signature plate';
@@ -169,7 +169,7 @@ CRITICAL RULES:
     }
 
     if (event?.title) {
-      caption += `\n\n🏆 Pre-game with us before ${event.title}!`;
+      caption += `\n\nPre-game with us before ${event.title}!`;
     }
 
     return {

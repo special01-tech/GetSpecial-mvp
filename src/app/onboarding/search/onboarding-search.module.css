@@ -226,6 +226,53 @@
   color: var(--color-error);
 }
 
+/* Suggestions d'autocomplétion en direct */
+.autocompleteWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.autocompleteList {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  background: #FFFFFF;
+  border: 1.5px solid #1B4332;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+  z-index: 60;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+}
+
+.autocompleteItem {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.autocompleteItem:hover {
+  background: #F1F5F9;
+}
+
+.autocompleteItemTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.autocompleteItemSubtitle {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
 /* Résultats de recherche */
 .resultsSection {
   display: flex;

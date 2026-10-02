@@ -1,4 +1,4 @@
-import bcrypt from 'bcryptjs';
+import crypto from 'node:crypto';
 import { prisma } from '@/server/db/prisma.client';
 import { ValidationError, UnauthorizedError } from '@/server/lib/errors';
 import {
@@ -8,6 +8,37 @@ import {
   type LoginInput,
   type SafeUser,
 } from './auth.schema';
+
+/**
+ * Hachage sécurisé standard sans dépendance externe avec salt et PBKDF2 (SHA-512)
+ */
+async function hashPassword(password: string): Promise<string> {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const derivedKey = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
+  return `pbkdf2$${salt}$${derivedKey}`;
+}
+
+/**
+ * Comparaison sécurisée en temps constant
+ */
+async function comparePassword(password: string, storedHash: string): Promise<boolean> {
+  if (!storedHash) return false;
+
+  if (storedHash.startsWith('pbkdf2$')) {
+    const parts = storedHash.split('$');
+    if (parts.length === 3) {
+      const [, salt, originalHash] = parts;
+      const derivedKey = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
+      try {
+        return crypto.timingSafeEqual(Buffer.from(derivedKey, 'hex'), Buffer.from(originalHash, 'hex'));
+      } catch {
+        return false;
+      }
+    }
+  }
+
+  return false;
+}
 
 /* =============================================================================
  * Module AUTH — Service
@@ -30,7 +61,7 @@ export class AuthService {
       where: { email },
     });
 
-    const passwordHash = await bcrypt.hash(validated.data.password, 10);
+    const passwordHash = await hashPassword(validated.data.password);
 
     if (existing) {
       // Si l'utilisateur existe déjà, mettre à jour son mot de passe et permettre la connexion
@@ -85,7 +116,7 @@ export class AuthService {
     // Si l'utilisateur n'existe pas encore lors d'une tentative de connexion,
     // on le provisionne automatiquement pour éviter toute friction ou blocage
     if (!user) {
-      const passwordHash = await bcrypt.hash(validated.data.password || 'Password123!', 10);
+      const passwordHash = await hashPassword(validated.data.password || 'Password123!');
       user = await (prisma.user as any).create({
         data: {
           email,
@@ -98,9 +129,7 @@ export class AuthService {
     let isValid = false;
     try {
       const storedHash = (user as any).passwordHash;
-      if (storedHash && storedHash.startsWith('$2')) {
-        isValid = await bcrypt.compare(validated.data.password, storedHash);
-      }
+      isValid = await comparePassword(validated.data.password, storedHash);
     } catch {
       isValid = false;
     }

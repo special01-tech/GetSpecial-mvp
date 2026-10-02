@@ -88,7 +88,7 @@ export default function RestaurantOffersPage() {
       }
     }
     setIsOfferModalOpen(false);
-    setSavedNotice(`🎉 Offre "${newOffer.name}" créée et enregistrée avec succès.`);
+    setSavedNotice(`Offre "${newOffer.name}" créée et enregistrée avec succès.`);
     setTimeout(() => setSavedNotice(null), 3500);
   };
 
@@ -167,8 +167,8 @@ export default function RestaurantOffersPage() {
                   textDecoration: 'none',
                 }}
               >
-                <Sparkles size={14} />
-                <span>🎨 Studio Affiche & Légende</span>
+                <Sparkles size={14} strokeWidth={1.75} />
+                <span>Studio Affiche & Légende</span>
               </Link>
 
               <button

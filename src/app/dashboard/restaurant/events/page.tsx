@@ -110,10 +110,10 @@ export default function RestaurantEventsPage() {
   const handleSaveEvent = async (savedEvent: RestaurantEvent) => {
     if (editingEvent) {
       const updated = events.map((e) => (e.id === savedEvent.id ? savedEvent : e));
-      saveEventsList(updated, `✨ Événement "${savedEvent.title}" mis à jour.`);
+      saveEventsList(updated, `Événement "${savedEvent.title}" mis à jour.`);
     } else {
       const updated = [savedEvent, ...events];
-      saveEventsList(updated, `🎉 Événement "${savedEvent.title}" ajouté avec succès.`);
+      saveEventsList(updated, `Événement "${savedEvent.title}" ajouté avec succès.`);
 
       // Synchronisation immédiate avec le moteur de signaux & opportunités IA
       try {
@@ -150,7 +150,7 @@ export default function RestaurantEventsPage() {
   const handleDelete = (id: string) => {
     const target = events.find((e) => e.id === id);
     const updated = events.filter((e) => e.id !== id);
-    saveEventsList(updated, `🗑️ Événement "${target?.title || ''}" supprimé.`);
+    saveEventsList(updated, `Événement "${target?.title || ''}" supprimé.`);
   };
 
   // 4. Toggle activation / désactivation
@@ -162,8 +162,8 @@ export default function RestaurantEventsPage() {
     saveEventsList(
       updated,
       target?.isActive
-        ? `🟢 Événement "${target.title}" activé pour l’IA.`
-        : `⚪ Événement "${target?.title}" mis en veille.`
+        ? `Événement "${target.title}" activé pour l’IA.`
+        : `Événement "${target?.title}" mis en veille.`
     );
   };
 
@@ -245,8 +245,8 @@ export default function RestaurantEventsPage() {
                   textDecoration: 'none',
                 }}
               >
-                <Sparkles size={14} />
-                <span>🎨 Studio Affiche & Légende</span>
+                <Sparkles size={14} strokeWidth={1.75} />
+                <span>Studio Affiche & Légende</span>
               </Link>
 
               <button

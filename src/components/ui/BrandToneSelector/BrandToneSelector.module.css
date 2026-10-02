@@ -49,9 +49,21 @@
   justify-content: space-between;
 }
 
-.emoji {
-  font-size: 20px;
-  line-height: 1;
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--color-bg-app, #F8FAFC);
+  color: #64748B;
+  transition: all 0.2s ease;
+}
+
+.toneSelected .iconWrapper {
+  background: var(--color-primary-light, #EDF7F2);
+  color: var(--color-primary, #1B4332);
 }
 
 .checkCircle {

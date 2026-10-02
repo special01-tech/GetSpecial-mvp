@@ -21,6 +21,13 @@ const CreateRestaurantApiSchema = z.object({
   hasDelivery: z.boolean().optional(),
   offPeakDays: z.array(z.string()).optional(),
   constraints: z.array(z.string()).optional(),
+  targetAudience: z.array(z.string()).optional(),
+  marketingGoal: z.string().optional(),
+  logoUrl: z.string().optional(),
+  photos: z.array(z.string()).optional(),
+  brandColors: z.array(z.string()).optional(),
+  menuUrl: z.string().optional(),
+  currentOffer: z.string().optional(),
 });
 
 function deduceUsTimezone(lon: number): string {
@@ -74,6 +81,13 @@ export async function POST(req: NextRequest) {
       hasDelivery = false,
       offPeakDays = [],
       constraints = [],
+      targetAudience = [],
+      marketingGoal = 'more_clients',
+      logoUrl,
+      photos = [],
+      brandColors = [],
+      menuUrl,
+      currentOffer,
     } = validated.data;
 
     let targetUserId = validated.data.userId;
@@ -127,11 +141,28 @@ export async function POST(req: NextRequest) {
             hasTerrace,
             offPeakDays,
             constraints,
-            customRules: { hasDelivery },
+            customRules: {
+              hasDelivery,
+              targetAudience,
+              marketingGoal,
+              logoUrl,
+              photos,
+              brandColors,
+              menuUrl,
+            },
           },
         },
+        ...(currentOffer ? {
+          offers: {
+            create: {
+              title: currentOffer,
+              description: `Offre active : ${currentOffer}`,
+              status: 'active',
+            },
+          },
+        } : {}),
       },
-      include: { profile: true },
+      include: { profile: true, offers: true },
     });
 
     await logAudit({

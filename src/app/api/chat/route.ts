@@ -103,7 +103,7 @@ Guidelines:
         replyText = `I've paused automatic posting for ${restName}. No campaigns will be published without your explicit manual review. You can unpause anytime from your Dashboard or Rules settings.`;
       } else if (lower.includes('propose') || lower.includes('semaine') || lower.includes('opportunité') || lower.includes('week') || lower.includes('today')) {
         replyText = `Here is today's top marketing opportunity for ${restName} in ${restCity}:\n\n` +
-          `☀️ **Patio & Happy Hour Rush**\n` +
+          `**Patio & Happy Hour Rush**\n` +
           `• **Weather**: ${weatherSummary}\n` +
           `• **Strategy**: Promote your "${activeOfferTitle}" between 4:30 PM and 6:30 PM to fill early tables.\n` +
           `• **Estimated lift**: +15 to +25 covers.`;

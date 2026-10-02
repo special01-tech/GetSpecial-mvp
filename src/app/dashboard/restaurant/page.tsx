@@ -109,8 +109,8 @@ export default function RestaurantProfilePage() {
     }
     setSavedNotice(
       nextMode
-        ? '🌙 Mode sombre activé (thème global GetSpecial appliqué).'
-        : '☀️ Mode clair activé.'
+        ? 'Mode sombre activé (thème global GetSpecial appliqué).'
+        : 'Mode clair activé.'
     );
     setTimeout(() => setSavedNotice(null), 3000);
   };

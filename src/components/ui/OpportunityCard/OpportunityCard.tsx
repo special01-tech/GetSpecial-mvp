@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Zap, Clock, Users, ArrowRight, ChevronRight } from 'lucide-react';
+import { Zap, Clock, Users, ArrowRight, ChevronRight, Radio } from 'lucide-react';
 import { TodayOpportunity, UrgencyLevel } from '@/services/today/today.data';
 import styles from './OpportunityCard.module.css';
 
@@ -110,8 +110,9 @@ export default function OpportunityCard({ opportunity, onClick }: OpportunityCar
       </div>
 
       <div className={styles.footerRow} style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--color-border)' }}>
-        <span className={styles.signalOrigin}>
-          📡 {opportunity.signalOrigin}
+        <span className={styles.signalOrigin} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <Radio size={14} strokeWidth={1.75} />
+          <span>{opportunity.signalOrigin}</span>
         </span>
         <span
           style={{

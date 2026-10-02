@@ -23,7 +23,7 @@ export const INITIAL_CHAT_MESSAGES: ChatMessage[] = [
   {
     id: 'msg_1',
     sender: 'assistant',
-    text: "Hello! I am your GetSpecial AI Marketing Assistant. I monitor your local weather, local events, holidays, and foot traffic in real-time to generate high-impact campaigns for your restaurant. 🎯\n\nHow can I assist you today?",
+    text: "Hello! I am your GetSpecial AI Marketing Assistant. I monitor your local weather, local events, holidays, and foot traffic in real-time to generate high-impact campaigns for your restaurant.\n\nHow can I assist you today?",
     timestamp: 'Just now',
   },
 ];
@@ -80,7 +80,7 @@ export class ChatAiService {
 
     if (lower.includes('pause') || lower.includes('stop')) {
       return {
-        message: '🚨 I have paused all automated campaign publishing. You can reactivate anytime from your Rules tab or Dashboard.',
+        message: 'I have paused all automated campaign publishing. You can reactivate anytime from your Rules tab or Dashboard.',
         suggestedAction: 'pause_toggle',
       };
     }

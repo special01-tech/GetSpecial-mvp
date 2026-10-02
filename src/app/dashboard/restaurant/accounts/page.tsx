@@ -89,7 +89,7 @@ export default function RestaurantAccountsPage() {
         );
         saveAccounts(
           updated,
-          `🎉 Compte ${account.name} connecté avec succès ! La diffusion automatique est active.`
+          `Compte ${account.name} connecté avec succès ! La diffusion automatique est active.`
         );
         setLoadingId(null);
       }, 500);
