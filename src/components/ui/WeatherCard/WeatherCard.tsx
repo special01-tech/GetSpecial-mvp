@@ -15,11 +15,11 @@ export default function WeatherCard({ weather, loading }: WeatherCardProps) {
     return (
       <div className={styles.card} style={{ minHeight: 110, justifyContent: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#F1F5F9', animation: 'pulse 1.5s infinite' }} />
-          <div style={{ width: 60, height: 24, borderRadius: 6, background: '#F1F5F9', animation: 'pulse 1.5s infinite' }} />
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#F2F2F2', animation: 'pulse 1.5s infinite' }} />
+          <div style={{ width: 60, height: 24, borderRadius: 6, background: '#F2F2F2', animation: 'pulse 1.5s infinite' }} />
         </div>
-        <div style={{ width: '80%', height: 14, borderRadius: 4, background: '#F1F5F9', marginBottom: 6, animation: 'pulse 1.5s infinite' }} />
-        <div style={{ width: '50%', height: 10, borderRadius: 4, background: '#F8FAFC', animation: 'pulse 1.5s infinite' }} />
+        <div style={{ width: '80%', height: 14, borderRadius: 4, background: '#F2F2F2', marginBottom: 6, animation: 'pulse 1.5s infinite' }} />
+        <div style={{ width: '50%', height: 10, borderRadius: 4, background: '#F7F7F7', animation: 'pulse 1.5s infinite' }} />
       </div>
     );
   }
@@ -37,14 +37,14 @@ export default function WeatherCard({ weather, loading }: WeatherCardProps) {
               iconType === 'rain'
                 ? '#E0F2FE'
                 : iconType === 'cloud'
-                ? '#F1F5F9'
+                ? '#F2F2F2'
                 : '#FEF3C7',
           }}
         >
           {iconType === 'rain' ? (
             <CloudRain size={22} color="#0284C7" />
           ) : iconType === 'cloud' ? (
-            <Cloud size={22} color="#64748B" />
+            <Cloud size={22} color="#6B6B6B" />
           ) : iconType === 'cloud-sun' ? (
             <CloudSun size={22} color="#D97706" />
           ) : (

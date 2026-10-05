@@ -24,6 +24,7 @@ import {
   AssistantRulesData,
   INITIAL_RULES_DATA,
 } from '@/services/rules/rules.data';
+import { useLanguage } from '@/i18n';
 import styles from './rules.module.css';
 
 /**
@@ -53,6 +54,7 @@ import styles from './rules.module.css';
  * Persistance des règles dans le localStorage / DB.
  */
 export default function RulesPage() {
+  const { t } = useLanguage();
   const [rules, setRules] = useState<AssistantRulesData>(INITIAL_RULES_DATA);
   const [newExcludedTopic, setNewExcludedTopic] = useState('');
   const [isAddingTag, setIsAddingTag] = useState(false);
@@ -89,8 +91,8 @@ export default function RulesPage() {
     saveRules(
       updated,
       updated.globalPause
-        ? 'Mode pause globale activé. Aucune publication automatique ne sera émise.'
-        : 'Mode automatique réactivé.'
+        ? t('engagement.rules.globalPause.enabledMsg')
+        : t('engagement.rules.globalPause.disabledMsg')
     );
   };
 
@@ -102,8 +104,8 @@ export default function RulesPage() {
     saveRules(
       updated,
       updated.deleteAllScheduledOnPause
-        ? 'Option activée : les publications en attente seront purgées en cas de pause.'
-        : 'Option désactivée.'
+        ? t('engagement.rules.globalPause.purgeOn')
+        : t('engagement.rules.globalPause.purgeOff')
     );
   };
 
@@ -116,7 +118,7 @@ export default function RulesPage() {
         [topicKey]: !rules.topics[topicKey],
       },
     };
-    saveRules(updated, 'Paramètres des sujets mis à jour.');
+    saveRules(updated, t('engagement.rules.topics.updatedMsg'));
   };
 
   // Section 3 : Sujets exclus
@@ -126,7 +128,7 @@ export default function RulesPage() {
     if (!tag) return;
 
     if (rules.excludedTopics.some((t) => t.toLowerCase() === tag.toLowerCase())) {
-      setNotice(`Le sujet "${tag}" est déjà exclu.`);
+      setNotice(t('engagement.rules.excluded.alreadyExcluded', { tag }));
       setTimeout(() => setNotice(null), 3000);
       return;
     }
@@ -135,7 +137,7 @@ export default function RulesPage() {
       ...rules,
       excludedTopics: [...rules.excludedTopics, tag],
     };
-    saveRules(updated, `Sujet "${tag}" ajouté aux exclusions de l’IA.`);
+    saveRules(updated, t('engagement.rules.excluded.added', { tag }));
     setNewExcludedTopic('');
     setIsAddingTag(false);
   };
@@ -145,7 +147,7 @@ export default function RulesPage() {
       ...rules,
       excludedTopics: rules.excludedTopics.filter((t) => t !== tagToRemove),
     };
-    saveRules(updated, `Sujet "${tagToRemove}" retiré des exclusions.`);
+    saveRules(updated, t('engagement.rules.excluded.removed', { tag: tagToRemove }));
   };
 
   return (
@@ -158,9 +160,9 @@ export default function RulesPage() {
               <Sliders size={22} className={styles.headerIcon} />
             </div>
             <div>
-              <h1 className={styles.pageTitle}>Règles</h1>
+              <h1 className={styles.pageTitle}>{t('engagement.rules.title')}</h1>
               <p className={styles.pageSubtitle}>
-                Contrôle des publications et thèmes de votre IA
+                {t('engagement.rules.subtitle')}
               </p>
             </div>
           </div>
@@ -177,8 +179,8 @@ export default function RulesPage() {
         <main className={styles.mainContent}>
           {/* SECTION 1 : Pause globale */}
           <SettingsSection
-            title="Pause globale"
-            description="Arrêt d'urgence de toutes les diffusions automatiques"
+            title={t('engagement.rules.globalPause.title')}
+            description={t('engagement.rules.globalPause.desc')}
             icon={AlertOctagon}
           >
             {/* Switch Pause Globale */}
@@ -192,9 +194,9 @@ export default function RulesPage() {
                   <AlertOctagon size={18} />
                 </div>
                 <div>
-                  <span className={styles.toggleTitle}>Mettre en pause globale</span>
+                  <span className={styles.toggleTitle}>{t('engagement.rules.globalPause.toggleTitle')}</span>
                   <p className={styles.toggleSubtitle}>
-                    Bloque instantanément toute nouvelle publication sur vos réseaux
+                    {t('engagement.rules.globalPause.toggleSub')}
                   </p>
                 </div>
               </div>
@@ -206,7 +208,7 @@ export default function RulesPage() {
                   rules.globalPause ? styles.switchDanger : styles.switchOff
                 }`}
                 aria-pressed={rules.globalPause}
-                aria-label="Basculer pause globale"
+                aria-label={t('engagement.rules.globalPause.toggleLabel')}
               >
                 <span className={styles.switchHandle} />
               </button>
@@ -220,10 +222,10 @@ export default function RulesPage() {
                 </div>
                 <div>
                   <span className={styles.toggleTitle}>
-                    Supprime toutes les publications
+                    {t('engagement.rules.globalPause.deleteTitle')}
                   </span>
                   <p className={styles.toggleSubtitle}>
-                    Purger également les posts programmés en attente dans le planning
+                    {t('engagement.rules.globalPause.deleteSub')}
                   </p>
                 </div>
               </div>
@@ -235,7 +237,7 @@ export default function RulesPage() {
                   rules.deleteAllScheduledOnPause ? styles.switchOn : styles.switchOff
                 }`}
                 aria-pressed={rules.deleteAllScheduledOnPause}
-                aria-label="Supprimer toutes les publications programmées"
+                aria-label={t('engagement.rules.globalPause.deleteLabel')}
               >
                 <span className={styles.switchHandle} />
               </button>
@@ -244,8 +246,8 @@ export default function RulesPage() {
 
           {/* SECTION 2 : Sujets autorisés */}
           <SettingsSection
-            title="Sujets"
-            description="Activez les déclencheurs que l'IA peut exploiter pour communiquer"
+            title={t('engagement.rules.topics.title')}
+            description={t('engagement.rules.topics.desc')}
             icon={CloudSun}
           >
             <div className={styles.topicsGrid}>
@@ -256,9 +258,9 @@ export default function RulesPage() {
                     <CloudSun size={17} className={styles.weatherIcon} />
                   </div>
                   <div>
-                    <span className={styles.topicTitle}>Météo</span>
+                    <span className={styles.topicTitle}>{t('engagement.rules.topics.weather')}</span>
                     <span className={styles.topicHint}>
-                      Terrasse ensoleillée, averses cocooning
+                      {t('engagement.rules.topics.weatherHint')}
                     </span>
                   </div>
                 </div>
@@ -269,7 +271,7 @@ export default function RulesPage() {
                     rules.topics.weather ? styles.switchOn : styles.switchOff
                   }`}
                   aria-pressed={rules.topics.weather}
-                  aria-label="Activer sujet météo"
+                  aria-label={t('engagement.rules.topics.weatherLabel')}
                 >
                   <span className={styles.switchHandle} />
                 </button>
@@ -282,9 +284,9 @@ export default function RulesPage() {
                     <Trophy size={17} className={styles.sportIcon} />
                   </div>
                   <div>
-                    <span className={styles.topicTitle}>Sport</span>
+                    <span className={styles.topicTitle}>{t('engagement.rules.topics.sport')}</span>
                     <span className={styles.topicHint}>
-                      Matchs de football, rugby, tournois majeurs
+                      {t('engagement.rules.topics.sportHint')}
                     </span>
                   </div>
                 </div>
@@ -295,7 +297,7 @@ export default function RulesPage() {
                     rules.topics.sport ? styles.switchOn : styles.switchOff
                   }`}
                   aria-pressed={rules.topics.sport}
-                  aria-label="Activer sujet sport"
+                  aria-label={t('engagement.rules.topics.sportLabel')}
                 >
                   <span className={styles.switchHandle} />
                 </button>
@@ -308,9 +310,9 @@ export default function RulesPage() {
                     <Music size={17} className={styles.concertIcon} />
                   </div>
                   <div>
-                    <span className={styles.topicTitle}>Concerts</span>
+                    <span className={styles.topicTitle}>{t('engagement.rules.topics.concerts')}</span>
                     <span className={styles.topicHint}>
-                      Spectacles locaux, musique live, festivals
+                      {t('engagement.rules.topics.concertsHint')}
                     </span>
                   </div>
                 </div>
@@ -321,7 +323,7 @@ export default function RulesPage() {
                     rules.topics.concerts ? styles.switchOn : styles.switchOff
                   }`}
                   aria-pressed={rules.topics.concerts}
-                  aria-label="Activer sujet concerts"
+                  aria-label={t('engagement.rules.topics.concertsLabel')}
                 >
                   <span className={styles.switchHandle} />
                 </button>
@@ -334,9 +336,9 @@ export default function RulesPage() {
                     <PartyPopper size={17} className={styles.holidayIcon} />
                   </div>
                   <div>
-                    <span className={styles.topicTitle}>Jours fériés</span>
+                    <span className={styles.topicTitle}>{t('engagement.rules.topics.holidays')}</span>
                     <span className={styles.topicHint}>
-                      Ponts, fêtes calendaires, vacances
+                      {t('engagement.rules.topics.holidaysHint')}
                     </span>
                   </div>
                 </div>
@@ -347,7 +349,7 @@ export default function RulesPage() {
                     rules.topics.holidays ? styles.switchOn : styles.switchOff
                   }`}
                   aria-pressed={rules.topics.holidays}
-                  aria-label="Activer sujet jours fériés"
+                  aria-label={t('engagement.rules.topics.holidaysLabel')}
                 >
                   <span className={styles.switchHandle} />
                 </button>
@@ -360,9 +362,9 @@ export default function RulesPage() {
                     <Tag size={17} className={styles.offerIcon} />
                   </div>
                   <div>
-                    <span className={styles.topicTitle}>Rappels offres</span>
+                    <span className={styles.topicTitle}>{t('engagement.rules.topics.offers')}</span>
                     <span className={styles.topicHint}>
-                      Happy hour, menus du midi, réductions
+                      {t('engagement.rules.topics.offersHint')}
                     </span>
                   </div>
                 </div>
@@ -373,7 +375,7 @@ export default function RulesPage() {
                     rules.topics.offerReminders ? styles.switchOn : styles.switchOff
                   }`}
                   aria-pressed={rules.topics.offerReminders}
-                  aria-label="Activer sujet rappels offres"
+                  aria-label={t('engagement.rules.topics.offersLabel')}
                 >
                   <span className={styles.switchHandle} />
                 </button>
@@ -383,8 +385,8 @@ export default function RulesPage() {
 
           {/* SECTION 3 : Sujets exclus */}
           <SettingsSection
-            title="Sujets exclus"
-            description="L'IA évitera strictement toute mention de ces thématiques"
+            title={t('engagement.rules.excluded.title')}
+            description={t('engagement.rules.excluded.desc')}
             icon={ShieldAlert}
             action={
               !isAddingTag && (
@@ -394,7 +396,7 @@ export default function RulesPage() {
                   className={styles.addTagBtn}
                 >
                   <Plus size={13} />
-                  <span>+ Ajouter</span>
+                  <span>{t('engagement.rules.excluded.addButton')}</span>
                 </button>
               )
             }
@@ -405,13 +407,13 @@ export default function RulesPage() {
                 <input
                   type="text"
                   autoFocus
-                  placeholder="Ex : Soirée étudiante, Alcool fort..."
+                  placeholder={t('engagement.rules.excluded.inputPlaceholder')}
                   value={newExcludedTopic}
                   onChange={(e) => setNewExcludedTopic(e.target.value)}
                   className={styles.tagInput}
                 />
                 <button type="submit" className={styles.confirmAddBtn}>
-                  Ajouter
+                  {t('engagement.rules.excluded.addConfirm')}
                 </button>
                 <button
                   type="button"
@@ -435,7 +437,7 @@ export default function RulesPage() {
                     type="button"
                     onClick={() => handleRemoveExcludedTopic(tag)}
                     className={styles.removeTagBtn}
-                    aria-label={`Supprimer l'exclusion ${tag}`}
+                    aria-label={t('engagement.rules.excluded.removeLabel', { tag })}
                   >
                     <X size={13} />
                   </button>
@@ -446,8 +448,7 @@ export default function RulesPage() {
             <p className={styles.exclusionNote}>
               <Info size={13} />
               <span>
-                Ces exclusions agissent comme des filtres stricts sur l’ensemble de vos posts
-                générés par Claude IA.
+                {t('engagement.rules.excluded.note')}
               </span>
             </p>
           </SettingsSection>

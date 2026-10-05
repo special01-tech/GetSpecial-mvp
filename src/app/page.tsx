@@ -7,14 +7,16 @@ import Logo from '@/components/ui/Logo/Logo';
 import BenefitItem from '@/components/ui/BenefitItem/BenefitItem';
 import PrimaryButton from '@/components/ui/PrimaryButton/PrimaryButton';
 import RestaurantVisual from '@/components/ui/RestaurantVisual/RestaurantVisual';
+import LanguageToggle from '@/components/ui/LanguageToggle';
+import { useLanguage } from '@/i18n';
 import styles from './page.module.css';
 
 /**
  * Écran 1 : Splash / Accueil GetSpecial
  *
  * Écran de bienvenue mobile & desktop respectant scrupuleusement la charte :
- * - Fond ivoire / blanc très épuré (#FAFAF7)
- * - Identité vert forêt (#1B4332)
+ * - Fond ivoire / blanc très épuré (#F2F2F2)
+ * - Identité vert forêt (#FF5A00)
  * - Typographie moderne et soignée
  * - 3 bénéfices clairs
  * - Visuel restaurant avec badge flottant
@@ -22,6 +24,7 @@ import styles from './page.module.css';
  */
 export default function SplashPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState(false);
 
@@ -45,6 +48,7 @@ export default function SplashPage() {
         {/* Header Branding */}
         <header className={styles.header}>
           <Logo size="md" showTagline={false} />
+          <LanguageToggle compact />
         </header>
 
         {/* Corps principal : visuel + message */}
@@ -53,36 +57,32 @@ export default function SplashPage() {
           <div className={styles.visualSection}>
             <RestaurantVisual
               imageUrl="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80"
-              badgeText="Aujourd'hui • Terrasse pleine grâce au soleil"
+              badgeText={t('common.splash.badge')}
             />
           </div>
 
           {/* Accroche & Slogan */}
           <div className={styles.heroSection}>
-            <h1 className={styles.slogan}>
-              Votre assistant marketing pour un restaurant qui fait parler de lui.
-            </h1>
-            <p className={styles.subtext}>
-              Transformez chaque jour la météo, les événements et vos spécialités en clients à table.
-            </p>
+            <h1 className={styles.slogan}>{t('common.splash.slogan')}</h1>
+            <p className={styles.subtext}>{t('common.splash.subtext')}</p>
           </div>
 
           {/* Les 3 Bénéfices */}
           <div className={styles.benefitsGrid}>
             <BenefitItem
               icon={Users}
-              title="Plus de clients"
-              description="Remplissez vos tables aux heures creuses"
+              title={t('common.splash.benefit1Title')}
+              description={t('common.splash.benefit1Desc')}
             />
             <BenefitItem
               icon={Eye}
-              title="Plus de visibilité"
-              description="Présence active et ultra-ciblée sur vos réseaux"
+              title={t('common.splash.benefit2Title')}
+              description={t('common.splash.benefit2Desc')}
             />
             <BenefitItem
               icon={Sparkles}
-              title="Moins d'efforts"
-              description="Opportunités et posts rédigés en 1 clic"
+              title={t('common.splash.benefit3Title')}
+              description={t('common.splash.benefit3Desc')}
             />
           </div>
         </main>
@@ -93,7 +93,7 @@ export default function SplashPage() {
             onClick={handleStart}
             icon={<ArrowRight size={18} />}
           >
-            {hasCompletedOnboarding ? 'Créer un nouveau restaurant' : 'Commencer'}
+            {hasCompletedOnboarding ? t('common.splash.createNew') : t('common.splash.start')}
           </PrimaryButton>
 
           {hasCompletedOnboarding && (
@@ -103,23 +103,21 @@ export default function SplashPage() {
               style={{
                 marginTop: '12px',
                 background: 'transparent',
-                border: '1px solid #E5E7EB',
+                border: '1px solid #E5E5E5',
                 borderRadius: '10px',
                 padding: '10px 18px',
-                color: '#1B4332',
+                color: '#FF5A00',
                 fontWeight: 600,
                 fontSize: '14px',
                 cursor: 'pointer',
                 width: '100%',
               }}
             >
-              Accéder à mon tableau de bord actif →
+              {t('common.splash.goToDashboard')}
             </button>
           )}
 
-          <p className={styles.disclaimer}>
-            Sans engagement • Configuration en 2 minutes
-          </p>
+          <p className={styles.disclaimer}>{t('common.splash.disclaimer')}</p>
         </footer>
       </div>
     </div>

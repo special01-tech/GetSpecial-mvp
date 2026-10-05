@@ -52,62 +52,13 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import Logo from '@/components/ui/Logo/Logo';
+import LanguageToggle from '@/components/ui/LanguageToggle';
+import { useLanguage } from '@/i18n';
 import CountrySelect from '@/components/ui/CountrySelect/CountrySelect';
 import { getCountryDisplayName } from '@/services/country/countries.data';
 import { restaurantSearchService } from '@/services/restaurant-search/restaurant-search.service';
 import type { RestaurantSearchResult } from '@/services/restaurant-search/restaurant-search.types';
 import styles from './onboarding.module.css';
-
-// Types d'établissement généralistes & catégorisables avec icônes Lucide épurées
-const ESTABLISHMENT_TYPES = [
-  { id: 'restaurant', label: 'Restaurant traditionnel', icon: Utensils },
-  { id: 'bistro', label: 'Bistrot & Brasserie', icon: Wine },
-  { id: 'fast_casual', label: 'Restauration rapide & Street food', icon: Zap },
-  { id: 'cafe_brunch', label: 'Café, Salon de thé & Brunch', icon: Coffee },
-  { id: 'bar_lounge', label: 'Bar, Pub & Lounge', icon: Martini },
-  { id: 'bakery', label: 'Boulangerie, Pâtisserie & Traiteur', icon: Croissant },
-  { id: 'food_truck', label: 'Food Truck & Kiosque', icon: Truck },
-  { id: 'fine_dining', label: 'Gastronomique & Bistronomique', icon: Sparkles },
-  { id: 'autre', label: 'Autre concept culinaire', icon: Store },
-];
-
-// Objectifs sur les réseaux sociaux avec icônes Lucide (badges)
-const MARKETING_GOALS = [
-  { id: 'more_clients', label: 'Attirer plus de clients', icon: Target },
-  { id: 'off_peak', label: 'Remplir les heures creuses', icon: Clock },
-  { id: 'delivery', label: 'Développer la livraison & vente à emporter', icon: Bike },
-  { id: 'happy_hour', label: 'Booster les soirées & afterworks', icon: Martini },
-  { id: 'promote_dishes', label: 'Faire découvrir la carte & nouveaux plats', icon: CookingPot },
-];
-
-// Cibles prioritaires avec icônes Lucide (badges)
-const TARGET_AUDIENCES = [
-  { id: 'young_pros', label: 'Jeunes actifs / Afterwork', icon: Briefcase },
-  { id: 'families', label: 'Familles & Enfants', icon: Users },
-  { id: 'students', label: 'Étudiants', icon: GraduationCap },
-  { id: 'business', label: 'Déjeuners d’affaires express', icon: HeartHandshake },
-  { id: 'tourists', label: 'Touristes & Visiteurs', icon: Plane },
-  { id: 'couples', label: 'Couples & Dîners romantiques', icon: Heart },
-];
-
-// Tons de communication avec icônes Lucide (badges clairs)
-const TONE_OPTIONS = [
-  { id: 'chaleureux', label: 'Chaleureux & Accueillant', icon: Sun },
-  { id: 'gourmand', label: 'Gourmand & Passionné', icon: UtensilsCrossed },
-  { id: 'festif', label: 'Festif & Dynamique', icon: PartyPopper },
-  { id: 'chic', label: 'Chic & Raffiné', icon: Sparkles },
-  { id: 'decontracte', label: 'Décontracté & Direct', icon: Smile },
-  { id: 'convivial', label: 'Convivial & Proche', icon: HeartHandshake },
-];
-
-// Étapes de l'onboarding pour la barre de progression
-const ONBOARDING_STEPS = [
-  { step: 1, label: 'Établissement', shortLabel: 'Resto' },
-  { step: 2, label: 'Concept & Carte', shortLabel: 'Concept' },
-  { step: 3, label: 'Communication', shortLabel: 'Com' },
-  { step: 4, label: 'Marque & Couleurs', shortLabel: 'Marque' },
-  { step: 5, label: 'Réseaux sociaux', shortLabel: 'Réseaux' },
-];
 
 // Couleurs suggérées pour faciliter le choix
 const COLOR_SUGGESTIONS = [
@@ -129,6 +80,58 @@ interface AddressSuggestion {
 
 export default function UnifiedOnboardingPage() {
   const router = useRouter();
+  const { t } = useLanguage();
+
+  // Types d'établissement généralistes & catégorisables avec icônes Lucide épurées
+  const ESTABLISHMENT_TYPES = [
+    { id: 'restaurant', label: t('onboarding.unified.typeRestaurant'), icon: Utensils },
+    { id: 'bistro', label: t('onboarding.unified.typeBistro'), icon: Wine },
+    { id: 'fast_casual', label: t('onboarding.unified.typeFastCasual'), icon: Zap },
+    { id: 'cafe_brunch', label: t('onboarding.unified.typeCafeBrunch'), icon: Coffee },
+    { id: 'bar_lounge', label: t('onboarding.unified.typeBarLounge'), icon: Martini },
+    { id: 'bakery', label: t('onboarding.unified.typeBakery'), icon: Croissant },
+    { id: 'food_truck', label: t('onboarding.unified.typeFoodTruck'), icon: Truck },
+    { id: 'fine_dining', label: t('onboarding.unified.typeFineDining'), icon: Sparkles },
+    { id: 'autre', label: t('onboarding.unified.typeOther'), icon: Store },
+  ];
+
+  // Objectifs sur les réseaux sociaux avec icônes Lucide (badges)
+  const MARKETING_GOALS = [
+    { id: 'more_clients', label: t('onboarding.unified.goalMoreClients'), icon: Target },
+    { id: 'off_peak', label: t('onboarding.unified.goalOffPeak'), icon: Clock },
+    { id: 'delivery', label: t('onboarding.unified.goalDelivery'), icon: Bike },
+    { id: 'happy_hour', label: t('onboarding.unified.goalHappyHour'), icon: Martini },
+    { id: 'promote_dishes', label: t('onboarding.unified.goalPromoteDishes'), icon: CookingPot },
+  ];
+
+  // Cibles prioritaires avec icônes Lucide (badges)
+  const TARGET_AUDIENCES = [
+    { id: 'young_pros', label: t('onboarding.unified.targetYoungPros'), icon: Briefcase },
+    { id: 'families', label: t('onboarding.unified.targetFamilies'), icon: Users },
+    { id: 'students', label: t('onboarding.unified.targetStudents'), icon: GraduationCap },
+    { id: 'business', label: t('onboarding.unified.targetBusiness'), icon: HeartHandshake },
+    { id: 'tourists', label: t('onboarding.unified.targetTourists'), icon: Plane },
+    { id: 'couples', label: t('onboarding.unified.targetCouples'), icon: Heart },
+  ];
+
+  // Tons de communication avec icônes Lucide (badges clairs)
+  const TONE_OPTIONS = [
+    { id: 'chaleureux', label: t('onboarding.unified.toneWarm'), icon: Sun },
+    { id: 'gourmand', label: t('onboarding.unified.toneFoodie'), icon: UtensilsCrossed },
+    { id: 'festif', label: t('onboarding.unified.toneFestive'), icon: PartyPopper },
+    { id: 'chic', label: t('onboarding.unified.toneChic'), icon: Sparkles },
+    { id: 'decontracte', label: t('onboarding.unified.toneCasual'), icon: Smile },
+    { id: 'convivial', label: t('onboarding.unified.toneFriendly'), icon: HeartHandshake },
+  ];
+
+  // Étapes de l'onboarding pour la barre de progression
+  const ONBOARDING_STEPS = [
+    { step: 1, label: t('onboarding.unified.step1Label'), shortLabel: t('onboarding.unified.step1Short') },
+    { step: 2, label: t('onboarding.unified.step2Label'), shortLabel: t('onboarding.unified.step2Short') },
+    { step: 3, label: t('onboarding.unified.step3Label'), shortLabel: t('onboarding.unified.step3Short') },
+    { step: 4, label: t('onboarding.unified.step4Label'), shortLabel: t('onboarding.unified.step4Short') },
+    { step: 5, label: t('onboarding.unified.step5Label'), shortLabel: t('onboarding.unified.step5Short') },
+  ];
 
   // Étape courante (1: Établissement, 2: Concept & Carte, 3: Communication, 4: Marque & Réseaux)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5>(1);
@@ -207,7 +210,7 @@ export default function UnifiedOnboardingPage() {
   // Détection GPS : extrait simultanément rue, ville, code postal et pays
   const handleDetectGps = () => {
     if (typeof window === 'undefined' || !navigator.geolocation) {
-      setErrorMsg("La géolocalisation n'est pas supportée par votre navigateur.");
+      setErrorMsg(t('onboarding.unified.gpsUnsupported'));
       return;
     }
 
@@ -242,14 +245,14 @@ export default function UnifiedOnboardingPage() {
             setDetectedGpsInfo(`${detCity}, ${detCountryName}`);
           }
         } catch {
-          setDetectedGpsInfo(`Coordonnées : ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+          setDetectedGpsInfo(t('onboarding.unified.gpsCoords', { coords: `${lat.toFixed(4)}, ${lon.toFixed(4)}` }));
         } finally {
           setIsLocating(false);
         }
       },
       () => {
         setIsLocating(false);
-        setErrorMsg('Accès GPS refusé ou indisponible. Vous pouvez saisir votre ville manuellement.');
+        setErrorMsg(t('onboarding.unified.gpsDenied'));
       },
       { timeout: 10000, enableHighAccuracy: true }
     );
@@ -392,7 +395,7 @@ export default function UnifiedOnboardingPage() {
   // Recherche sur Google Places
   const handleSearchGoogle = async () => {
     if (!name.trim()) {
-      setErrorMsg('Veuillez renseigner le nom de votre établissement avant de chercher sur Google.');
+      setErrorMsg(t('onboarding.unified.nameRequiredGoogle'));
       return;
     }
     setErrorMsg(null);
@@ -477,11 +480,11 @@ export default function UnifiedOnboardingPage() {
     setErrorMsg(null);
     if (currentStep === 1) {
       if (!name.trim()) {
-        setErrorMsg('Veuillez renseigner le nom de votre restaurant.');
+        setErrorMsg(t('onboarding.unified.nameRequired'));
         return;
       }
       if (!city.trim()) {
-        setErrorMsg('Veuillez renseigner la ville de votre établissement.');
+        setErrorMsg(t('onboarding.unified.cityRequired'));
         return;
       }
       setCurrentStep(2);
@@ -579,12 +582,13 @@ export default function UnifiedOnboardingPage() {
           <Logo size="md" showTagline={false} />
           <div className={styles.headerStepMeta}>
             <span className={styles.headerStepText}>
-              Étape <strong className={styles.headerStepBold}>{currentStep}</strong> / 5
+              {t('onboarding.unified.headerStepLabel')} <strong className={styles.headerStepBold}>{currentStep}</strong> {t('onboarding.unified.headerStepTotal')}
             </span>
             <span className={styles.headerStepBadge}>
               {Math.round((currentStep / 5) * 100)}%
             </span>
           </div>
+          <LanguageToggle compact />
         </header>
 
         {/* Barre de progression continue & Labels des 5 sections */}
@@ -636,25 +640,25 @@ export default function UnifiedOnboardingPage() {
           <section className={styles.formSection}>
             <div className={styles.titleArea}>
               <span className={styles.sectionBadge}>
-                <Store size={15} /> Étape 1 sur 4
+                <Store size={15} /> {t('onboarding.unified.s1Badge')}
               </span>
-              <h1 className={styles.title}>Trouvez votre établissement</h1>
+              <h1 className={styles.title}>{t('onboarding.unified.s1Title')}</h1>
               <p className={styles.subtitle}>
-                Recherchez votre restaurant sur Google Maps ou indiquez ses coordonnées.
+                {t('onboarding.unified.s1Subtitle')}
               </p>
             </div>
 
             {/* Nom du restaurant */}
             <div className={styles.fieldGroup}>
               <label htmlFor="name" className={styles.label}>
-                <span>Nom de l&apos;établissement *</span>
+                <span>{t('onboarding.unified.nameLabel')}</span>
               </label>
               <div className={styles.inputWrapper}>
                 <Store size={16} strokeWidth={1.75} className={styles.inputIcon} />
                 <input
                   id="name"
                   type="text"
-                  placeholder="Ex. Le Bistrot Parisien, Chez Marco..."
+                  placeholder={t('onboarding.unified.namePlaceholder')}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className={styles.input}
@@ -667,14 +671,14 @@ export default function UnifiedOnboardingPage() {
             <div className={styles.formRow}>
               <div className={styles.fieldGroup}>
                 <label htmlFor="city" className={styles.label}>
-                  <span>Ville *</span>
+                  <span>{t('onboarding.unified.cityLabel')}</span>
                 </label>
                 <div className={styles.inputWrapper}>
                   <MapPin size={16} strokeWidth={1.75} className={styles.inputIcon} />
                   <input
                     id="city"
                     type="text"
-                    placeholder="Ex. Paris, Abidjan, Dakar..."
+                    placeholder={t('onboarding.unified.cityPlaceholder')}
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     onBlur={handleCityBlur}
@@ -686,13 +690,13 @@ export default function UnifiedOnboardingPage() {
 
               <div className={styles.fieldGroup}>
                 <label htmlFor="country" className={styles.label}>
-                  <span>Pays *</span>
+                  <span>{t('onboarding.unified.countryLabel')}</span>
                 </label>
                 <CountrySelect
                   id="country"
                   value={country}
                   onChange={(cCode) => setCountry(cCode)}
-                  placeholder="Rechercher pays..."
+                  placeholder={t('onboarding.unified.countryPlaceholder')}
                 />
               </div>
             </div>
@@ -710,12 +714,12 @@ export default function UnifiedOnboardingPage() {
                     {isSearchingGoogle ? (
                       <>
                         <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
-                        <span>Recherche sur Google Maps...</span>
+                        <span>{t('onboarding.unified.searchingGoogle')}</span>
                       </>
                     ) : (
                       <>
                         <Search size={14} strokeWidth={2} />
-                        <span>Trouver mon restaurant sur Google</span>
+                        <span>{t('onboarding.unified.findOnGoogle')}</span>
                       </>
                     )}
                   </button>
@@ -724,7 +728,7 @@ export default function UnifiedOnboardingPage() {
                   {isSearchingGoogle && (
                     <div className={styles.googleSearchLoading}>
                       <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
-                      <span>Recherche de votre établissement en direct...</span>
+                      <span>{t('onboarding.unified.searchingLive')}</span>
                     </div>
                   )}
 
@@ -749,19 +753,19 @@ export default function UnifiedOnboardingPage() {
                             <div className={styles.googleResultHeader}>
                               <span className={styles.googleResultName}>{place.name}</span>
                               <span className={styles.googleResultRating}>
-                                <Star size={11} fill="#D97706" stroke="#D97706" />
+                                <Star size={11} fill="#FF5A00" stroke="#FF5A00" />
                                 <span>{place.rating || '4.8'}</span>
-                                <span style={{ color: '#94A3B8', fontWeight: 400 }}>({place.reviewsCount || 120})</span>
+                                <span style={{ color: '#8A8A8A', fontWeight: 400 }}>({place.reviewsCount || 120})</span>
                                 {place.isOpenNow !== undefined && (
                                   <span className={place.isOpenNow ? styles.openBadge : styles.closedBadge}>
-                                    {place.isOpenNow ? 'Ouvert' : 'Fermé'}
+                                    {place.isOpenNow ? t('onboarding.unified.openBadge') : t('onboarding.unified.closedBadge')}
                                   </span>
                                 )}
                               </span>
                             </div>
-                            <div className={styles.googleResultMeta}>
-                              <span className={styles.googleResultCategory}>{place.cuisineType || 'Restaurant'}</span>
-                            </div>
+                              <div className={styles.googleResultMeta}>
+                                <span className={styles.googleResultCategory}>{place.cuisineType || t('onboarding.unified.defaultCategory')}</span>
+                              </div>
                             <div className={styles.googleResultAddress}>
                               <MapPin size={11} strokeWidth={1.75} />
                               <span>{place.address}{place.city && place.city !== place.address ? `, ${place.city}` : ''}{place.postalCode ? ` ${place.postalCode}` : ''}</span>
@@ -785,10 +789,12 @@ export default function UnifiedOnboardingPage() {
                         <AlertCircle size={20} strokeWidth={2} className={styles.googleNoResultIcon} />
                         <div>
                           <div className={styles.googleNoResultTitle}>
-                            Aucun établissement trouvé sur Google Maps
+                            {t('onboarding.unified.noResultTitle')}
                           </div>
                           <div className={styles.googleNoResultSubtitle}>
-                            Aucun résultat pour &ldquo;{name}&rdquo;{city ? ` à ${city}` : ''}. Vous pouvez corriger la saisie ou renseigner l&apos;adresse manuellement.
+                            {city
+                              ? t('onboarding.unified.noResultWithCity', { name, city })
+                              : t('onboarding.unified.noResultWithoutCity', { name })}
                           </div>
                         </div>
                       </div>
@@ -797,7 +803,7 @@ export default function UnifiedOnboardingPage() {
                         className={styles.manualAddressBtn}
                         onClick={() => setShowManualAddress(true)}
                       >
-                        Saisir l&apos;adresse
+                        {t('onboarding.unified.manualAddressBtn')}
                       </button>
                     </div>
                   )}
@@ -809,25 +815,25 @@ export default function UnifiedOnboardingPage() {
                       className={styles.manualAddressToggle}
                       onClick={() => setShowManualAddress(true)}
                     >
-                      Mon établissement n&apos;est pas sur Google / Saisir l&apos;adresse manuelle
+                      {t('onboarding.unified.notOnGoogle')}
                     </button>
                   ) : (
                     <div style={{ marginTop: '4px', animation: 'fadeIn 0.2s ease' }}>
                       <div className={styles.label} style={{ marginBottom: '4px' }}>
-                        <span>Adresse manuelle</span>
+                        <span>{t('onboarding.unified.manualAddressLabel')}</span>
                         <button
                           type="button"
                           className={styles.manualAddressToggle}
                           onClick={() => setShowManualAddress(false)}
                         >
-                          Masquer
+                          {t('onboarding.unified.hide')}
                         </button>
                       </div>
                       <div className={styles.inputWrapper}>
                         <MapPin size={16} strokeWidth={1.75} className={styles.inputIcon} />
                         <input
                           type="text"
-                          placeholder="Ex. 15 Rue de Rivoli..."
+                          placeholder={t('onboarding.unified.addressPlaceholder')}
                           value={address}
                           onChange={handleAddressChange}
                           className={styles.inputWithGps}
@@ -837,14 +843,14 @@ export default function UnifiedOnboardingPage() {
                           className={styles.inlineGpsBtn}
                           onClick={handleDetectGps}
                           disabled={isLocating}
-                          title="Détecter ma position automatiquement"
+                          title={t('onboarding.unified.detectGpsTitle')}
                         >
                           {isLocating ? (
                             <Loader2 size={11} strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }} />
                           ) : (
                             <Navigation size={11} strokeWidth={2} />
                           )}
-                          {isLocating ? 'Localisation…' : 'Localiser'}
+                          {isLocating ? t('onboarding.unified.locating') : t('onboarding.unified.locate')}
                         </button>
                       </div>
                     </div>
@@ -870,13 +876,13 @@ export default function UnifiedOnboardingPage() {
                       <div className={styles.selectedPlaceTitleRow}>
                         <span className={styles.selectedPlaceName}>{selectedGooglePlace.name}</span>
                         <span className={styles.selectedPlaceBadge}>
-                          <Check size={11} strokeWidth={2.5} /> Lié à Google
+                          <Check size={11} strokeWidth={2.5} /> {t('onboarding.unified.linkedToGoogle')}
                         </span>
                       </div>
                       <div className={styles.selectedPlaceSub}>
-                        <Star size={11} fill="#D97706" stroke="#D97706" />
-                        <span style={{ fontWeight: 600, color: '#B45309' }}>{selectedGooglePlace.rating || '4.8'}</span>
-                        <span>• {selectedGooglePlace.cuisineType || 'Restaurant'} •</span>
+                        <Star size={11} fill="#FF5A00" stroke="#FF5A00" />
+                        <span style={{ fontWeight: 600, color: '#E04F00' }}>{selectedGooglePlace.rating || '4.8'}</span>
+                        <span>• {selectedGooglePlace.cuisineType || t('onboarding.unified.defaultCategory')} •</span>
                         <MapPin size={11} strokeWidth={1.75} />
                         <span>{selectedGooglePlace.address}</span>
                       </div>
@@ -886,10 +892,10 @@ export default function UnifiedOnboardingPage() {
                     type="button"
                     onClick={handleClearSelectedPlace}
                     className={styles.changePlaceBtn}
-                    title="Changer d'établissement ou chercher à nouveau"
+                    title={t('onboarding.unified.changePlaceTitle')}
                   >
                     <Edit2 size={12} strokeWidth={2} />
-                    <span>Changer</span>
+                    <span>{t('onboarding.unified.change')}</span>
                   </button>
                 </div>
               )}
@@ -910,7 +916,7 @@ export default function UnifiedOnboardingPage() {
                   onClick={handleNextStep}
                   className={styles.primaryBtn}
                 >
-                  <span>Continuer</span>
+                  <span>{t('onboarding.unified.continue')}</span>
                   <ArrowRight size={16} />
                 </button>
               </div>
@@ -925,19 +931,19 @@ export default function UnifiedOnboardingPage() {
           <section className={styles.formSection}>
             <div className={styles.titleArea}>
               <span className={styles.sectionBadge}>
-                <Utensils size={15} /> Étape 2 sur 4
+                <Utensils size={15} /> {t('onboarding.unified.s2Badge')}
               </span>
-              <h1 className={styles.title}>Concept culinaire & Services</h1>
+              <h1 className={styles.title}>{t('onboarding.unified.s2Title')}</h1>
               <p className={styles.subtitle}>
-                Précisez votre type d&apos;établissement, votre carte et vos services pour alimenter l&apos;IA.
+                {t('onboarding.unified.s2Subtitle')}
               </p>
             </div>
 
             {/* Type d'établissement (Badges interactifs catégorisables) */}
             <div className={styles.fieldGroup}>
               <label className={styles.label}>
-                <span>Type d&apos;établissement</span>
-                <span className={styles.optionalTag}>1 clic</span>
+                <span>{t('onboarding.unified.establishmentTypeLabel')}</span>
+                <span className={styles.optionalTag}>{t('onboarding.unified.oneClick')}</span>
               </label>
               <div className={styles.typeBadgesRow}>
                 {ESTABLISHMENT_TYPES.map((t) => {
@@ -970,7 +976,7 @@ export default function UnifiedOnboardingPage() {
                     <Store size={18} className={styles.inputIcon} />
                     <input
                       type="text"
-                      placeholder="Précisez votre concept (ex. Bar à ramen, Glacerie artisanale, Cantine bio...)"
+                      placeholder={t('onboarding.unified.customTypePlaceholder')}
                       value={customRestaurantTypeInput}
                       onChange={(e) => setCustomRestaurantTypeInput(e.target.value)}
                       className={styles.input}
@@ -984,8 +990,8 @@ export default function UnifiedOnboardingPage() {
             {/* Menu / Carte (Optionnel : Lien ou Fichier) */}
             <div className={styles.fieldGroup}>
               <label className={styles.label}>
-                <span>Menu ou Carte des plats</span>
-                <span className={styles.optionalTag}>Optionnel</span>
+                <span>{t('onboarding.unified.menuLabel')}</span>
+                <span className={styles.optionalTag}>{t('onboarding.unified.optional')}</span>
               </label>
               <div className={styles.menuButtonsRow}>
                 <button
@@ -993,14 +999,14 @@ export default function UnifiedOnboardingPage() {
                   className={`${styles.menuCompactBtn} ${menuType === 'link' ? styles.menuCompactBtnActive : ''}`}
                   onClick={() => setMenuType(menuType === 'link' ? 'none' : 'link')}
                 >
-                  <LinkIcon size={13} strokeWidth={1.75} /> Coller un lien
+                  <LinkIcon size={13} strokeWidth={1.75} /> {t('onboarding.unified.pasteLink')}
                 </button>
                 <button
                   type="button"
                   className={`${styles.menuCompactBtn} ${menuType === 'file' ? styles.menuCompactBtnActive : ''}`}
                   onClick={() => setMenuType(menuType === 'file' ? 'none' : 'file')}
                 >
-                  <FileText size={13} strokeWidth={1.75} /> Importer photo / PDF
+                  <FileText size={13} strokeWidth={1.75} /> {t('onboarding.unified.importFile')}
                 </button>
               </div>
 
@@ -1009,7 +1015,7 @@ export default function UnifiedOnboardingPage() {
                   <LinkIcon size={14} strokeWidth={1.75} className={styles.inputIcon} />
                   <input
                     type="url"
-                    placeholder="https://mon-restaurant.com/menu ou lien Instagram..."
+                    placeholder={t('onboarding.unified.menuUrlPlaceholder')}
                     value={menuUrl}
                     onChange={(e) => setMenuUrl(e.target.value)}
                     className={styles.input}
@@ -1029,9 +1035,9 @@ export default function UnifiedOnboardingPage() {
                     }}
                   />
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <FileText size={16} strokeWidth={1.75} style={{ color: '#1B4332' }} />
+                    <FileText size={16} strokeWidth={1.75} style={{ color: '#FF5A00' }} />
                     <span className={styles.dropzoneTitle}>
-                      {menuFileName ? `Fichier : ${menuFileName}` : 'Sélectionner la carte (photo ou PDF)'}
+                      {menuFileName ? t('onboarding.unified.menuFileSelected', { file: menuFileName }) : t('onboarding.unified.menuFileCta')}
                     </span>
                   </div>
                 </label>
@@ -1041,8 +1047,8 @@ export default function UnifiedOnboardingPage() {
             {/* Aménagements : Terrasse & Livraison en format chips compact */}
             <div className={styles.fieldGroup}>
               <label className={styles.label}>
-                <span>Services & Équipements</span>
-                <span className={styles.optionalTag}>Météo & suggestions</span>
+                <span>{t('onboarding.unified.servicesLabel')}</span>
+                <span className={styles.optionalTag}>{t('onboarding.unified.servicesHint')}</span>
               </label>
               <div className={styles.amenitiesRow}>
                 <button
@@ -1052,9 +1058,9 @@ export default function UnifiedOnboardingPage() {
                 >
                   <span className={styles.amenityChipLeft}>
                     <Sun size={15} strokeWidth={1.75} />
-                    <span>Terrasse</span>
+                    <span>{t('onboarding.unified.terrace')}</span>
                   </span>
-                  <span className={styles.amenityChipBadge}>{hasTerrace ? 'Activé' : 'Désactivé'}</span>
+                  <span className={styles.amenityChipBadge}>{hasTerrace ? t('onboarding.unified.enabled') : t('onboarding.unified.disabled')}</span>
                 </button>
 
                 <button
@@ -1064,9 +1070,9 @@ export default function UnifiedOnboardingPage() {
                 >
                   <span className={styles.amenityChipLeft}>
                     <Bike size={15} strokeWidth={1.75} />
-                    <span>Livraison</span>
+                    <span>{t('onboarding.unified.delivery')}</span>
                   </span>
-                  <span className={styles.amenityChipBadge}>{hasDelivery ? 'Activé' : 'Désactivé'}</span>
+                  <span className={styles.amenityChipBadge}>{hasDelivery ? t('onboarding.unified.enabled') : t('onboarding.unified.disabled')}</span>
                 </button>
               </div>
             </div>
@@ -1078,7 +1084,7 @@ export default function UnifiedOnboardingPage() {
                 onClick={() => setCurrentStep(1)}
                 className={styles.backBtn}
               >
-                <ArrowLeft size={16} /> Retour
+                <ArrowLeft size={16} /> {t('onboarding.unified.back')}
               </button>
 
               <div className={styles.nextBtnGroup}>
@@ -1087,7 +1093,7 @@ export default function UnifiedOnboardingPage() {
                   onClick={handleNextStep}
                   className={styles.primaryBtn}
                 >
-                  <span>Continuer</span>
+                  <span>{t('onboarding.unified.continue')}</span>
                   <ArrowRight size={16} />
                 </button>
               </div>
@@ -1102,19 +1108,19 @@ export default function UnifiedOnboardingPage() {
           <section className={styles.formSection}>
             <div className={styles.titleArea}>
               <span className={styles.sectionBadge}>
-                <Target size={15} /> Étape 3 sur 4
+                <Target size={15} /> {t('onboarding.unified.s3Badge')}
               </span>
-              <h1 className={styles.title}>Votre stratégie de communication</h1>
+              <h1 className={styles.title}>{t('onboarding.unified.s3Title')}</h1>
               <p className={styles.subtitle}>
-                Ces réglages permettent à l&apos;IA de cibler le bon public et de trouver les mots justes pour vos posts.
+                {t('onboarding.unified.s3Subtitle')}
               </p>
             </div>
 
             {/* Objectif principal sur les réseaux */}
             <div className={styles.fieldGroup}>
               <label className={styles.label}>
-                <span>Votre objectif principal sur les réseaux sociaux</span>
-                <span className={styles.optionalTag}>1 clic</span>
+                <span>{t('onboarding.unified.goalLabel')}</span>
+                <span className={styles.optionalTag}>{t('onboarding.unified.oneClick')}</span>
               </label>
               <div className={styles.tagsRow}>
                 {MARKETING_GOALS.map((goal) => {
@@ -1140,8 +1146,8 @@ export default function UnifiedOnboardingPage() {
             {/* Cible prioritaire */}
             <div className={styles.fieldGroup}>
               <label className={styles.label}>
-                <span>Qui sont vos clients cibles ?</span>
-                <span className={styles.optionalTag}>Sélection multiple</span>
+                <span>{t('onboarding.unified.targetLabel')}</span>
+                <span className={styles.optionalTag}>{t('onboarding.unified.targetMultiple')}</span>
               </label>
               <div className={styles.tagsRow}>
                 {TARGET_AUDIENCES.map((target) => {
@@ -1167,8 +1173,8 @@ export default function UnifiedOnboardingPage() {
             {/* Ton de communication */}
             <div className={styles.fieldGroup}>
               <label className={styles.label}>
-                <span>Ton de communication</span>
-                <span className={styles.optionalTag}>1 clic</span>
+                <span>{t('onboarding.unified.toneLabel')}</span>
+                <span className={styles.optionalTag}>{t('onboarding.unified.oneClick')}</span>
               </label>
               <div className={styles.tagsRow}>
                 {TONE_OPTIONS.map((t) => {
@@ -1198,7 +1204,7 @@ export default function UnifiedOnboardingPage() {
                 onClick={() => setCurrentStep(2)}
                 className={styles.backBtn}
               >
-                <ArrowLeft size={16} /> Retour
+                <ArrowLeft size={16} /> {t('onboarding.unified.back')}
               </button>
 
               <div className={styles.nextBtnGroup}>
@@ -1207,7 +1213,7 @@ export default function UnifiedOnboardingPage() {
                   onClick={handleNextStep}
                   className={styles.primaryBtn}
                 >
-                  <span>Continuer</span>
+                  <span>{t('onboarding.unified.continue')}</span>
                   <ArrowRight size={16} />
                 </button>
               </div>
@@ -1222,32 +1228,32 @@ export default function UnifiedOnboardingPage() {
           <section className={styles.formSection}>
             <div className={styles.titleArea}>
               <span className={styles.sectionBadge}>
-                <Palette size={15} /> Étape 4 sur 5
+                <Palette size={15} /> {t('onboarding.unified.s4Badge')}
               </span>
-              <h1 className={styles.title}>Votre image de marque</h1>
+              <h1 className={styles.title}>{t('onboarding.unified.s4Title')}</h1>
               <p className={styles.subtitle}>
-                Ajoutez votre logo et choisissez vos couleurs. Tout est optionnel.
+                {t('onboarding.unified.s4Subtitle')}
               </p>
             </div>
 
             {/* Logo unique */}
             <div className={styles.fieldGroup}>
               <label className={styles.label}>
-                <span>Logo de l&apos;établissement</span>
-                <span className={styles.optionalTag}>Optionnel</span>
+                <span>{t('onboarding.unified.logoLabel')}</span>
+                <span className={styles.optionalTag}>{t('onboarding.unified.optional')}</span>
               </label>
               {logoPreview ? (
                 <div className={styles.logoPreviewRow}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={logoPreview} alt="Logo" className={styles.logoPreviewImg} />
+                  <img src={logoPreview} alt={t('onboarding.unified.logoAlt')} className={styles.logoPreviewImg} />
                   <div className={styles.logoPreviewMeta}>
-                    <span className={styles.logoPreviewName}>Logo chargé</span>
+                    <span className={styles.logoPreviewName}>{t('onboarding.unified.logoLoaded')}</span>
                     <button
                       type="button"
                       className={styles.logoRemoveBtn}
                       onClick={() => setLogoPreview(null)}
                     >
-                      <X size={13} strokeWidth={2} /> Supprimer
+                      <X size={13} strokeWidth={2} /> {t('onboarding.unified.logoRemove')}
                     </button>
                   </div>
                 </div>
@@ -1259,9 +1265,9 @@ export default function UnifiedOnboardingPage() {
                     style={{ display: 'none' }}
                     onChange={handleLogoUpload}
                   />
-                  <ImageIcon size={22} strokeWidth={1.75} style={{ color: '#94A3B8' }} />
-                  <span className={styles.dropzoneTitle}>Cliquez pour ajouter votre logo</span>
-                  <span className={styles.dropzoneHint}>PNG, JPG, SVG — max 5 Mo</span>
+                  <ImageIcon size={22} strokeWidth={1.75} style={{ color: '#8A8A8A' }} />
+                  <span className={styles.dropzoneTitle}>{t('onboarding.unified.logoCta')}</span>
+                  <span className={styles.dropzoneHint}>{t('onboarding.unified.logoHint')}</span>
                 </label>
               )}
             </div>
@@ -1269,8 +1275,8 @@ export default function UnifiedOnboardingPage() {
             {/* Couleurs personnalisées */}
             <div className={styles.fieldGroup}>
               <label className={styles.label}>
-                <span>Couleurs de votre marque</span>
-                <span className={styles.optionalTag}>3 max</span>
+                <span>{t('onboarding.unified.brandColorsLabel')}</span>
+                <span className={styles.optionalTag}>{t('onboarding.unified.brandColorsMax')}</span>
               </label>
 
               {/* Aperçu des couleurs choisies */}
@@ -1291,7 +1297,7 @@ export default function UnifiedOnboardingPage() {
                                 next[idx] = e.target.value;
                                 setCustomColors(next);
                               }}
-                              title={`Couleur ${idx + 1}`}
+                              title={t('onboarding.unified.colorTitle', { index: idx + 1 })}
                             />
                             <span
                               className={styles.colorSwatch}
@@ -1305,14 +1311,14 @@ export default function UnifiedOnboardingPage() {
                                 const next = customColors.filter((_, i) => i !== idx);
                                 setCustomColors(next);
                               }}
-                              title="Supprimer cette couleur"
+                              title={t('onboarding.unified.colorRemoveTitle')}
                             >
                               <X size={10} strokeWidth={2.5} />
                             </button>
                           </div>
                         ) : (
                           customColors.length === idx && (
-                            <label className={styles.colorPickerEmpty} title="Ajouter une couleur">
+                            <label className={styles.colorPickerEmpty} title={t('onboarding.unified.colorAddTitle')}>
                               <input
                                 type="color"
                                 defaultValue="#1B4332"
@@ -1321,8 +1327,8 @@ export default function UnifiedOnboardingPage() {
                                   setCustomColors([...customColors, e.target.value]);
                                 }}
                               />
-                              <Plus size={16} strokeWidth={2} style={{ color: '#94A3B8' }} />
-                              <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>Ajouter</span>
+                              <Plus size={16} strokeWidth={1.75} style={{ color: '#8A8A8A' }} />
+                              <span style={{ fontSize: '0.72rem', color: '#8A8A8A' }}>{t('onboarding.unified.colorAdd')}</span>
                             </label>
                           )
                         )}
@@ -1333,7 +1339,7 @@ export default function UnifiedOnboardingPage() {
 
                 {/* Suggestions rapides */}
                 <div className={styles.colorSuggestionsRow}>
-                  <span className={styles.colorSuggestLabel}>Suggestions :</span>
+                  <span className={styles.colorSuggestLabel}>{t('onboarding.unified.colorSuggestions')}</span>
                   {COLOR_SUGGESTIONS.map((c) => (
                     <button
                       key={c}
@@ -1370,7 +1376,7 @@ export default function UnifiedOnboardingPage() {
                 onClick={() => setCurrentStep(3)}
                 className={styles.backBtn}
               >
-                <ArrowLeft size={16} /> Retour
+                <ArrowLeft size={16} /> {t('onboarding.unified.back')}
               </button>
 
               <div className={styles.nextBtnGroup}>
@@ -1379,7 +1385,7 @@ export default function UnifiedOnboardingPage() {
                   onClick={handleNextStep}
                   className={styles.primaryBtn}
                 >
-                  <span>Continuer</span>
+                  <span>{t('onboarding.unified.continue')}</span>
                   <ArrowRight size={16} />
                 </button>
               </div>
@@ -1394,11 +1400,11 @@ export default function UnifiedOnboardingPage() {
           <section className={styles.formSection}>
             <div className={styles.titleArea}>
               <span className={styles.sectionBadge}>
-                <Share2 size={15} /> Étape 5 sur 5
+                <Share2 size={15} /> {t('onboarding.unified.s5Badge')}
               </span>
-              <h1 className={styles.title}>Connectez vos réseaux</h1>
+              <h1 className={styles.title}>{t('onboarding.unified.s5Title')}</h1>
               <p className={styles.subtitle}>
-                Liez vos comptes pour que votre copilote publie directement. Vous pouvez le faire plus tard.
+                {t('onboarding.unified.s5Subtitle')}
               </p>
             </div>
 
@@ -1408,23 +1414,27 @@ export default function UnifiedOnboardingPage() {
               <div className={styles.socialCardLarge}>
                 <div className={styles.socialCardHeader}>
                   <span className={styles.socialIconBoxLarge} style={{ background: 'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)' }}>
-                    <Camera size={18} strokeWidth={1.75} style={{ color: '#fff' }} />
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label={t('onboarding.unified.logoInstagram')}>
+                      <rect x="2.5" y="2.5" width="19" height="19" rx="5.5" />
+                      <circle cx="12" cy="12" r="4" />
+                      <circle cx="17.4" cy="6.6" r="1.1" fill="#FFFFFF" stroke="none" />
+                    </svg>
                   </span>
                   <div>
                     <div className={styles.socialCardName}>Instagram</div>
-                    <div className={styles.socialCardDesc}>Photos, Reels & Stories</div>
+                    <div className={styles.socialCardDesc}>{t('onboarding.unified.instaDesc')}</div>
                   </div>
                 </div>
                 {connectedPlatforms.instagram ? (
                   <div className={styles.socialConnectedRow}>
-                    <CheckCircle2 size={14} strokeWidth={2} style={{ color: '#16A34A' }} />
-                    <span className={styles.socialConnectedLabel}>Compte lié</span>
+                    <CheckCircle2 size={14} strokeWidth={1.75} style={{ color: '#16A34A' }} />
+                    <span className={styles.socialConnectedLabel}>{t('onboarding.unified.accountLinked')}</span>
                     <button
                       type="button"
                       className={styles.socialDisconnectBtn}
                       onClick={() => handleTogglePlatform('instagram')}
                     >
-                      Délier
+                      {t('onboarding.unified.unlink')}
                     </button>
                   </div>
                 ) : (
@@ -1433,7 +1443,7 @@ export default function UnifiedOnboardingPage() {
                     className={styles.socialConnectBtn}
                     onClick={() => handleTogglePlatform('instagram')}
                   >
-                    Connecter Instagram
+                    {t('onboarding.unified.connectPlatform', { platform: 'Instagram' })}
                   </button>
                 )}
               </div>
@@ -1442,23 +1452,25 @@ export default function UnifiedOnboardingPage() {
               <div className={styles.socialCardLarge}>
                 <div className={styles.socialCardHeader}>
                   <span className={styles.socialIconBoxLarge} style={{ background: '#1877F2' }}>
-                    <Share2 size={18} strokeWidth={1.75} style={{ color: '#fff' }} />
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#FFFFFF" aria-label={t('onboarding.unified.logoFacebook')}>
+                      <path d="M13.5 22v-8h2.7l.4-3.2h-3.1V8.7c0-.9.3-1.6 1.7-1.6h1.5V4.2c-.3 0-1.2-.1-2.3-.1-2.3 0-3.9 1.4-3.9 4v2.7H7.8V14h2.7v8h3z" />
+                    </svg>
                   </span>
                   <div>
                     <div className={styles.socialCardName}>Facebook</div>
-                    <div className={styles.socialCardDesc}>Page & Publications</div>
+                    <div className={styles.socialCardDesc}>{t('onboarding.unified.fbDesc')}</div>
                   </div>
                 </div>
                 {connectedPlatforms.facebook ? (
                   <div className={styles.socialConnectedRow}>
-                    <CheckCircle2 size={14} strokeWidth={2} style={{ color: '#16A34A' }} />
-                    <span className={styles.socialConnectedLabel}>Compte lié</span>
+                    <CheckCircle2 size={14} strokeWidth={1.75} style={{ color: '#16A34A' }} />
+                    <span className={styles.socialConnectedLabel}>{t('onboarding.unified.accountLinked')}</span>
                     <button
                       type="button"
                       className={styles.socialDisconnectBtn}
                       onClick={() => handleTogglePlatform('facebook')}
                     >
-                      Délier
+                      {t('onboarding.unified.unlink')}
                     </button>
                   </div>
                 ) : (
@@ -1467,7 +1479,7 @@ export default function UnifiedOnboardingPage() {
                     className={styles.socialConnectBtn}
                     onClick={() => handleTogglePlatform('facebook')}
                   >
-                    Connecter Facebook
+                    {t('onboarding.unified.connectPlatform', { platform: 'Facebook' })}
                   </button>
                 )}
               </div>
@@ -1475,24 +1487,29 @@ export default function UnifiedOnboardingPage() {
               {/* Google Business */}
               <div className={styles.socialCardLarge}>
                 <div className={styles.socialCardHeader}>
-                  <span className={styles.socialIconBoxLarge} style={{ background: '#fff', border: '1.5px solid #E2E8F0' }}>
-                    <MapPin size={18} strokeWidth={1.75} style={{ color: '#EA4335' }} />
+                  <span className={styles.socialIconBoxLarge} style={{ background: '#FFFFFF', border: '1.5px solid rgba(13, 13, 13, 0.10)' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" aria-label={t('onboarding.unified.logoGoogle')}>
+                      <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
+                      <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z" />
+                      <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
+                      <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
+                    </svg>
                   </span>
                   <div>
                     <div className={styles.socialCardName}>Google Business</div>
-                    <div className={styles.socialCardDesc}>Fiche & Avis clients</div>
+                    <div className={styles.socialCardDesc}>{t('onboarding.unified.googleDesc')}</div>
                   </div>
                 </div>
                 {connectedPlatforms.google_business ? (
                   <div className={styles.socialConnectedRow}>
-                    <CheckCircle2 size={14} strokeWidth={2} style={{ color: '#16A34A' }} />
-                    <span className={styles.socialConnectedLabel}>Compte lié</span>
+                    <CheckCircle2 size={14} strokeWidth={1.75} style={{ color: '#16A34A' }} />
+                    <span className={styles.socialConnectedLabel}>{t('onboarding.unified.accountLinked')}</span>
                     <button
                       type="button"
                       className={styles.socialDisconnectBtn}
                       onClick={() => handleTogglePlatform('google_business')}
                     >
-                      Délier
+                      {t('onboarding.unified.unlink')}
                     </button>
                   </div>
                 ) : (
@@ -1501,7 +1518,7 @@ export default function UnifiedOnboardingPage() {
                     className={styles.socialConnectBtn}
                     onClick={() => handleTogglePlatform('google_business')}
                   >
-                    Connecter Google
+                    {t('onboarding.unified.connectPlatform', { platform: 'Google' })}
                   </button>
                 )}
               </div>
@@ -1510,23 +1527,25 @@ export default function UnifiedOnboardingPage() {
               <div className={styles.socialCardLarge}>
                 <div className={styles.socialCardHeader}>
                   <span className={styles.socialIconBoxLarge} style={{ background: '#010101' }}>
-                    <Zap size={18} strokeWidth={1.75} style={{ color: '#fff' }} />
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF" aria-label={t('onboarding.unified.logoTiktok')}>
+                      <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
+                    </svg>
                   </span>
                   <div>
                     <div className={styles.socialCardName}>TikTok</div>
-                    <div className={styles.socialCardDesc}>Vidéos courtes & Tendances</div>
+                    <div className={styles.socialCardDesc}>{t('onboarding.unified.tiktokDesc')}</div>
                   </div>
                 </div>
                 {connectedPlatforms.tiktok ? (
                   <div className={styles.socialConnectedRow}>
-                    <CheckCircle2 size={14} strokeWidth={2} style={{ color: '#16A34A' }} />
-                    <span className={styles.socialConnectedLabel}>Compte lié</span>
+                    <CheckCircle2 size={14} strokeWidth={1.75} style={{ color: '#16A34A' }} />
+                    <span className={styles.socialConnectedLabel}>{t('onboarding.unified.accountLinked')}</span>
                     <button
                       type="button"
                       className={styles.socialDisconnectBtn}
                       onClick={() => handleTogglePlatform('tiktok')}
                     >
-                      Délier
+                      {t('onboarding.unified.unlink')}
                     </button>
                   </div>
                 ) : (
@@ -1535,7 +1554,7 @@ export default function UnifiedOnboardingPage() {
                     className={styles.socialConnectBtn}
                     onClick={() => handleTogglePlatform('tiktok')}
                   >
-                    Connecter TikTok
+                    {t('onboarding.unified.connectPlatform', { platform: 'TikTok' })}
                   </button>
                 )}
               </div>
@@ -1554,7 +1573,7 @@ export default function UnifiedOnboardingPage() {
                 onClick={() => setCurrentStep(4)}
                 className={styles.backBtn}
               >
-                <ArrowLeft size={16} /> Retour
+                <ArrowLeft size={16} /> {t('onboarding.unified.back')}
               </button>
 
               <div className={styles.nextBtnGroup}>
@@ -1564,7 +1583,7 @@ export default function UnifiedOnboardingPage() {
                   disabled={isSubmitting}
                   className={styles.skipBtn}
                 >
-                  Passer cette étape
+                  {t('onboarding.unified.skipStep')}
                 </button>
 
                 <button
@@ -1576,12 +1595,12 @@ export default function UnifiedOnboardingPage() {
                   {isSubmitting ? (
                     <>
                       <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                      <span>Initialisation du copilote...</span>
+                      <span>{t('onboarding.unified.finalizing')}</span>
                     </>
                   ) : (
                     <>
-                      <span>Lancer mon copilote IA</span>
-                      <Sparkles size={16} />
+                      <span>{t('onboarding.unified.finish')}</span>
+                      <Check size={16} />
                     </>
                   )}
                 </button>

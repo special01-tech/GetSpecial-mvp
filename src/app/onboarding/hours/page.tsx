@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Clock, Flame, Check, Sparkles } from 'lucide-react';
 import Logo from '@/components/ui/Logo/Logo';
+import LanguageToggle from '@/components/ui/LanguageToggle';
+import { useLanguage } from '@/i18n';
 import PrimaryButton from '@/components/ui/PrimaryButton/PrimaryButton';
 import OpeningHoursEditor from '@/components/ui/OpeningHoursEditor/OpeningHoursEditor';
 import {
@@ -16,26 +18,27 @@ import styles from './hours.module.css';
 
 const DAYS_ORDER: DayKey[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
-const PEAK_TIME_OPTIONS: { id: PeakTimeOption; label: string; subtitle: string }[] = [
-  {
-    id: 'lunch_rush',
-    label: 'Lunch Rush',
-    subtitle: 'Boost weekday office lunch specials & quick meals',
-  },
-  {
-    id: 'happy_hour',
-    label: 'Happy Hour',
-    subtitle: 'After-work craft drinks & half-price appetizers (4-7 PM)',
-  },
-  {
-    id: 'dinner_rush',
-    label: 'Dinner Rush',
-    subtitle: 'Full dining room, prime reservations & weekend sports crowd',
-  },
-];
-
 export default function OpeningHoursPage() {
   const router = useRouter();
+  const { t } = useLanguage();
+
+  const PEAK_TIME_OPTIONS: { id: PeakTimeOption; label: string; subtitle: string }[] = [
+    {
+      id: 'lunch_rush',
+      label: t('onboarding.hours.peakLunch'),
+      subtitle: t('onboarding.hours.peakLunchDesc'),
+    },
+    {
+      id: 'happy_hour',
+      label: t('onboarding.hours.peakHappy'),
+      subtitle: t('onboarding.hours.peakHappyDesc'),
+    },
+    {
+      id: 'dinner_rush',
+      label: t('onboarding.hours.peakDinner'),
+      subtitle: t('onboarding.hours.peakDinnerDesc'),
+    },
+  ];
 
   const [schedule, setSchedule] = useState<Record<DayKey, DaySchedule>>(DEFAULT_WEEK_SCHEDULE);
   const [selectedPeakTimes, setSelectedPeakTimes] = useState<PeakTimeOption[]>(['happy_hour', 'dinner_rush']);
@@ -90,7 +93,7 @@ export default function OpeningHoursPage() {
           <button
             onClick={() => router.push('/onboarding/establishment-type')}
             className={styles.backButton}
-            aria-label="Back to establishment type"
+            aria-label={t('onboarding.hours.backLabel')}
           >
             <ArrowLeft size={18} />
           </button>
@@ -100,13 +103,14 @@ export default function OpeningHoursPage() {
             <span className={styles.stepDotDone} />
             <span className={styles.stepDotActive} />
           </div>
+          <LanguageToggle compact />
         </header>
 
         <main className={styles.mainContent}>
           <div className={styles.titleArea}>
-            <h1 className={styles.title}>Hours & Peak Times</h1>
+            <h1 className={styles.title}>{t('onboarding.hours.title')}</h1>
             <p className={styles.subtitle}>
-              Configure your service hours so GetSpecial schedules campaigns right when your diners are deciding where to eat.
+              {t('onboarding.hours.subtitle')}
             </p>
           </div>
 
@@ -114,9 +118,9 @@ export default function OpeningHoursPage() {
             <div className={styles.scheduleHeader}>
               <div className={styles.cardHeaderLeft}>
                 <Clock size={16} className={styles.headerIcon} />
-                <span className={styles.scheduleTitle}>Weekly Operating Hours</span>
+                <span className={styles.scheduleTitle}>{t('onboarding.hours.scheduleTitle')}</span>
               </div>
-              <span className={styles.timeZoneBadge}>Auto-synced</span>
+              <span className={styles.timeZoneBadge}>{t('onboarding.hours.autoSynced')}</span>
             </div>
 
             <div className={styles.daysList}>
@@ -137,10 +141,10 @@ export default function OpeningHoursPage() {
           <section className={styles.peakTimesSection}>
             <div className={styles.peakHeader}>
               <Flame size={16} className={styles.flameIcon} />
-              <h2 className={styles.peakTitle}>When do you want to drive more covers?</h2>
+              <h2 className={styles.peakTitle}>{t('onboarding.hours.peakTitle')}</h2>
             </div>
             <p className={styles.peakSubtitle}>
-              Select the rush periods where you want the highest table turnover or promotion.
+              {t('onboarding.hours.peakSubtitle')}
             </p>
 
             <div className={styles.peakGrid}>
@@ -170,13 +174,13 @@ export default function OpeningHoursPage() {
 
           <footer className={styles.footer}>
             <PrimaryButton onClick={handleNext} icon={<ArrowRight size={18} />}>
-              Next: Brand Voice & Style
+              {t('onboarding.hours.nextCta')}
             </PrimaryButton>
 
             <div className={styles.helperRow}>
               <Sparkles size={14} className={styles.sparkleIcon} />
               <span className={styles.helperText}>
-                You can adjust individual shifts anytime in your restaurant settings.
+                {t('onboarding.hours.helper')}
               </span>
             </div>
           </footer>

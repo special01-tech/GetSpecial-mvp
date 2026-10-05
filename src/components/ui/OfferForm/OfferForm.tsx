@@ -16,6 +16,7 @@ import {
 import PrimaryButton from '@/components/ui/PrimaryButton/PrimaryButton';
 import { RestaurantOffer, OfferStatus } from '@/services/restaurant/restaurant-offers.data';
 import { PlatformType } from '@/services/planning/planning.data';
+import { useLanguage } from '@/i18n';
 import styles from './OfferForm.module.css';
 
 interface OfferFormProps {
@@ -30,6 +31,7 @@ const AVAILABLE_PLATFORMS: { id: PlatformType; name: string }[] = [
 ];
 
 export default function OfferForm({ onSave, onCancel }: OfferFormProps) {
+  const { t } = useLanguage();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [discount, setDiscount] = useState('-20%');
@@ -59,7 +61,7 @@ export default function OfferForm({ onSave, onCancel }: OfferFormProps) {
       description: description.trim(),
       image,
       discount: discount.trim(),
-      period: `Le ${date} à partir de ${time}`,
+      period: t('common.components.offerForm.period', { date, time }),
       date,
       time,
       status: 'scheduled',
@@ -79,15 +81,15 @@ export default function OfferForm({ onSave, onCancel }: OfferFormProps) {
               <Plus size={18} />
             </div>
             <div>
-              <h2 className={styles.title}>Nouvelle offre spéciale</h2>
-              <p className={styles.subtitle}>Créez et ciblez votre promotion</p>
+              <h2 className={styles.title}>{t('common.components.offerForm.title')}</h2>
+              <p className={styles.subtitle}>{t('common.components.offerForm.subtitle')}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onCancel}
             className={styles.closeBtn}
-            aria-label="Fermer"
+            aria-label={t('common.components.offerForm.closeAria')}
           >
             <X size={18} />
           </button>
@@ -98,13 +100,13 @@ export default function OfferForm({ onSave, onCancel }: OfferFormProps) {
           {/* Titre */}
           <div className={styles.fieldGroup}>
             <label htmlFor="offerTitle" className={styles.label}>
-              Titre de l&apos;offre *
+              {t('common.components.offerForm.offerTitleLabel')}
             </label>
             <input
               id="offerTitle"
               type="text"
               required
-              placeholder="Ex : Burgers Gourmet -30%"
+              placeholder={t('common.components.offerForm.offerTitlePlaceholder')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className={styles.input}
@@ -114,7 +116,7 @@ export default function OfferForm({ onSave, onCancel }: OfferFormProps) {
           {/* Réduction */}
           <div className={styles.fieldGroup}>
             <label htmlFor="offerDiscount" className={styles.label}>
-              Réduction ou Avantage *
+              {t('common.components.offerForm.discountLabel')}
             </label>
             <div className={styles.inputWithIcon}>
               <Percent size={14} className={styles.inputIcon} />
@@ -122,7 +124,7 @@ export default function OfferForm({ onSave, onCancel }: OfferFormProps) {
                 id="offerDiscount"
                 type="text"
                 required
-                placeholder="Ex : -30% ou 1 acheté = 1 offert"
+                placeholder={t('common.components.offerForm.discountPlaceholder')}
                 value={discount}
                 onChange={(e) => setDiscount(e.target.value)}
                 className={styles.input}
@@ -133,13 +135,13 @@ export default function OfferForm({ onSave, onCancel }: OfferFormProps) {
           {/* Description */}
           <div className={styles.fieldGroup}>
             <label htmlFor="offerDesc" className={styles.label}>
-              Description *
+              {t('common.components.offerForm.descriptionLabel')}
             </label>
             <textarea
               id="offerDesc"
               required
               rows={3}
-              placeholder="Détaillez les conditions (ex : valable sur place pour le match)..."
+              placeholder={t('common.components.offerForm.descriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className={styles.textarea}
@@ -149,7 +151,7 @@ export default function OfferForm({ onSave, onCancel }: OfferFormProps) {
           {/* Image URL */}
           <div className={styles.fieldGroup}>
             <label htmlFor="offerImage" className={styles.label}>
-              Lien de l&apos;image d&apos;illustration
+              {t('common.components.offerForm.imageLabel')}
             </label>
             <div className={styles.inputWithIcon}>
               <ImageIcon size={14} className={styles.inputIcon} />
@@ -167,7 +169,7 @@ export default function OfferForm({ onSave, onCancel }: OfferFormProps) {
           <div className={styles.dateTimeGrid}>
             <div className={styles.fieldGroup}>
               <label htmlFor="offerDate" className={styles.label}>
-                Date d&apos;activation
+                {t('common.components.offerForm.activationDateLabel')}
               </label>
               <input
                 id="offerDate"
@@ -180,7 +182,7 @@ export default function OfferForm({ onSave, onCancel }: OfferFormProps) {
 
             <div className={styles.fieldGroup}>
               <label htmlFor="offerTime" className={styles.label}>
-                Heure de début
+                {t('common.components.offerForm.startTimeLabel')}
               </label>
               <input
                 id="offerTime"
@@ -194,7 +196,7 @@ export default function OfferForm({ onSave, onCancel }: OfferFormProps) {
 
           {/* Plateformes cibles */}
           <div className={styles.fieldGroup}>
-            <label className={styles.label}>Plateformes de diffusion</label>
+            <label className={styles.label}>{t('common.components.offerForm.platformsLabel')}</label>
             <div className={styles.platformsSelectGrid}>
               {AVAILABLE_PLATFORMS.map((plat) => {
                 const isSelected = selectedPlatforms.includes(plat.id);
@@ -224,10 +226,10 @@ export default function OfferForm({ onSave, onCancel }: OfferFormProps) {
               onClick={onCancel}
               className={styles.cancelBtn}
             >
-              Annuler
+              {t('common.components.offerForm.cancel')}
             </button>
             <PrimaryButton type="submit" fullWidth={false}>
-              Enregistrer l&apos;offre
+              {t('common.components.offerForm.save')}
             </PrimaryButton>
           </div>
         </form>

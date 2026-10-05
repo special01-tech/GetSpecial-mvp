@@ -22,3 +22,4 @@ export { default as MetricCard } from './MetricCard/MetricCard';
 export { default as BenefitItem } from './BenefitItem/BenefitItem';
 export { default as SocialLoginButton } from './SocialLoginButton/SocialLoginButton';
 export { default as EmailAuthButton } from './EmailAuthButton/EmailAuthButton';
+export { default as LanguageToggle } from './LanguageToggle';

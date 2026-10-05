@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import Logo from '@/components/ui/Logo/Logo';
+import LanguageToggle from '@/components/ui/LanguageToggle';
 import AuthLayout from '@/components/layout/AuthLayout/AuthLayout';
 import SocialLoginButton from '@/components/ui/SocialLoginButton/SocialLoginButton';
 import EmailAuthButton from '@/components/ui/EmailAuthButton/EmailAuthButton';
 import PrimaryButton from '@/components/ui/PrimaryButton/PrimaryButton';
 import { authClientService } from '@/services/auth/auth.client.service';
+import { useLanguage } from '@/i18n';
 import styles from './login.module.css';
 
 /**
@@ -27,6 +29,7 @@ import styles from './login.module.css';
  */
 export default function AuthPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [mode, setMode] = useState<'options' | 'email_form' | 'existing_account'>('options');
   const [email, setEmail] = useState('');
@@ -53,15 +56,15 @@ export default function AuthPage() {
     try {
       const res = await authClientService.loginWithGoogle();
       if (res.success) {
-        setFeedback({ type: 'success', message: 'Connexion Google réussie ! Redirection...' });
+        setFeedback({ type: 'success', message: t('login.googleSuccess') });
         setTimeout(() => {
           router.push('/dashboard');
         }, 600);
       } else {
-        setFeedback({ type: 'error', message: res.error || 'Erreur lors de la connexion Google.' });
+        setFeedback({ type: 'error', message: res.error || t('login.googleError') });
       }
     } catch {
-      setFeedback({ type: 'error', message: 'Impossible de contacter le service Google.' });
+      setFeedback({ type: 'error', message: t('login.googleUnreachable') });
     } finally {
       setIsLoading(false);
     }
@@ -71,7 +74,7 @@ export default function AuthPage() {
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
-      setFeedback({ type: 'error', message: 'Veuillez saisir votre email.' });
+      setFeedback({ type: 'error', message: t('login.emailRequired') });
       return;
     }
 
@@ -87,16 +90,16 @@ export default function AuthPage() {
       if (res.success) {
         setFeedback({
           type: 'success',
-          message: isLogin ? 'Connexion réussie !' : 'Compte créé avec succès !',
+          message: isLogin ? t('login.loginSuccess') : t('login.registerSuccess'),
         });
         setTimeout(() => {
           router.push(isLogin ? '/dashboard' : '/onboarding');
         }, 700);
       } else {
-        setFeedback({ type: 'error', message: res.error || 'Une erreur est survenue.' });
+        setFeedback({ type: 'error', message: res.error || t('login.genericError') });
       }
     } catch {
-      setFeedback({ type: 'error', message: 'Erreur réseau. Veuillez réessayer.' });
+      setFeedback({ type: 'error', message: t('login.networkError') });
     } finally {
       setIsLoading(false);
     }
@@ -111,22 +114,21 @@ export default function AuthPage() {
             <button
               onClick={() => { setMode('options'); setFeedback(null); }}
               className={styles.backButton}
-              aria-label="Retour aux options"
+              aria-label={t('login.backToOptions')}
             >
               <ArrowLeft size={18} />
             </button>
           )}
           <Logo size="md" showTagline={false} />
+          <LanguageToggle compact />
         </div>
 
         <div className={styles.titleArea}>
           <h1 className={styles.title}>
-            {mode === 'existing_account' ? 'Bon retour !' : 'Bienvenue !'}
+            {mode === 'existing_account' ? t('login.titleBack') : t('login.titleWelcome')}
           </h1>
           <p className={styles.subtitle}>
-            {mode === 'existing_account'
-              ? 'Connectez-vous à votre espace restaurant.'
-              : 'Créez votre compte pour commencer.'}
+            {mode === 'existing_account' ? t('login.subtitleLogin') : t('login.subtitleRegister')}
           </p>
         </div>
       </div>
@@ -157,16 +159,16 @@ export default function AuthPage() {
           />
 
           <EmailAuthButton onClick={() => setMode('email_form')}>
-            Continuer avec email
+            {t('login.continueWithEmail')}
           </EmailAuthButton>
 
           <div className={styles.switchRow}>
-            <span className={styles.switchPrompt}>Vous utilisez déjà GetSpecial ?</span>
+            <span className={styles.switchPrompt}>{t('login.alreadyUser')}</span>
             <button
               onClick={() => { setMode('existing_account'); setFeedback(null); }}
               className={styles.linkButton}
             >
-              J&apos;ai déjà un compte
+              {t('login.haveAccount')}
             </button>
           </div>
         </div>
@@ -178,12 +180,12 @@ export default function AuthPage() {
           {mode === 'email_form' && (
             <div className={styles.inputGroup}>
               <label htmlFor="nameInput" className={styles.label}>
-                Nom du restaurant ou de l&apos;établissement
+                {t('login.nameLabel')}
               </label>
               <input
                 id="nameInput"
                 type="text"
-                placeholder="Ex. Le Bistrot Parisien"
+                placeholder={t('login.namePlaceholder')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className={styles.input}
@@ -193,12 +195,12 @@ export default function AuthPage() {
 
           <div className={styles.inputGroup}>
             <label htmlFor="emailInput" className={styles.label}>
-              Adresse email professionnelle
+              {t('login.emailLabel')}
             </label>
             <input
               id="emailInput"
               type="email"
-              placeholder="contact@restaurant.com"
+              placeholder={t('login.emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={styles.input}
@@ -208,12 +210,12 @@ export default function AuthPage() {
 
           <div className={styles.inputGroup}>
             <label htmlFor="passwordInput" className={styles.label}>
-              Mot de passe
+              {t('login.passwordLabel')}
             </label>
             <input
               id="passwordInput"
               type="password"
-              placeholder="••••••••"
+              placeholder={t('login.passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={styles.input}
@@ -229,36 +231,36 @@ export default function AuthPage() {
             {isLoading ? (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                 <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-                <span>Chargement...</span>
+                <span>{t('common.loading')}</span>
               </span>
             ) : mode === 'existing_account' ? (
-              'Se connecter'
+              t('login.submitLogin')
             ) : (
-              'Créer mon compte'
+              t('login.submitRegister')
             )}
           </PrimaryButton>
 
           <div className={styles.switchRow}>
             {mode === 'existing_account' ? (
               <>
-                <span className={styles.switchPrompt}>Pas encore de compte ?</span>
+                <span className={styles.switchPrompt}>{t('login.noAccount')}</span>
                 <button
                   type="button"
                   onClick={() => { setMode('email_form'); setFeedback(null); }}
                   className={styles.linkButton}
                 >
-                  Créer un compte
+                  {t('login.createAccount')}
                 </button>
               </>
             ) : (
               <>
-                <span className={styles.switchPrompt}>Vous utilisez déjà GetSpecial ?</span>
+                <span className={styles.switchPrompt}>{t('login.alreadyUser')}</span>
                 <button
                   type="button"
                   onClick={() => { setMode('existing_account'); setFeedback(null); }}
                   className={styles.linkButton}
                 >
-                  J&apos;ai déjà un compte
+                  {t('login.haveAccount')}
                 </button>
               </>
             )}
@@ -269,15 +271,15 @@ export default function AuthPage() {
       {/* Mentions Légales en bas */}
       <footer className={styles.footerLegal}>
         <p>
-          En continuant, vous acceptez les{' '}
+          {t('login.legalPrefix')}{' '}
           <Link href="#" className={styles.legalLink}>
-            Conditions Générales
+            {t('login.legalTerms')}
           </Link>{' '}
-          et la{' '}
+          {t('login.legalAnd')}{' '}
           <Link href="#" className={styles.legalLink}>
-            Politique de Confidentialité
+            {t('login.legalPrivacy')}
           </Link>{' '}
-          de GetSpecial.
+          {t('login.legalSuffix')}
         </p>
       </footer>
     </AuthLayout>

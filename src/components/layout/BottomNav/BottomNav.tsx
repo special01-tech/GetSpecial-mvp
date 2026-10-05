@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useLanguage } from '@/i18n';
 import {
   Home,
   MessageSquare,
@@ -15,18 +16,18 @@ import styles from './BottomNav.module.css';
 
 /** Élément de navigation mobile */
 interface NavItem {
-  label: string;
+  labelKey: string;
   href: string;
   icon: LucideIcon;
 }
 
 /** Liens de navigation mobile conformes à la maquette */
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Today', href: '/dashboard', icon: Home },
-  { label: 'Studio', href: '/dashboard/create', icon: PenTool },
-  { label: 'Chat', href: '/dashboard/chat', icon: MessageSquare },
-  { label: 'Planning', href: '/dashboard/planning', icon: Calendar },
-  { label: 'Restaurant', href: '/dashboard/restaurant', icon: Store },
+  { labelKey: 'nav.today', href: '/dashboard', icon: Home },
+  { labelKey: 'nav.studioShort', href: '/dashboard/create', icon: PenTool },
+  { labelKey: 'nav.chat', href: '/dashboard/chat', icon: MessageSquare },
+  { labelKey: 'nav.planning', href: '/dashboard/planning', icon: Calendar },
+  { labelKey: 'nav.restaurant', href: '/dashboard/restaurant', icon: Store },
 ];
 
 /**
@@ -37,6 +38,7 @@ const NAV_ITEMS: NavItem[] = [
  */
 export default function BottomNav() {
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   return (
     <nav className={styles.bottomNav}>
@@ -55,12 +57,12 @@ export default function BottomNav() {
             .join(' ');
 
           return (
-            <li key={item.label}>
+            <li key={item.href}>
               <Link href={item.href} className={classes}>
                 <span className={styles.navIcon}>
                   <Icon size={18} strokeWidth={2} />
                 </span>
-                <span>{item.label}</span>
+                <span>{t(item.labelKey)}</span>
               </Link>
             </li>
           );

@@ -4,6 +4,7 @@ import React from 'react';
 import { Clock, Percent, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
 import { RestaurantOffer, OfferStatus } from '@/services/restaurant/restaurant-offers.data';
 import { PlatformType } from '@/services/planning/planning.data';
+import { useLanguage } from '@/i18n';
 import styles from './OfferCard.module.css';
 
 interface OfferCardProps {
@@ -12,6 +13,7 @@ interface OfferCardProps {
 }
 
 export default function OfferCard({ offer, onClick }: OfferCardProps) {
+  const { t } = useLanguage();
   const getStatusBadge = (status: OfferStatus) => {
     switch (status) {
       case 'active':
@@ -25,14 +27,14 @@ export default function OfferCard({ offer, onClick }: OfferCardProps) {
         return (
           <span className={`${styles.statusBadge} ${styles.statusScheduled}`}>
             <Clock size={11} />
-            <span>Programmée</span>
+            <span>{t('common.components.offerCard.scheduled')}</span>
           </span>
         );
       case 'draft':
         return (
           <span className={`${styles.statusBadge} ${styles.statusDraft}`}>
             <AlertCircle size={11} />
-            <span>Brouillon</span>
+            <span>{t('common.components.offerCard.draft')}</span>
           </span>
         );
       default:

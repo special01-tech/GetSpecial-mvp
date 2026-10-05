@@ -3,6 +3,7 @@
 import React from 'react';
 import { Sun, Moon, Power, Clock } from 'lucide-react';
 import { DaySchedule } from '@/services/onboarding/schedule.types';
+import { useLanguage } from '@/i18n';
 import styles from './OpeningHoursEditor.module.css';
 
 interface OpeningHoursEditorProps {
@@ -11,6 +12,8 @@ interface OpeningHoursEditorProps {
 }
 
 export default function OpeningHoursEditor({ day, onChange }: OpeningHoursEditorProps) {
+  const { t } = useLanguage();
+  const dayName = t(`common.components.openingHoursEditor.days.${day.dayKey}`);
   const toggleClosed = () => {
     onChange({
       ...day,
@@ -30,17 +33,25 @@ export default function OpeningHoursEditor({ day, onChange }: OpeningHoursEditor
       {/* Colonne Jour & Bouton Fermé */}
       <div className={styles.dayInfo}>
         <div className={styles.dayBadge}>
-          <span className={styles.dayLabel}>{day.label}</span>
+          <span className={styles.dayLabel}>{dayName}</span>
         </div>
 
         <button
           type="button"
           onClick={toggleClosed}
           className={`${styles.toggleClosedBtn} ${day.isClosed ? styles.toggleClosedActive : ''}`}
-          title={day.isClosed ? 'Rouvrir cette journée' : 'Marquer comme fermé'}
+          title={
+            day.isClosed
+              ? t('common.components.openingHoursEditor.reopenTitle')
+              : t('common.components.openingHoursEditor.markClosedTitle')
+          }
         >
           <Power size={13} strokeWidth={2.5} />
-          <span>{day.isClosed ? 'Fermé' : 'Ouvert'}</span>
+          <span>
+            {day.isClosed
+              ? t('common.components.openingHoursEditor.closedLabel')
+              : t('common.components.openingHoursEditor.openLabel')}
+          </span>
         </button>
       </div>
 
@@ -48,7 +59,7 @@ export default function OpeningHoursEditor({ day, onChange }: OpeningHoursEditor
       <div className={styles.slotsArea}>
         {day.isClosed ? (
           <div className={styles.closedNotice}>
-            <span>Closed all day</span>
+            <span>{t('common.components.openingHoursEditor.closedAllDay')}</span>
           </div>
         ) : (
           <div className={styles.servicesGrid}>
@@ -56,7 +67,7 @@ export default function OpeningHoursEditor({ day, onChange }: OpeningHoursEditor
             <div className={styles.serviceSlot}>
               <div className={styles.serviceHeader}>
                 <Sun size={13} className={styles.sunIcon} />
-                <span>Lunch</span>
+                <span>{t('common.components.openingHoursEditor.lunch')}</span>
               </div>
               <div className={styles.timeInputs}>
                 <input
@@ -64,7 +75,9 @@ export default function OpeningHoursEditor({ day, onChange }: OpeningHoursEditor
                   value={day.lunchOpen}
                   onChange={(e) => updateField('lunchOpen', e.target.value)}
                   className={styles.timeInput}
-                  aria-label={`Opening hour lunch ${day.label}`}
+                  aria-label={t('common.components.openingHoursEditor.openLunchAria', {
+                    day: dayName,
+                  })}
                 />
                 <span className={styles.timeDash}>–</span>
                 <input
@@ -72,7 +85,9 @@ export default function OpeningHoursEditor({ day, onChange }: OpeningHoursEditor
                   value={day.lunchClose}
                   onChange={(e) => updateField('lunchClose', e.target.value)}
                   className={styles.timeInput}
-                  aria-label={`Closing hour lunch ${day.label}`}
+                  aria-label={t('common.components.openingHoursEditor.closeLunchAria', {
+                    day: dayName,
+                  })}
                 />
               </div>
             </div>
@@ -81,7 +96,7 @@ export default function OpeningHoursEditor({ day, onChange }: OpeningHoursEditor
             <div className={styles.serviceSlot}>
               <div className={styles.serviceHeader}>
                 <Moon size={13} className={styles.moonIcon} />
-                <span>Dinner</span>
+                <span>{t('common.components.openingHoursEditor.dinner')}</span>
               </div>
               <div className={styles.timeInputs}>
                 <input
@@ -89,7 +104,9 @@ export default function OpeningHoursEditor({ day, onChange }: OpeningHoursEditor
                   value={day.dinnerOpen}
                   onChange={(e) => updateField('dinnerOpen', e.target.value)}
                   className={styles.timeInput}
-                  aria-label={`Opening hour dinner ${day.label}`}
+                  aria-label={t('common.components.openingHoursEditor.openDinnerAria', {
+                    day: dayName,
+                  })}
                 />
                 <span className={styles.timeDash}>–</span>
                 <input
@@ -97,7 +114,9 @@ export default function OpeningHoursEditor({ day, onChange }: OpeningHoursEditor
                   value={day.dinnerClose}
                   onChange={(e) => updateField('dinnerClose', e.target.value)}
                   className={styles.timeInput}
-                  aria-label={`Closing hour dinner ${day.label}`}
+                  aria-label={t('common.components.openingHoursEditor.closeDinnerAria', {
+                    day: dayName,
+                  })}
                 />
               </div>
             </div>

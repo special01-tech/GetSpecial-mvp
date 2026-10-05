@@ -12,7 +12,7 @@
 
 .itemRow:hover {
   border-color: var(--color-border-hover);
-  background-color: #FAFAF8;
+  background-color: #F7F7F7;
 }
 
 .iconContainer {
@@ -71,7 +71,7 @@
 .badgePositive {
   background-color: var(--color-primary-subtle);
   color: var(--color-primary);
-  border: 1px solid rgba(27, 67, 50, 0.2);
+  border: 1px solid rgba(22, 163, 74,  0.2);
 }
 
 .badgeNegative {
@@ -81,6 +81,6 @@
 }
 
 .badgeNeutral {
-  background-color: #F0F4F8;
-  color: #2D3748;
+  background-color: #F2F2F2;
+  color: #2E2E2E;
 }

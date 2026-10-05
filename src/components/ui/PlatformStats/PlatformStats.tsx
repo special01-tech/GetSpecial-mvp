@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { PlatformStatItem } from '@/services/insights/insights.data';
+import { useLanguage } from '@/i18n';
 import styles from './PlatformStats.module.css';
 
 interface PlatformStatsProps {
@@ -9,12 +10,16 @@ interface PlatformStatsProps {
 }
 
 export default function PlatformStats({ platforms }: PlatformStatsProps) {
+  const { t } = useLanguage();
   const totalViews = platforms.reduce((acc, p) => acc + p.views, 0);
 
   return (
     <div className={styles.container}>
       {/* Barre de répartition segmentée visuelle */}
-      <div className={styles.segmentedBar} aria-label="Répartition des vues par plateforme">
+      <div
+        className={styles.segmentedBar}
+        aria-label={t('common.components.platformStats.distributionAria')}
+      >
         {platforms.map((p) => (
           <div
             key={p.id}
@@ -23,7 +28,11 @@ export default function PlatformStats({ platforms }: PlatformStatsProps) {
               width: `${(p.views / totalViews) * 100}%`,
               backgroundColor: p.color,
             }}
-            title={`${p.name}: ${p.views.toLocaleString('fr-FR')} vues (${p.percentage}%)`}
+            title={t('common.components.platformStats.segmentTitle', {
+              name: p.name,
+              views: p.views.toLocaleString('fr-FR'),
+              pct: p.percentage,
+            })}
           />
         ))}
       </div>
@@ -37,14 +46,18 @@ export default function PlatformStats({ platforms }: PlatformStatsProps) {
               <div>
                 <span className={styles.name}>{plat.name}</span>
                 <span className={styles.interactionsText}>
-                  {plat.interactions} interactions
+                  {t('common.components.platformStats.interactionsLabel', {
+                    count: plat.interactions,
+                  })}
                 </span>
               </div>
             </div>
 
             <div className={styles.rightCol}>
               <span className={styles.viewsCount}>
-                {plat.views.toLocaleString('fr-FR')} vues
+                {t('common.components.platformStats.viewsLabel', {
+                  views: plat.views.toLocaleString('fr-FR'),
+                })}
               </span>
               <span className={styles.percentagePill}>{plat.percentage}%</span>
             </div>

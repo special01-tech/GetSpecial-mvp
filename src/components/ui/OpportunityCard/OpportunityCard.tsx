@@ -3,6 +3,7 @@
 import React from 'react';
 import { Zap, Clock, Users, ArrowRight, ChevronRight, Radio } from 'lucide-react';
 import { TodayOpportunity, UrgencyLevel } from '@/services/today/today.data';
+import { useLanguage } from '@/i18n';
 import styles from './OpportunityCard.module.css';
 
 interface OpportunityCardProps {
@@ -11,6 +12,7 @@ interface OpportunityCardProps {
 }
 
 export default function OpportunityCard({ opportunity, onClick }: OpportunityCardProps) {
+  const { t } = useLanguage();
   const [showWhy, setShowWhy] = React.useState(false);
   const isHigh = (opportunity.urgency as string) === 'High' || (opportunity.urgency as string) === 'Haute';
 
@@ -77,7 +79,9 @@ export default function OpportunityCard({ opportunity, onClick }: OpportunityCar
             textDecoration: 'underline',
           }}
         >
-          {showWhy ? 'Masquer la justification' : 'Pourquoi cette recommandation ?'}
+          {showWhy
+            ? t('common.components.opportunityCard.hideJustification')
+            : t('common.components.opportunityCard.showJustification')}
         </button>
 
         {showWhy && (
@@ -94,7 +98,7 @@ export default function OpportunityCard({ opportunity, onClick }: OpportunityCar
             }}
           >
             <div style={{ fontWeight: 600, marginBottom: '4px', color: 'var(--color-text-primary)' }}>
-              Faits vérifiés utilisés :
+              {t('common.components.opportunityCard.verifiedFactsTitle')}
             </div>
             {Array.isArray(opportunity.verifiedFacts) && opportunity.verifiedFacts.length > 0 ? (
               <ul style={{ margin: 0, paddingLeft: '16px' }}>
@@ -103,7 +107,10 @@ export default function OpportunityCard({ opportunity, onClick }: OpportunityCar
                 ))}
               </ul>
             ) : (
-              <div>{opportunity.signalOrigin || 'Conditions et offres du restaurant observées ce jour.'}</div>
+              <div>
+                {opportunity.signalOrigin ||
+                  t('common.components.opportunityCard.defaultSignalOrigin')}
+              </div>
             )}
           </div>
         )}
@@ -124,7 +131,7 @@ export default function OpportunityCard({ opportunity, onClick }: OpportunityCar
             color: 'var(--color-primary)',
           }}
         >
-          Créer la campagne <ArrowRight size={14} />
+          {t('common.components.opportunityCard.createCampaign')} <ArrowRight size={14} />
         </span>
       </div>
     </article>

@@ -16,6 +16,7 @@ import {
   Radio,
 } from 'lucide-react';
 import Logo from '@/components/ui/Logo/Logo';
+import { useLanguage } from '@/i18n';
 import WeatherCard from '@/components/ui/WeatherCard/WeatherCard';
 import TodayEventCard from '@/components/ui/TodayEventCard/TodayEventCard';
 import OpportunityCard from '@/components/ui/OpportunityCard/OpportunityCard';
@@ -63,6 +64,7 @@ import styles from './dashboard.module.css';
  */
 export default function DashboardPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [restaurantName, setRestaurantName] = useState('Restaurant');
   const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
@@ -117,16 +119,16 @@ export default function DashboardPage() {
         // Fallback immédiat pour ne jamais bloquer l'affichage
         setIsLiveApi(true);
         setWeather({
-          condition: 'Ciel Dégagé • Austin, TX',
+          condition: t('dashboard.fallback.weatherCondition'),
           temperature: 84,
           tempFahrenheit: 84,
           tempUnit: '°F',
           iconType: 'sun',
-          terraceAdvice: 'Conditions idéales pour le service en terrasse ce midi.',
+          terraceAdvice: t('dashboard.fallback.terraceAdviceNoon'),
         });
         setEvent({
-          title: 'Concerts & Matchs Locaux',
-          time: 'Ce soir',
+          title: t('dashboard.fallback.eventTitle'),
+          time: t('dashboard.fallback.eventTime'),
           distance: '0.8 mi',
           venue: 'Downtown Austin',
           category: 'sports',
@@ -136,16 +138,16 @@ export default function DashboardPage() {
       console.warn('[DASHBOARD_LIVE_SIGNALS_ERROR]', err);
       setIsLiveApi(true);
       setWeather({
-        condition: 'Ciel Dégagé • Austin, TX',
+        condition: t('dashboard.fallback.weatherCondition'),
         temperature: 84,
         tempFahrenheit: 84,
         tempUnit: '°F',
         iconType: 'sun',
-        terraceAdvice: 'Conditions idéales pour le service en terrasse.',
+        terraceAdvice: t('dashboard.fallback.terraceAdvice'),
       });
       setEvent({
-        title: 'Concerts & Matchs Locaux',
-        time: 'Ce soir',
+        title: t('dashboard.fallback.eventTitle'),
+        time: t('dashboard.fallback.eventTime'),
         distance: '0.8 mi',
         venue: 'Downtown Austin',
         category: 'sports',
@@ -210,8 +212,8 @@ export default function DashboardPage() {
     }
     setBannerNotice(
       newState
-        ? 'Emergency Pause active. No automated campaigns will be published.'
-        : 'Live automation active. AI is monitoring signals and scheduling posts.'
+        ? t('dashboard.banner.paused')
+        : t('dashboard.banner.active')
     );
     setTimeout(() => setBannerNotice(null), 4000);
   };
@@ -250,7 +252,7 @@ export default function DashboardPage() {
             </div>
 
             <div className={styles.restaurantMeta}>
-              <span className={styles.welcomePill}>Active Partner</span>
+              <span className={styles.welcomePill}>{t('dashboard.header.activePartner')}</span>
               <h1 className={styles.restaurantName}>{restaurantName}</h1>
             </div>
           </div>
@@ -259,17 +261,17 @@ export default function DashboardPage() {
             type="button"
             onClick={toggleEmergencyPause}
             className={`${styles.pauseButton} ${isPaused ? styles.pausedActive : styles.pauseIdle}`}
-            title={isPaused ? 'Resume automated posting' : 'Emergency pause all automated publishing'}
+            title={isPaused ? t('dashboard.header.resumeTitle') : t('dashboard.header.pauseTitle')}
           >
             {isPaused ? (
               <>
                 <AlertOctagon size={14} />
-                <span>Paused</span>
+                <span>{t('dashboard.header.paused')}</span>
               </>
             ) : (
               <>
                 <Pause size={14} />
-                <span>Pause</span>
+                <span>{t('dashboard.header.pause')}</span>
               </>
             )}
           </button>
@@ -277,9 +279,9 @@ export default function DashboardPage() {
 
         {/* Message d'accueil personnalisé */}
         <div className={styles.welcomeSection}>
-          <h2 className={styles.greetingTitle}>Bonjour !</h2>
+          <h2 className={styles.greetingTitle}>{t('dashboard.greeting.title')}</h2>
           <p className={styles.greetingSubtext}>
-            Voici ce que nous avons découvert pour votre restaurant aujourd&apos;hui.
+            {t('dashboard.greeting.subtitle')}
           </p>
         </div>
 
@@ -287,15 +289,15 @@ export default function DashboardPage() {
         <div
           onClick={() => router.push('/dashboard/create')}
           style={{
-            background: 'linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%)',
-            border: '1px solid #FFEDD5',
+            background: 'linear-gradient(135deg, #FFF3EC 0%, #FFFFFF 100%)',
+            border: '1px solid #FFE0CC',
             borderRadius: 14,
             padding: '12px 16px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(255, 107, 74, 0.08)',
+            boxShadow: '0 2px 8px rgba(255, 90, 0,  0.08)',
             marginBottom: 14,
             transition: 'all 0.2s ease',
           }}
@@ -305,21 +307,21 @@ export default function DashboardPage() {
               width: 36,
               height: 36,
               borderRadius: 10,
-              background: '#FF6B4A',
+              background: '#FF5A00',
               color: '#FFFFFF',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 2px 6px rgba(255, 107, 74, 0.3)',
+              boxShadow: '0 2px 6px rgba(255, 90, 0,  0.3)',
             }}>
               <Sparkles size={18} />
             </div>
             <div>
-              <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#0F172A' }}>
-                Studio Créatif : Générer une affiche & légende à la demande
+              <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#0D0D0D' }}>
+                {t('dashboard.studio.title')}
               </div>
-              <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
-                Choisissez votre offre, votre soirée ou tapez une idée libre pour créer un post en 3s.
+              <div style={{ fontSize: '0.78rem', color: '#6B6B6B' }}>
+                {t('dashboard.studio.subtitle')}
               </div>
             </div>
           </div>
@@ -329,9 +331,9 @@ export default function DashboardPage() {
             gap: 4,
             fontSize: '0.8rem',
             fontWeight: 700,
-            color: '#FF6B4A',
+            color: '#FF5A00',
           }}>
-            <span>Créer</span>
+            <span>{t('dashboard.studio.cta')}</span>
             <ChevronRight size={16} />
           </div>
         </div>
@@ -355,11 +357,11 @@ export default function DashboardPage() {
               backgroundColor: isLiveApi ? '#10B981' : '#F59E0B',
               boxShadow: isLiveApi ? '0 0 10px #10B981' : 'none',
             }} />
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#047857' }}>
-              {isLiveApi ? 'Signaux en direct (Météo & Événements)' : 'Connexion aux signaux...'}
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#15803D' }}>
+              {isLiveApi ? t('dashboard.signals.live') : t('dashboard.signals.connecting')}
             </span>
-            <span style={{ fontSize: 11, color: '#64748B', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              • Auto-sync active (30s)
+            <span style={{ fontSize: 11, color: '#6B6B6B', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              {t('dashboard.signals.autoSync')}
             </span>
           </div>
           <button
@@ -374,16 +376,16 @@ export default function DashboardPage() {
               fontWeight: 600,
               padding: '4px 10px',
               borderRadius: 6,
-              border: '1px solid #CBD5E1',
+              border: '1px solid #D4D4D4',
               background: '#FFFFFF',
               cursor: isSyncing ? 'not-allowed' : 'pointer',
-              color: '#334155',
+              color: '#2E2E2E',
               boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
             }}
-            title="Forcer la synchronisation immédiate des signaux météo et événements"
+            title={t('dashboard.signals.refreshTitle')}
           >
             <RefreshCw size={11} style={{ animation: isSyncing ? 'spin 1s linear infinite' : 'none' }} />
-            <span>{isSyncing ? 'Synchronisation...' : 'Actualiser'}</span>
+            <span>{isSyncing ? t('dashboard.signals.syncing') : t('dashboard.signals.refresh')}</span>
           </button>
         </div>
 
@@ -397,23 +399,23 @@ export default function DashboardPage() {
           <div className={styles.sectionHeader}>
             <div className={styles.headingGroup}>
               <TrendingUp size={18} className={styles.sectionIcon} />
-              <h2 className={styles.sectionHeading}>Today&apos;s Opportunities</h2>
+              <h2 className={styles.sectionHeading}>{t('dashboard.opportunities.title')}</h2>
             </div>
             <div className={styles.headerActions}>
-              <span className={styles.badgeCount}>{opportunities.length} live detected</span>
+              <span className={styles.badgeCount}>{t('dashboard.opportunities.count', { count: opportunities.length })}</span>
             </div>
           </div>
 
           {isLoadingLive && opportunities.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '12px 0' }}>
-              <div style={{ height: 72, borderRadius: 12, background: '#F8FAFC', border: '1px solid #E2E8F0', animation: 'pulse 1.5s infinite' }} />
-              <div style={{ height: 72, borderRadius: 12, background: '#F8FAFC', border: '1px solid #E2E8F0', animation: 'pulse 1.5s infinite' }} />
+              <div style={{ height: 72, borderRadius: 12, background: '#F7F7F7', border: '1px solid #E5E5E5', animation: 'pulse 1.5s infinite' }} />
+              <div style={{ height: 72, borderRadius: 12, background: '#F7F7F7', border: '1px solid #E5E5E5', animation: 'pulse 1.5s infinite' }} />
             </div>
           ) : opportunities.length === 0 ? (
             <EmptyState
-              title="All quiet for today"
-              description="We are continuously monitoring local signals for high-impact opportunities."
-              buttonText="View schedule"
+              title={t('dashboard.opportunities.emptyTitle')}
+              description={t('dashboard.opportunities.emptyDescription')}
+              buttonText={t('dashboard.opportunities.emptyButton')}
               buttonHref="/dashboard/planning"
             />
           ) : (
@@ -435,9 +437,9 @@ export default function DashboardPage() {
             <div className={styles.sectionHeader}>
               <div className={styles.headingGroup}>
                 <Tag size={18} className={styles.sectionIcon} />
-                <h2 className={styles.sectionHeading}>Featured Offer</h2>
+                <h2 className={styles.sectionHeading}>{t('dashboard.offer.title')}</h2>
               </div>
-              <span className={styles.badgeHighlight}>Recommended</span>
+              <span className={styles.badgeHighlight}>{t('dashboard.offer.badge')}</span>
             </div>
 
             <TodayOfferCard offer={offer} onActivateToggle={handleBoostOffer} />

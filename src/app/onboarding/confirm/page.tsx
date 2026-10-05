@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, X, Loader2, ArrowLeft, AlertCircle } from 'lucide-react';
 import Logo from '@/components/ui/Logo/Logo';
+import LanguageToggle from '@/components/ui/LanguageToggle';
+import { useLanguage } from '@/i18n';
 import PrimaryButton from '@/components/ui/PrimaryButton/PrimaryButton';
 import RestaurantCard from '@/components/ui/RestaurantCard/RestaurantCard';
 import { RestaurantSearchResult } from '@/services/restaurant-search/restaurant-search.types';
@@ -22,6 +24,7 @@ import styles from './confirm.module.css';
  */
 export default function ConfirmRestaurantPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [restaurant, setRestaurant] = useState<RestaurantSearchResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,13 +42,13 @@ export default function ConfirmRestaurantPage() {
           setRestaurant({
             id: `rest_user_${Date.now()}`,
             name: newRestName,
-            address: 'Adresse en cours de saisie',
-            city: 'France',
+            address: t('onboarding.confirm.fallbackAddress'),
+            city: t('onboarding.confirm.fallbackCity'),
             country: 'FR',
             latitude: 48.8566,
             longitude: 2.3522,
-            cuisineType: 'Restaurant & Bar',
-            openingHours: '11:30 - 23:00 • Lun - Dim',
+            cuisineType: t('onboarding.confirm.fallbackCuisine'),
+            openingHours: t('onboarding.confirm.fallbackHours'),
             isOpenNow: true,
             photoUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
             photoGallery: [],
@@ -56,7 +59,7 @@ export default function ConfirmRestaurantPage() {
         }
       }
     } catch {
-      setErrorMsg('Impossible de charger les données du restaurant.');
+      setErrorMsg(t('onboarding.confirm.loadError'));
     } finally {
       setIsLoading(false);
     }
@@ -90,7 +93,7 @@ export default function ConfirmRestaurantPage() {
           <button
             onClick={() => router.push('/onboarding/search')}
             className={styles.backButton}
-            aria-label="Retour à la recherche"
+            aria-label={t('onboarding.confirm.backLabel')}
           >
             <ArrowLeft size={18} />
           </button>
@@ -100,13 +103,14 @@ export default function ConfirmRestaurantPage() {
             <span className={styles.stepDotActive} />
             <span className={styles.stepDot} />
           </div>
+          <LanguageToggle compact />
         </header>
 
         {/* État Loading */}
         {isLoading && (
           <div className={styles.stateContainer}>
             <Loader2 size={36} className="spin" style={{ animation: 'spin 1s linear infinite', color: 'var(--color-primary)' }} />
-            <p className={styles.stateText}>Chargement des détails de l&apos;établissement...</p>
+            <p className={styles.stateText}>{t('onboarding.confirm.loading')}</p>
           </div>
         )}
 
@@ -116,7 +120,7 @@ export default function ConfirmRestaurantPage() {
             <AlertCircle size={36} color="var(--color-error)" />
             <p className={styles.stateText}>{errorMsg}</p>
             <PrimaryButton onClick={() => router.push('/onboarding/search')}>
-              Nouvelle recherche
+              {t('onboarding.confirm.newSearch')}
             </PrimaryButton>
           </div>
         )}
@@ -124,9 +128,9 @@ export default function ConfirmRestaurantPage() {
         {/* État Empty */}
         {!isLoading && !errorMsg && !restaurant && (
           <div className={styles.stateContainer}>
-            <p className={styles.stateText}>Aucun restaurant sélectionné.</p>
+            <p className={styles.stateText}>{t('onboarding.confirm.emptyText')}</p>
             <PrimaryButton onClick={() => router.push('/onboarding/search')}>
-              Rechercher mon restaurant
+              {t('onboarding.confirm.searchCta')}
             </PrimaryButton>
           </div>
         )}
@@ -135,9 +139,9 @@ export default function ConfirmRestaurantPage() {
         {!isLoading && !errorMsg && restaurant && (
           <main className={styles.mainContent}>
             <div className={styles.titleArea}>
-              <h1 className={styles.title}>Confirmez les informations de votre établissement</h1>
+              <h1 className={styles.title}>{t('onboarding.confirm.title')}</h1>
               <p className={styles.subtitle}>
-                Vérifiez vos coordonnées avant de personnaliser votre concept et vos horaires.
+                {t('onboarding.confirm.subtitle')}
               </p>
             </div>
 
@@ -153,7 +157,7 @@ export default function ConfirmRestaurantPage() {
                 icon={<Check size={18} strokeWidth={2.5} />}
                 className={styles.confirmBtn}
               >
-                Confirmer et continuer
+                {t('onboarding.confirm.confirmCta')}
               </PrimaryButton>
 
               <button
@@ -161,7 +165,7 @@ export default function ConfirmRestaurantPage() {
                 className={styles.rejectBtn}
               >
                 <ArrowLeft size={16} />
-                <span>Modifier les informations</span>
+                <span>{t('onboarding.confirm.editCta')}</span>
               </button>
             </footer>
           </main>

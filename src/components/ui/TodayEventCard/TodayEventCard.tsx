@@ -15,11 +15,11 @@ export default function TodayEventCard({ event, loading }: TodayEventCardProps) 
     return (
       <div className={styles.card} style={{ minHeight: 110, justifyContent: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#F1F5F9', animation: 'pulse 1.5s infinite' }} />
-          <div style={{ width: 80, height: 18, borderRadius: 12, background: '#F1F5F9', animation: 'pulse 1.5s infinite' }} />
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#F2F2F2', animation: 'pulse 1.5s infinite' }} />
+          <div style={{ width: 80, height: 18, borderRadius: 12, background: '#F2F2F2', animation: 'pulse 1.5s infinite' }} />
         </div>
-        <div style={{ width: '85%', height: 14, borderRadius: 4, background: '#F1F5F9', marginBottom: 6, animation: 'pulse 1.5s infinite' }} />
-        <div style={{ width: '60%', height: 10, borderRadius: 4, background: '#F8FAFC', animation: 'pulse 1.5s infinite' }} />
+        <div style={{ width: '85%', height: 14, borderRadius: 4, background: '#F2F2F2', marginBottom: 6, animation: 'pulse 1.5s infinite' }} />
+        <div style={{ width: '60%', height: 10, borderRadius: 4, background: '#F7F7F7', animation: 'pulse 1.5s infinite' }} />
       </div>
     );
   }

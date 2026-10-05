@@ -12,7 +12,7 @@
   font-size: var(--font-size-base);
   font-weight: 600;
   letter-spacing: -0.01em;
-  box-shadow: 0 6px 20px rgba(27, 67, 50, 0.22);
+  box-shadow: 0 6px 20px rgba(255, 90, 0,  0.22);
   cursor: pointer;
   transition: transform var(--transition-fast),
               background-color var(--transition-fast),
@@ -22,12 +22,12 @@
 .primaryBtn:hover:not(:disabled) {
   background-color: var(--color-primary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(27, 67, 50, 0.3);
+  box-shadow: 0 8px 24px rgba(255, 90, 0,  0.3);
 }
 
 .primaryBtn:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 4px 12px rgba(27, 67, 50, 0.2);
+  box-shadow: 0 4px 12px rgba(22, 163, 74,  0.2);
 }
 
 .primaryBtn:disabled {

@@ -3,6 +3,7 @@
 import React from 'react';
 import { MapPin, Phone, Clock, Star, CheckCircle, Image as ImageIcon } from 'lucide-react';
 import { RestaurantSearchResult } from '@/services/restaurant-search/restaurant-search.types';
+import { useLanguage } from '@/i18n';
 import styles from './RestaurantCard.module.css';
 
 interface RestaurantCardProps {
@@ -11,6 +12,7 @@ interface RestaurantCardProps {
 }
 
 export default function RestaurantCard({ restaurant, className = '' }: RestaurantCardProps) {
+  const { t } = useLanguage();
   const gallery = restaurant.photoGallery && restaurant.photoGallery.length > 0
     ? restaurant.photoGallery
     : [restaurant.photoUrl || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80'];
@@ -30,7 +32,11 @@ export default function RestaurantCard({ restaurant, className = '' }: Restauran
         <div className={styles.topBadges}>
           <span className={`${styles.statusBadge} ${restaurant.isOpenNow !== false ? styles.open : styles.closed}`}>
             <span className={styles.statusDot} />
-            <span>{restaurant.isOpenNow !== false ? 'Ouvert actuellement' : 'Fermé'}</span>
+            <span>
+              {restaurant.isOpenNow !== false
+                ? t('common.components.restaurantCard.openNow')
+                : t('common.components.restaurantCard.closed')}
+            </span>
           </span>
 
           {restaurant.rating && (
@@ -85,7 +91,7 @@ export default function RestaurantCard({ restaurant, className = '' }: Restauran
           <div className={styles.gallerySection}>
             <div className={styles.galleryHeader}>
               <ImageIcon size={14} className={styles.galleryIcon} />
-              <span>Galerie photos</span>
+              <span>{t('common.components.restaurantCard.galleryTitle')}</span>
             </div>
             <div className={styles.galleryGrid}>
               {gallery.slice(0, 3).map((imgUrl, idx) => (
@@ -93,7 +99,10 @@ export default function RestaurantCard({ restaurant, className = '' }: Restauran
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={imgUrl}
-                    alt={`${restaurant.name} photo ${idx + 1}`}
+                    alt={t('common.components.restaurantCard.photoAlt', {
+                      name: restaurant.name,
+                      index: idx + 1,
+                    })}
                     className={styles.galleryThumb}
                   />
                 </div>

@@ -13,10 +13,13 @@ import {
   Sliders,
 } from 'lucide-react';
 import { authClientService } from '@/services/auth/auth.client.service';
+import LanguageToggle from '@/components/ui/LanguageToggle';
+import { useLanguage } from '@/i18n';
 import styles from './settings.module.css';
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [isPaused, setIsPaused] = useState(false);
   const [maxPostsPerDay, setMaxPostsPerDay] = useState('1');
   const [autoApprove, setAutoApprove] = useState(false);
@@ -55,8 +58,8 @@ export default function SettingsPage() {
     }
     setNotice(
       newState
-        ? 'Emergency Pause active. Toutes les publications sont suspendues.'
-        : 'Automatisation active. GetSpecial surveille vos signaux et prépare vos posts.'
+        ? t('settings.pauseOn')
+        : t('settings.pauseOff')
     );
     setTimeout(() => setNotice(null), 4000);
   };
@@ -69,9 +72,9 @@ export default function SettingsPage() {
   return (
     <div className={styles.settingsWrapper}>
       <header className={styles.header}>
-        <h1 className={styles.title}>Paramètres & Sécurité</h1>
+        <h1 className={styles.title}>{t('settings.header.title')}</h1>
         <p className={styles.subtitle}>
-          Gérez vos canaux connectés, vos limites de publication et la sécurité de {restaurantName}.
+          {t('settings.header.subtitle', { name: restaurantName })}
         </p>
       </header>
 
@@ -79,7 +82,7 @@ export default function SettingsPage() {
         <div style={{
           padding: '0.85rem 1.25rem',
           borderRadius: '12px',
-          background: isPaused ? 'rgba(185, 56, 56, 0.12)' : 'rgba(45, 106, 79, 0.12)',
+          background: isPaused ? 'rgba(185, 56, 56, 0.12)' : 'rgba(22, 163, 74,  0.12)',
           color: isPaused ? 'var(--color-error)' : 'var(--color-success)',
           marginBottom: '1.5rem',
           fontWeight: 500,
@@ -93,15 +96,15 @@ export default function SettingsPage() {
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <ShieldAlert className={styles.sectionIcon} size={22} />
-          <h2 className={styles.sectionTitle}>Disjoncteur d&apos;Urgence (Emergency Pause)</h2>
+          <h2 className={styles.sectionTitle}>{t('settings.emergency.title')}</h2>
         </div>
         <div className={styles.cardRow}>
           <div>
             <div className={styles.rowLabel}>
-              {isPaused ? 'Publications totalement suspendues' : 'Mode normal actif'}
+              {isPaused ? t('settings.emergency.paused') : t('settings.emergency.normal')}
             </div>
             <div className={styles.rowDescription}>
-              En cas de rush imprévu ou de fermeture temporaire, suspendez toutes les publications d&apos;un simple tap.
+              {t('settings.emergency.description')}
             </div>
           </div>
           <button
@@ -109,7 +112,7 @@ export default function SettingsPage() {
             onClick={toggleEmergencyPause}
             className={isPaused ? styles.pauseToggleActive : styles.pauseToggleIdle}
           >
-            {isPaused ? 'Reprendre l’assistant' : 'Mettre en Pause'}
+            {isPaused ? t('settings.emergency.resume') : t('settings.emergency.pause')}
           </button>
         </div>
       </section>
@@ -118,36 +121,36 @@ export default function SettingsPage() {
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <Share2 className={styles.sectionIcon} size={22} />
-          <h2 className={styles.sectionTitle}>Canaux de Diffusion Connectés</h2>
+          <h2 className={styles.sectionTitle}>{t('settings.channels.title')}</h2>
         </div>
 
         <div className={styles.cardRow}>
           <div>
             <div className={styles.rowLabel}>TikTok (@getspecial_app)</div>
-            <div className={styles.rowDescription}>Connecté via passerelle unifiée Zernio</div>
+            <div className={styles.rowDescription}>{t('settings.channels.tiktokDescription')}</div>
           </div>
           <span className={styles.badgeConnected}>
-            <CheckCircle2 size={14} /> Connecté
+            <CheckCircle2 size={14} /> {t('settings.channels.connected')}
           </span>
         </div>
 
         <div className={styles.cardRow}>
           <div>
             <div className={styles.rowLabel}>Instagram Business</div>
-            <div className={styles.rowDescription}>Prêt pour liaison directe ou publication guidée</div>
+            <div className={styles.rowDescription}>{t('settings.channels.instagramDescription')}</div>
           </div>
           <span className={styles.badgeConnected}>
-            <CheckCircle2 size={14} /> Prêt
+            <CheckCircle2 size={14} /> {t('settings.channels.ready')}
           </span>
         </div>
 
         <div className={styles.cardRow}>
           <div>
             <div className={styles.rowLabel}>Facebook & Google Business</div>
-            <div className={styles.rowDescription}>Synchronisation des fiches locales</div>
+            <div className={styles.rowDescription}>{t('settings.channels.facebookGoogleDescription')}</div>
           </div>
           <span className={styles.badgeDisconnected}>
-            Liaison optionnelle
+            {t('settings.channels.optional')}
           </span>
         </div>
       </section>
@@ -156,14 +159,14 @@ export default function SettingsPage() {
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <Sliders className={styles.sectionIcon} size={22} />
-          <h2 className={styles.sectionTitle}>Règles Anti-Fatigue & Fréquence</h2>
+          <h2 className={styles.sectionTitle}>{t('settings.frequency.title')}</h2>
         </div>
 
         <div className={styles.cardRow}>
           <div>
-            <div className={styles.rowLabel}>Plafond de publication quotidienne</div>
+            <div className={styles.rowLabel}>{t('settings.frequency.capLabel')}</div>
             <div className={styles.rowDescription}>
-              Limite le nombre de posts automatiques par jour pour ne jamais lasser votre audience.
+              {t('settings.frequency.capDescription')}
             </div>
           </div>
           <select
@@ -177,20 +180,20 @@ export default function SettingsPage() {
               color: 'var(--color-text-primary)',
             }}
           >
-            <option value="1">1 post par jour (Recommandé)</option>
-            <option value="2">2 posts par jour max</option>
+            <option value="1">{t('settings.frequency.onePerDay')}</option>
+            <option value="2">{t('settings.frequency.twoPerDay')}</option>
           </select>
         </div>
 
         <div className={styles.cardRow}>
           <div>
-            <div className={styles.rowLabel}>Validation obligatoire par le gérant</div>
+            <div className={styles.rowLabel}>{t('settings.frequency.validationLabel')}</div>
             <div className={styles.rowDescription}>
-              Rien n&apos;est publié sans votre approbation explicite sur l&apos;écran Today.
+              {t('settings.frequency.validationDescription')}
             </div>
           </div>
           <span className={styles.badgeConnected}>
-            <CheckCircle2 size={14} /> Strictement actif
+            <CheckCircle2 size={14} /> {t('settings.frequency.strictlyActive')}
           </span>
         </div>
       </section>
@@ -198,13 +201,22 @@ export default function SettingsPage() {
       {/* Déconnexion */}
       <section className={styles.section} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <div className={styles.rowLabel}>Session utilisateur</div>
-          <div className={styles.rowDescription}>Déconnecter l&apos;appareil actuel de votre compte GetSpecial.</div>
+          <div className={styles.rowLabel}>{t('settings.session.label')}</div>
+          <div className={styles.rowDescription}>{t('settings.session.description')}</div>
         </div>
         <button type="button" onClick={handleLogout} className={styles.logoutBtn}>
           <LogOut size={16} />
-          <span>Déconnexion</span>
+          <span>{t('settings.session.logout')}</span>
         </button>
+      </section>
+
+      {/* Langue de l'interface */}
+      <section className={styles.section} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <div className={styles.rowLabel}>{t('settings.language.title')}</div>
+          <div className={styles.rowDescription}>{t('settings.language.description')}</div>
+        </div>
+        <LanguageToggle />
       </section>
     </div>
   );

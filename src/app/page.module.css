@@ -101,7 +101,7 @@
 @media (min-width: 768px) {
   .screenWrapper {
     padding: var(--space-10) var(--space-6);
-    background: radial-gradient(circle at 50% 10%, #F1F4F2 0%, var(--color-bg-app) 100%);
+    background: radial-gradient(circle at 50% 10%, #F2F2F2 0%, var(--color-bg-app) 100%);
   }
 
   .container {

@@ -9,9 +9,11 @@ import {
   Share2,
   Plus,
   CheckCircle2,
+  Sparkles,
 } from 'lucide-react';
 import OfferCard from '@/components/ui/OfferCard/OfferCard';
 import OfferForm from '@/components/ui/OfferForm/OfferForm';
+import { useLanguage } from '@/i18n';
 import {
   RestaurantOffer,
   INITIAL_RESTAURANT_OFFERS,
@@ -42,6 +44,7 @@ import styles from '../restaurant.module.css';
  * - titre, description, image, réduction, date, heure, plateformes
  */
 export default function RestaurantOffersPage() {
+  const { t } = useLanguage();
   const [restaurantName, setRestaurantName] = useState('Le Petit Bistrot');
   const [offers, setOffers] = useState<RestaurantOffer[]>(INITIAL_RESTAURANT_OFFERS);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
@@ -88,7 +91,7 @@ export default function RestaurantOffersPage() {
       }
     }
     setIsOfferModalOpen(false);
-    setSavedNotice(`Offre "${newOffer.name}" créée et enregistrée avec succès.`);
+    setSavedNotice(t('restaurant.offers.created', { name: newOffer.name }));
     setTimeout(() => setSavedNotice(null), 3500);
   };
 
@@ -103,7 +106,7 @@ export default function RestaurantOffersPage() {
             </div>
             <div>
               <h1 className={styles.headerTitle}>{restaurantName}</h1>
-              <p className={styles.headerSubtitle}>Gestion de l&apos;établissement & IA</p>
+              <p className={styles.headerSubtitle}>{t('restaurant.header.subtitle')}</p>
             </div>
           </div>
         </header>
@@ -117,25 +120,25 @@ export default function RestaurantOffersPage() {
         )}
 
         {/* Navigation Interne (Tabs) */}
-        <nav className={styles.tabsNav} aria-label="Sections du restaurant">
+        <nav className={styles.tabsNav} aria-label={t('restaurant.tabs.label')}>
           <Link href="/dashboard/restaurant" className={styles.tabBtn}>
             <Store size={14} />
-            <span>Profil</span>
+            <span>{t('restaurant.tabs.profile')}</span>
           </Link>
 
           <Link href="/dashboard/restaurant/offers" className={`${styles.tabBtn} ${styles.tabActive}`}>
             <Tag size={14} />
-            <span>Offres</span>
+            <span>{t('restaurant.tabs.offers')}</span>
           </Link>
 
           <Link href="/dashboard/restaurant/events" className={styles.tabBtn}>
             <Calendar size={14} />
-            <span>Événements</span>
+            <span>{t('restaurant.tabs.events')}</span>
           </Link>
 
           <Link href="/dashboard/restaurant/accounts" className={styles.tabBtn}>
             <Share2 size={14} />
-            <span>Comptes</span>
+            <span>{t('restaurant.tabs.accounts')}</span>
           </Link>
         </nav>
 
@@ -144,9 +147,12 @@ export default function RestaurantOffersPage() {
           {/* Header d'actions des offres */}
           <div className={styles.offersHeaderRow}>
             <div>
-              <h2 className={styles.tabSectionTitle}>Offres spéciales & promos</h2>
+              <h2 className={styles.tabSectionTitle}>{t('restaurant.offers.title')}</h2>
               <p className={styles.tabSectionSubtitle}>
-                {offers.length} offre{offers.length > 1 ? 's' : ''} configurée{offers.length > 1 ? 's' : ''} pour votre restaurant
+                {t('restaurant.offers.summary', {
+                  count: offers.length,
+                  plural: offers.length > 1 ? 's' : '',
+                })}
               </p>
             </div>
 
@@ -161,14 +167,14 @@ export default function RestaurantOffersPage() {
                   borderRadius: 10,
                   fontSize: 13,
                   fontWeight: 600,
-                  backgroundColor: '#FFF7ED',
-                  border: '1px solid #FFEDD5',
-                  color: '#EA580C',
+                  backgroundColor: '#FFF3EC',
+                  border: '1px solid #FFE0CC',
+                  color: '#E04F00',
                   textDecoration: 'none',
                 }}
               >
                 <Sparkles size={14} strokeWidth={1.75} />
-                <span>Studio Affiche & Légende</span>
+                <span>{t('restaurant.offers.studio')}</span>
               </Link>
 
               <button
@@ -177,7 +183,7 @@ export default function RestaurantOffersPage() {
                 className={styles.addOfferBtn}
               >
                 <Plus size={15} />
-                <span>+ Ajouter une offre</span>
+                <span>{t('restaurant.offers.add')}</span>
               </button>
             </div>
           </div>
@@ -189,7 +195,7 @@ export default function RestaurantOffersPage() {
                 key={offer.id}
                 offer={offer}
                 onClick={(selected) => {
-                  setSavedNotice(`Offre "${selected.name}" sélectionnée.`);
+                  setSavedNotice(t('restaurant.offers.selected', { name: selected.name }));
                   setTimeout(() => setSavedNotice(null), 3000);
                 }}
               />

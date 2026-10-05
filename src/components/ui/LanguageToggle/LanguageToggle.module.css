@@ -1,0 +1,38 @@
+/* LanguageToggle — contrôle segmenté FR / EN */
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+}
+
+.option {
+  border: none;
+  cursor: pointer;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  background: transparent;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.option:hover {
+  color: var(--color-text-primary);
+}
+
+.option.active {
+  color: var(--color-on-primary);
+  background: var(--color-primary);
+}
+
+.compact .option {
+  padding: 4px 9px;
+}

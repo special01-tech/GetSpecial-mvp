@@ -14,6 +14,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { RestaurantEvent, EventCategory } from '@/services/restaurant/restaurant-events.data';
+import { useLanguage } from '@/i18n';
 import styles from './EventCard.module.css';
 
 interface EventCardProps {
@@ -31,6 +32,7 @@ export default function EventCard({
 }: EventCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   // Close menu on outside click
   useEffect(() => {
@@ -61,15 +63,15 @@ export default function EventCard({
   const getCategoryLabel = (cat: EventCategory) => {
     switch (cat) {
       case 'concert':
-        return 'Concert';
+        return t('common.eventCategories.concert');
       case 'sport':
-        return 'Sport / Match';
+        return t('common.eventCategories.sport');
       case 'festival':
-        return 'Fête / Festival';
+        return t('common.eventCategories.festival');
       case 'special_day':
-        return 'Jour Férié';
+        return t('common.eventCategories.special_day');
       default:
-        return 'Culture';
+        return t('common.eventCategories.culture');
     }
   };
 
@@ -112,10 +114,18 @@ export default function EventCard({
             className={`${styles.activeTogglePill} ${
               event.isActive ? styles.pillActive : styles.pillInactive
             }`}
-            title={event.isActive ? 'Désactiver cet événement' : 'Activer cet événement'}
+            title={
+              event.isActive
+                ? t('common.components.eventCard.disableTitle')
+                : t('common.components.eventCard.enableTitle')
+            }
           >
             <span className={styles.statusDot} />
-            <span>{event.isActive ? 'Actif' : 'Désactivé'}</span>
+            <span>
+              {event.isActive
+                ? t('common.components.eventCard.active')
+                : t('common.components.eventCard.inactive')}
+            </span>
           </button>
         </div>
 
@@ -144,7 +154,7 @@ export default function EventCard({
           type="button"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           className={styles.menuTriggerBtn}
-          aria-label="Actions de l'événement"
+          aria-label={t('common.components.eventCard.actionsAria')}
         >
           <MoreVertical size={16} />
         </button>
@@ -160,7 +170,7 @@ export default function EventCard({
               className={styles.dropdownItem}
             >
               <Edit2 size={13} />
-              <span>Modifier</span>
+              <span>{t('common.components.eventCard.edit')}</span>
             </button>
 
             <button
@@ -172,7 +182,11 @@ export default function EventCard({
               className={styles.dropdownItem}
             >
               <Power size={13} />
-              <span>{event.isActive ? 'Désactiver' : 'Activer'}</span>
+              <span>
+                {event.isActive
+                  ? t('common.components.eventCard.disable')
+                  : t('common.components.eventCard.enable')}
+              </span>
             </button>
 
             <button
@@ -184,7 +198,7 @@ export default function EventCard({
               className={`${styles.dropdownItem} ${styles.dropdownItemDanger}`}
             >
               <Trash2 size={13} />
-              <span>Supprimer</span>
+              <span>{t('common.components.eventCard.delete')}</span>
             </button>
           </div>
         )}

@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { Clock, CheckCircle2, AlertCircle } from 'lucide-react';
-import { PlanningStatus, PLANNING_STATUS_LABELS } from '@/services/planning/planning.data';
+import { PlanningStatus } from '@/services/planning/planning.data';
+import { useLanguage } from '@/i18n';
 import styles from './StatusBadge.module.css';
 
 interface StatusBadgeProps {
@@ -11,6 +12,8 @@ interface StatusBadgeProps {
 }
 
 export default function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
+  const { t } = useLanguage();
+
   const getIcon = () => {
     switch (status) {
       case 'programmed':
@@ -40,7 +43,7 @@ export default function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
       }`}
     >
       {getIcon()}
-      <span>{PLANNING_STATUS_LABELS[status]}</span>
+      <span>{t(`common.planningStatus.${status}`)}</span>
     </span>
   );
 }

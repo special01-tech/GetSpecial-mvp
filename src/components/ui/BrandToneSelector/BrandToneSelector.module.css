@@ -56,14 +56,14 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: var(--color-bg-app, #F8FAFC);
-  color: #64748B;
+  background: var(--color-bg-app, #F7F7F7);
+  color: #6B6B6B;
   transition: all 0.2s ease;
 }
 
 .toneSelected .iconWrapper {
-  background: var(--color-primary-light, #EDF7F2);
-  color: var(--color-primary, #1B4332);
+  background: var(--color-primary-light, #FFF0E8);
+  color: var(--color-primary, #FF5A00);
 }
 
 .checkCircle {

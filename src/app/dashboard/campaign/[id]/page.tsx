@@ -17,12 +17,14 @@ import Logo from '@/components/ui/Logo/Logo';
 import CampaignDetail from '@/components/ui/CampaignDetail/CampaignDetail';
 import PrimaryButton from '@/components/ui/PrimaryButton/PrimaryButton';
 import { MOCK_CAMPAIGN_DETAIL, CampaignData } from '@/services/campaign/campaign.data';
+import { useLanguage } from '@/i18n';
 import styles from './campaign-page.module.css';
 
 export default function CampaignDetailPage() {
   const router = useRouter();
   const params = useParams();
   const campaignId = (params?.id as string) || 'camp_wings_50';
+  const { t } = useLanguage();
 
   const [campaign, setCampaign] = useState<CampaignData>(MOCK_CAMPAIGN_DETAIL);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -54,14 +56,14 @@ export default function CampaignDetailPage() {
             const p = json.data;
             setCampaign({
               id: p.id,
-              title: p.text.split('\n')[0]?.slice(0, 50) || 'Campagne en direct',
-              discount: 'Special Offer',
+              title: p.text.split('\n')[0]?.slice(0, 50) || t('content.campaignDetail.fallbackTitle'),
+              discount: t('content.campaignDetail.fallbackDiscount'),
               description: p.text,
-              timeSlot: 'Today',
-              publishTime: 'Next optimal slot',
+              timeSlot: t('content.campaignDetail.fallbackSlot'),
+              publishTime: t('content.campaignDetail.fallbackPublish'),
               imageUrl: p.imageUrl || MOCK_CAMPAIGN_DETAIL.imageUrl,
               platforms: [p.platform || 'instagram'],
-              opportunityExplanation: Array.isArray(p.verifiedFacts) ? p.verifiedFacts.join(' • ') : 'Généré à partir des signaux réels du restaurant.',
+              opportunityExplanation: Array.isArray(p.verifiedFacts) ? p.verifiedFacts.join(' • ') : t('content.campaignDetail.fallbackExplanation'),
               status: p.status || 'pending_approval',
               scheduledDate: new Date().toISOString().split('T')[0],
               scheduledTime: '17:30',
@@ -80,14 +82,14 @@ export default function CampaignDetailPage() {
             const p = json.data;
             setCampaign({
               id: p.id,
-              title: p.text.split('\n')[0]?.slice(0, 50) || 'Campagne en direct',
-              discount: 'Special Offer',
+              title: p.text.split('\n')[0]?.slice(0, 50) || t('content.campaignDetail.fallbackTitle'),
+              discount: t('content.campaignDetail.fallbackDiscount'),
               description: p.text,
-              timeSlot: 'Today',
-              publishTime: 'Next optimal slot',
+              timeSlot: t('content.campaignDetail.fallbackSlot'),
+              publishTime: t('content.campaignDetail.fallbackPublish'),
               imageUrl: p.imageUrl || MOCK_CAMPAIGN_DETAIL.imageUrl,
               platforms: [p.platform || 'instagram'],
-              opportunityExplanation: Array.isArray(p.verifiedFacts) ? p.verifiedFacts.join(' • ') : 'Généré à partir des signaux réels du restaurant.',
+              opportunityExplanation: Array.isArray(p.verifiedFacts) ? p.verifiedFacts.join(' • ') : t('content.campaignDetail.fallbackExplanation'),
               status: p.status || 'pending_approval',
               scheduledDate: new Date().toISOString().split('T')[0],
               scheduledTime: '17:30',
@@ -142,7 +144,7 @@ export default function CampaignDetailPage() {
     setIsLoading(false);
     setFeedback({
       type: 'success',
-      message: '🎉 Campagne approuvée et mise en file d\'attente !',
+      message: t('content.campaignDetail.feedback.approved'),
     });
 
     setTimeout(() => {
@@ -165,7 +167,7 @@ export default function CampaignDetailPage() {
       });
       const approveJson = await approveRes.json();
       if (!approveJson.success) {
-        throw new Error(approveJson.error || 'Erreur lors de la validation preflight');
+        throw new Error(approveJson.error || t('content.campaignDetail.feedback.preflightError'));
       }
 
       await fetch('/api/publications/run', { method: 'POST' });
@@ -173,7 +175,7 @@ export default function CampaignDetailPage() {
       setCampaign((prev) => ({ ...prev, status: 'published' }));
       setFeedback({
         type: 'success',
-        message: '🚀 Campagne publiée avec succès sur vos canaux !',
+        message: t('content.campaignDetail.feedback.published'),
       });
       setTimeout(() => {
         router.push('/dashboard/planning');
@@ -181,7 +183,9 @@ export default function CampaignDetailPage() {
     } catch (err: any) {
       setFeedback({
         type: 'info',
-        message: `Alerte : ${err.message || 'Contrôle preflight actif'}`,
+        message: t('content.campaignDetail.feedback.alert', {
+          error: err.message || t('content.campaignDetail.feedback.preflightDefault'),
+        }),
       });
     } finally {
       setIsLoading(false);
@@ -232,7 +236,7 @@ export default function CampaignDetailPage() {
     setIsScheduleModalOpen(false);
     setFeedback({
       type: 'success',
-      message: `🕒 Campaign scheduled for publication on ${scheduledDate} at ${scheduledTime}.`,
+      message: t('content.campaignDetail.feedback.scheduled', { date: scheduledDate, time: scheduledTime }),
     });
   };
 
@@ -263,13 +267,13 @@ export default function CampaignDetailPage() {
         }));
         setFeedback({
           type: 'info',
-          message: '✨ Nouveau texte généré en direct par l\'API !',
+          message: t('content.campaignDetail.feedback.regenerated'),
         });
       }
     } catch {
       setFeedback({
         type: 'info',
-        message: '✨ Texte régénéré.',
+        message: t('content.campaignDetail.feedback.regeneratedFallback'),
       });
     } finally {
       setIsLoading(false);
@@ -289,13 +293,13 @@ export default function CampaignDetailPage() {
           <button
             onClick={() => router.push('/dashboard')}
             className={styles.backButton}
-            aria-label="Retour au dashboard"
+            aria-label={t('content.campaignDetail.backLabel')}
           >
             <ArrowLeft size={18} />
           </button>
           <Logo size="md" showTagline={false} />
           <div className={styles.campaignBadge}>
-            <span>Campagne IA</span>
+            <span>{t('content.campaignDetail.badge')}</span>
           </div>
         </header>
 
@@ -331,7 +335,7 @@ export default function CampaignDetailPage() {
                 }
                 className={styles.approveBtn}
               >
-                {campaign.status === 'published' ? 'Campagne Déjà Publiée' : 'Publier Maintenant'}
+                {campaign.status === 'published' ? t('content.campaignDetail.alreadyPublished') : t('content.campaignDetail.publishNow')}
               </PrimaryButton>
 
               <button
@@ -349,7 +353,7 @@ export default function CampaignDetailPage() {
                   cursor: 'pointer',
                 }}
               >
-                {campaign.status === 'approved' ? '✓ Approuvée (En attente)' : 'Approuver uniquement'}
+                {campaign.status === 'approved' ? t('content.campaignDetail.approvedPending') : t('content.campaignDetail.approveOnly')}
               </button>
             </div>
 
@@ -361,7 +365,7 @@ export default function CampaignDetailPage() {
                 className={styles.secondaryActionBtn}
               >
                 <Calendar size={15} className={styles.btnIcon} />
-                <span>Programmer</span>
+                <span>{t('content.campaignDetail.scheduleBtn')}</span>
               </button>
 
               <button
@@ -371,7 +375,7 @@ export default function CampaignDetailPage() {
                 className={styles.secondaryActionBtn}
               >
                 <RotateCcw size={15} className={styles.btnIcon} />
-                <span>Régénérer</span>
+                <span>{t('content.campaignDetail.regenerateBtn')}</span>
               </button>
             </div>
 
@@ -382,7 +386,7 @@ export default function CampaignDetailPage() {
               className={styles.cancelBtn}
             >
               <X size={15} />
-              <span>Annuler</span>
+              <span>{t('content.campaignDetail.cancelBtn')}</span>
             </button>
           </div>
         </main>
@@ -395,13 +399,13 @@ export default function CampaignDetailPage() {
             <div className={styles.modalHeader}>
               <div className={styles.modalTitleRow}>
                 <Calendar size={18} className={styles.modalCalendarIcon} />
-                <h3 className={styles.modalTitle}>Programmer la publication</h3>
+                <h3 className={styles.modalTitle}>{t('content.campaignDetail.modal.title')}</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsScheduleModalOpen(false)}
                 className={styles.closeModalBtn}
-                aria-label="Fermer"
+                aria-label={t('content.campaignDetail.modal.close')}
               >
                 <X size={16} />
               </button>
@@ -409,12 +413,12 @@ export default function CampaignDetailPage() {
 
             <div className={styles.modalBody}>
               <p className={styles.modalExplanation}>
-                Choisissez le créneau optimal pour déclencher la publication sur vos réseaux.
+                {t('content.campaignDetail.modal.explanation')}
               </p>
 
               <div className={styles.fieldGroup}>
                 <label htmlFor="scheduleDateInput" className={styles.fieldLabel}>
-                  Date de diffusion
+                  {t('content.campaignDetail.modal.dateLabel')}
                 </label>
                 <input
                   id="scheduleDateInput"
@@ -427,7 +431,7 @@ export default function CampaignDetailPage() {
 
               <div className={styles.fieldGroup}>
                 <label htmlFor="scheduleTimeInput" className={styles.fieldLabel}>
-                  Heure de publication
+                  {t('content.campaignDetail.modal.timeLabel')}
                 </label>
                 <input
                   id="scheduleTimeInput"
@@ -445,10 +449,10 @@ export default function CampaignDetailPage() {
                 onClick={() => setIsScheduleModalOpen(false)}
                 className={styles.modalCancelBtn}
               >
-                Annuler
+                {t('content.campaignDetail.modal.cancel')}
               </button>
               <PrimaryButton onClick={handleConfirmSchedule} fullWidth={false}>
-                Confirmer l&apos;horaire
+                {t('content.campaignDetail.modal.confirm')}
               </PrimaryButton>
             </div>
           </div>

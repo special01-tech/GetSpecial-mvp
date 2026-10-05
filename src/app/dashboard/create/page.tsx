@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { INITIAL_RESTAURANT_OFFERS, RestaurantOffer } from '@/services/restaurant/restaurant-offers.data';
 import { INITIAL_RESTAURANT_EVENTS, RestaurantEvent } from '@/services/restaurant/restaurant-events.data';
+import { useLanguage } from '@/i18n';
 import styles from './create.module.css';
 
 type SourceType = 'offer' | 'event' | 'custom';
@@ -35,6 +36,7 @@ type VisualStyle = 'gourmet' | 'festive' | 'chic' | 'deal';
 function StudioCreateContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
 
   const [restaurantName, setRestaurantName] = useState('Le Petit Bistrot');
   const [restaurantId, setRestaurantId] = useState('rest_demo_austin_1');
@@ -129,7 +131,11 @@ function StudioCreateContent() {
       const firstOffer = availableOffers[0];
       setGeneratedPost({
         title: firstOffer.name,
-        caption: `OFFRE SPÉCIALE : ${firstOffer.name} !\n\n${firstOffer.description}\n\nFormule exclusive : ${firstOffer.discount || 'Offre du jour'}\n\nRendez-vous au restaurant ce soir !\nRéservez votre table dès maintenant.\n\n#restaurant #foodie #bonneadresse #faitmaison`,
+        caption: t('content.studio.captions.initial', {
+          offer: firstOffer.name,
+          description: firstOffer.description,
+          deal: firstOffer.discount || t('content.studio.captions.initialDefaultDeal'),
+        }),
         imageUrl: firstOffer.image || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80',
         alternativeImages: [
           'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80',
@@ -151,17 +157,23 @@ function StudioCreateContent() {
 
     if (sourceType === 'offer') {
       const targetOffer = availableOffers.find((o) => o.id === selectedOfferId) || availableOffers[0];
-      titleToUse = targetOffer?.name || 'Offre Spéciale du Chef';
-      descToUse = targetOffer?.description || 'Formule exclusive à découvrir aujourd’hui.';
+      titleToUse = targetOffer?.name || t('content.studio.fallbacks.offerTitle');
+      descToUse = targetOffer?.description || t('content.studio.fallbacks.offerDesc');
       discountToUse = targetOffer?.discount || '-20%';
     } else if (sourceType === 'event') {
       const targetEvent = availableEvents.find((e) => e.id === selectedEventId) || availableEvents[0];
-      titleToUse = targetEvent?.title || 'Événement Spécial';
-      descToUse = targetEvent?.description || `Rendez-vous le ${targetEvent?.date || 'ce soir'} à l'établissement !`;
-      discountToUse = targetEvent?.time ? `Ce soir ${targetEvent.time}` : 'Événement';
+      titleToUse = targetEvent?.title || t('content.studio.fallbacks.eventTitle');
+      descToUse =
+        targetEvent?.description ||
+        t('content.studio.fallbacks.eventDesc', {
+          date: targetEvent?.date || t('content.studio.fallbacks.eventDateFallback'),
+        });
+      discountToUse = targetEvent?.time
+        ? t('content.studio.fallbacks.eventTimeBadge', { time: targetEvent.time })
+        : t('content.studio.fallbacks.eventBadge');
     } else {
-      titleToUse = customTitle.trim() || 'Menu du Jour & Suggestions';
-      descToUse = customDescription.trim() || 'Venez découvrir notre sélection fraîche du marché concoctée par le chef.';
+      titleToUse = customTitle.trim() || t('content.studio.fallbacks.customTitle');
+      descToUse = customDescription.trim() || t('content.studio.fallbacks.customDesc');
       discountToUse = customDiscount.trim() || undefined;
     }
 
@@ -192,7 +204,7 @@ function StudioCreateContent() {
           discountValue: d.discountValue || discountToUse,
         });
         setActiveImgIndex(0);
-        setNotice('Affiche & Légende générées avec succès !');
+        setNotice(t('content.studio.notices.generated'));
         setTimeout(() => setNotice(null), 3500);
       }
     } catch (err) {
@@ -217,16 +229,22 @@ function StudioCreateContent() {
   const handleRegenerateCaption = () => {
     if (!generatedPost) return;
     const variations = [
-      `${generatedPost.title} à l'honneur chez ${restaurantName} !\n\nUne expérience culinaire unique à partager sans modération.\n\n${restaurantName}\nRéservez votre table en quelques clics ou venez directement !\n\n#restaurant #foodie #lepetitbistrot #bonneadresse`,
-      `ALERTE GOURMANDE chez ${restaurantName} !\n\n${generatedPost.title} est disponible dès aujourd'hui.\n${generatedPost.discountValue ? `Formule exclusive : ${generatedPost.discountValue}\n` : ''}\nEnvie de vous régaler ? On vous garde une table !\n\n#foodlover #restaurant #tapas #gastronomie`,
-      `Ne manquez pas : ${generatedPost.title} !\n\nAmbiance chaleureuse, produits frais et moments de partage garantis chez ${restaurantName}.\n\nVenez nous rendre visite ce midi ou ce soir.\nPlus d'infos en message ou sur place !\n\n#foodies #restau #paris #faitmaison`,
+      t('content.studio.captions.v1', { title: generatedPost.title, restaurant: restaurantName }),
+      t('content.studio.captions.v2', {
+        title: generatedPost.title,
+        restaurant: restaurantName,
+        discountLine: generatedPost.discountValue
+          ? t('content.studio.captions.v2discountLine', { discount: generatedPost.discountValue })
+          : '',
+      }),
+      t('content.studio.captions.v3', { title: generatedPost.title, restaurant: restaurantName }),
     ];
     const newCaption = variations[Math.floor(Math.random() * variations.length)];
     setGeneratedPost({
       ...generatedPost,
       caption: newCaption,
     });
-    setNotice('Légende reformulée avec succès.');
+    setNotice(t('content.studio.notices.captionRegenerated'));
     setTimeout(() => setNotice(null), 2500);
   };
 
@@ -242,12 +260,12 @@ function StudioCreateContent() {
           body: JSON.stringify({ postId: generatedPost.id, channel: platform }),
         });
       }
-      setNotice(`Publication diffusée en direct sur ${platform.toUpperCase()} avec succès !`);
+      setNotice(t('content.studio.notices.publishedLive', { platform: platform.toUpperCase() }));
       setTimeout(() => {
         router.push('/dashboard/planning');
       }, 1200);
     } catch {
-      setNotice('Post validé et ajouté au calendrier.');
+      setNotice(t('content.studio.notices.validated'));
     } finally {
       setIsGenerating(false);
     }
@@ -257,7 +275,7 @@ function StudioCreateContent() {
   const handleScheduleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsScheduleOpen(false);
-    setNotice(`Affiche programmée pour diffusion le ${scheduledDate} à ${scheduledTime}.`);
+    setNotice(t('content.studio.notices.scheduled', { date: scheduledDate, time: scheduledTime }));
     setTimeout(() => {
       router.push('/dashboard/planning');
     }, 1200);
@@ -274,16 +292,16 @@ function StudioCreateContent() {
                 <Sparkles size={22} />
               </div>
               <div>
-                <h1 className={styles.pageTitle}>Studio Créatif IA</h1>
+                <h1 className={styles.pageTitle}>{t('content.studio.title')}</h1>
                 <p className={styles.pageSubtitle}>
-                  Choisissez une offre, un événement ou saisissez une idée libre : l&apos;IA génère l&apos;affiche et la légende prêtes à publier.
+                  {t('content.studio.subtitle')}
                 </p>
               </div>
             </div>
 
             <div className={styles.tagLive}>
               <span className={styles.pulseDot} />
-              <span>Génération IA Instantanée</span>
+              <span>{t('content.studio.liveBadge')}</span>
             </div>
           </div>
 
@@ -301,8 +319,8 @@ function StudioCreateContent() {
           <div className={styles.card}>
             <div className={styles.cardHeader}>
               <h2 className={styles.cardTitle}>
-                <Layers size={18} color="#FF6B4A" />
-                <span>1. Que souhaitez-vous promouvoir ?</span>
+                <Layers size={18} color="#FF5A00" />
+                <span>{t('content.studio.stepOne')}</span>
               </h2>
             </div>
 
@@ -314,7 +332,7 @@ function StudioCreateContent() {
                 className={`${styles.typeBtn} ${sourceType === 'offer' ? styles.typeBtnActive : ''}`}
               >
                 <Tag size={16} />
-                <span>Mon Offre</span>
+                <span>{t('content.studio.sourceOffer')}</span>
               </button>
 
               <button
@@ -323,7 +341,7 @@ function StudioCreateContent() {
                 className={`${styles.typeBtn} ${sourceType === 'event' ? styles.typeBtnActive : ''}`}
               >
                 <Calendar size={16} />
-                <span>Mon Événement</span>
+                <span>{t('content.studio.sourceEvent')}</span>
               </button>
 
               <button
@@ -332,14 +350,14 @@ function StudioCreateContent() {
                 className={`${styles.typeBtn} ${sourceType === 'custom' ? styles.typeBtnActive : ''}`}
               >
                 <PenTool size={16} />
-                <span>Saisie libre</span>
+                <span>{t('content.studio.sourceCustom')}</span>
               </button>
             </div>
 
             {/* CAS 1 : Choisir parmi les offres configurées */}
             {sourceType === 'offer' && (
               <div className={styles.fieldGroup}>
-                <label className={styles.label}>Sélectionnez votre offre du restaurant :</label>
+                <label className={styles.label}>{t('content.studio.offerLabel')}</label>
                 <select
                   value={selectedOfferId}
                   onChange={(e) => setSelectedOfferId(e.target.value)}
@@ -357,7 +375,7 @@ function StudioCreateContent() {
             {/* CAS 2 : Choisir parmi les événements configurés */}
             {sourceType === 'event' && (
               <div className={styles.fieldGroup}>
-                <label className={styles.label}>Sélectionnez l&apos;événement à diffuser :</label>
+                <label className={styles.label}>{t('content.studio.eventLabel')}</label>
                 <select
                   value={selectedEventId}
                   onChange={(e) => setSelectedEventId(e.target.value)}
@@ -376,33 +394,33 @@ function StudioCreateContent() {
             {sourceType === 'custom' && (
               <>
                 <div className={styles.fieldGroup}>
-                  <label className={styles.label}>Titre ou plat à mettre en avant :</label>
+                  <label className={styles.label}>{t('content.studio.customTitleLabel')}</label>
                   <input
                     type="text"
                     value={customTitle}
                     onChange={(e) => setCustomTitle(e.target.value)}
-                    placeholder="Ex. Côte de bœuf maturée, Soirée Cocktail Mojito..."
+                    placeholder={t('content.studio.customTitlePlaceholder')}
                     className={styles.input}
                   />
                 </div>
 
                 <div className={styles.fieldGroup}>
-                  <label className={styles.label}>Description ou formule :</label>
+                  <label className={styles.label}>{t('content.studio.customDescLabel')}</label>
                   <textarea
                     value={customDescription}
                     onChange={(e) => setCustomDescription(e.target.value)}
-                    placeholder="Ex. Servie avec frites maison et sauce béarnaise pour 2 personnes..."
+                    placeholder={t('content.studio.customDescPlaceholder')}
                     className={styles.textarea}
                   />
                 </div>
 
                 <div className={styles.fieldGroup}>
-                  <label className={styles.label}>Badge réduction ou prix spécial :</label>
+                  <label className={styles.label}>{t('content.studio.customDiscountLabel')}</label>
                   <input
                     type="text"
                     value={customDiscount}
                     onChange={(e) => setCustomDiscount(e.target.value)}
-                    placeholder="Ex. 14,90€, -20%, Cocktail offert..."
+                    placeholder={t('content.studio.customDiscountPlaceholder')}
                     className={styles.input}
                   />
                 </div>
@@ -411,7 +429,7 @@ function StudioCreateContent() {
 
             {/* Réseau social cible */}
             <div className={styles.fieldGroup}>
-              <label className={styles.label}>Canal de diffusion :</label>
+              <label className={styles.label}>{t('content.studio.channelLabel')}</label>
               <div className={styles.platformRow}>
                 {(['instagram', 'facebook', 'google_business', 'tiktok'] as Platform[]).map((p) => (
                   <button
@@ -428,13 +446,13 @@ function StudioCreateContent() {
 
             {/* Ambiance & Style de l'affiche */}
             <div className={styles.fieldGroup}>
-              <label className={styles.label}>Ambiance visuelle de l&apos;affiche :</label>
+              <label className={styles.label}>{t('content.studio.styleLabel')}</label>
               <div className={styles.stylesGrid}>
                 {[
-                  { id: 'gourmet', label: 'Gourmand & Chaleureux', icon: UtensilsCrossed },
-                  { id: 'festive', label: 'Festif & Soirée', icon: PartyPopper },
-                  { id: 'chic', label: 'Chic & Épuré', icon: Sparkles },
-                  { id: 'deal', label: 'Promo Choc & Deal', icon: Zap },
+                  { id: 'gourmet', label: t('content.studio.styles.gourmet'), icon: UtensilsCrossed },
+                  { id: 'festive', label: t('content.studio.styles.festive'), icon: PartyPopper },
+                  { id: 'chic', label: t('content.studio.styles.chic'), icon: Sparkles },
+                  { id: 'deal', label: t('content.studio.styles.deal'), icon: Zap },
                 ].map((s) => {
                   const StyleIcon = s.icon;
                   const isSelected = visualStyle === s.id;
@@ -463,12 +481,12 @@ function StudioCreateContent() {
               {isGenerating ? (
                 <>
                   <Loader2 size={18} className="spin" style={{ animation: 'spin 1s linear infinite' }} />
-                  <span>Génération de l&apos;Affiche & de la Légende...</span>
+                  <span>{t('content.studio.generating')}</span>
                 </>
               ) : (
                 <>
                   <Sparkles size={18} />
-                  <span>Générer l&apos;Affiche & la Légende par IA</span>
+                  <span>{t('content.studio.generate')}</span>
                 </>
               )}
             </button>
@@ -485,11 +503,11 @@ function StudioCreateContent() {
                   </div>
                   <div className={styles.mockupMeta}>
                     <span className={styles.mockupName}>{restaurantName}</span>
-                    <span className={styles.mockupTime}>Aperçu diffusion • {platform.toUpperCase()}</span>
+                    <span className={styles.mockupTime}>{t('content.studio.previewMeta', { platform: platform.toUpperCase() })}</span>
                   </div>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#FF6B4A', background: '#FFF5F2', padding: '3px 8px', borderRadius: 4 }}>
-                  Post IA
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#FF5A00', background: '#FFF3EC', padding: '3px 8px', borderRadius: 4 }}>
+                  {t('content.studio.postBadge')}
                 </span>
               </div>
 
@@ -501,7 +519,7 @@ function StudioCreateContent() {
                     generatedPost?.imageUrl ||
                     'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80'
                   }
-                  alt={generatedPost?.title || 'Affiche restaurant'}
+                  alt={generatedPost?.title || t('content.studio.posterAlt')}
                   className={styles.posterImage}
                 />
                 <div className={styles.posterOverlay}>
@@ -517,8 +535,8 @@ function StudioCreateContent() {
                   </div>
 
                   <div className={styles.posterBottomInfo}>
-                    <h3 className={styles.posterHeadline}>{generatedPost?.title || 'Votre Spécialité'}</h3>
-                    <p className={styles.posterSub}>Disponible chez {restaurantName}</p>
+                    <h3 className={styles.posterHeadline}>{generatedPost?.title || t('content.studio.defaultPosterTitle')}</h3>
+                    <p className={styles.posterSub}>{t('content.studio.availableAt', { name: restaurantName })}</p>
                   </div>
                 </div>
               </div>
@@ -529,29 +547,29 @@ function StudioCreateContent() {
                   type="button"
                   onClick={handleSwitchPoster}
                   className={styles.switchPosterBtn}
-                  title="Changer pour un autre visuel"
+                  title={t('content.studio.switchPosterTitle')}
                 >
                   <RefreshCw size={13} />
-                  <span>Changer l&apos;affiche (Autre visuel)</span>
+                  <span>{t('content.studio.switchPoster')}</span>
                 </button>
 
-                <span style={{ fontSize: 11, color: '#94A3B8' }}>
-                  Format optimisé 4:3 HD
+                <span style={{ fontSize: 11, color: '#8A8A8A' }}>
+                  {t('content.studio.formatNote')}
                 </span>
               </div>
 
               {/* LA LÉGENDE (Texte du post) */}
               <div className={styles.captionArea}>
                 <div className={styles.captionHeader}>
-                  <span className={styles.captionTitle}>Légende & Copywriting</span>
+                  <span className={styles.captionTitle}>{t('content.studio.captionTitle')}</span>
                   <button
                     type="button"
                     onClick={handleRegenerateCaption}
                     className={styles.switchPosterBtn}
-                    title="Générer une autre variante de texte"
+                    title={t('content.studio.regenerateTextTitle')}
                   >
                     <RefreshCw size={12} />
-                    <span>Régénérer texte</span>
+                    <span>{t('content.studio.regenerateText')}</span>
                   </button>
                 </div>
 
@@ -561,7 +579,7 @@ function StudioCreateContent() {
                     setGeneratedPost((prev) => (prev ? { ...prev, caption: e.target.value } : null))
                   }
                   className={styles.editCaptionInput}
-                  placeholder="La légende du post apparaîtra ici..."
+                  placeholder={t('content.studio.captionPlaceholder')}
                 />
               </div>
             </div>
@@ -575,7 +593,7 @@ function StudioCreateContent() {
                 className={styles.publishNowBtn}
               >
                 <Send size={16} />
-                <span>Publier maintenant</span>
+                <span>{t('content.studio.publishNow')}</span>
               </button>
 
               <button
@@ -585,7 +603,7 @@ function StudioCreateContent() {
                 className={styles.scheduleBtn}
               >
                 <Clock size={16} />
-                <span>Programmer</span>
+                <span>{t('content.studio.schedule')}</span>
               </button>
             </div>
           </div>
@@ -596,7 +614,7 @@ function StudioCreateContent() {
           <div className={styles.modalOverlay}>
             <div className={styles.modalCard}>
               <div className={styles.modalHeader}>
-                <h3 className={styles.modalTitle}>Programmer la publication</h3>
+                <h3 className={styles.modalTitle}>{t('content.studio.scheduleModalTitle')}</h3>
                 <button
                   type="button"
                   onClick={() => setIsScheduleOpen(false)}
@@ -608,7 +626,7 @@ function StudioCreateContent() {
 
               <form onSubmit={handleScheduleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div className={styles.fieldGroup}>
-                  <label className={styles.label}>Date de diffusion :</label>
+                  <label className={styles.label}>{t('content.studio.scheduleDateLabel')}</label>
                   <input
                     type="date"
                     value={scheduledDate}
@@ -619,7 +637,7 @@ function StudioCreateContent() {
                 </div>
 
                 <div className={styles.fieldGroup}>
-                  <label className={styles.label}>Heure de diffusion :</label>
+                  <label className={styles.label}>{t('content.studio.scheduleTimeLabel')}</label>
                   <input
                     type="time"
                     value={scheduledTime}
@@ -631,7 +649,7 @@ function StudioCreateContent() {
 
                 <button type="submit" className={styles.generateBtn} style={{ marginTop: 8 }}>
                   <Check size={16} />
-                  <span>Confirmer la programmation</span>
+                  <span>{t('content.studio.confirmSchedule')}</span>
                 </button>
               </form>
             </div>
@@ -643,8 +661,9 @@ function StudioCreateContent() {
 }
 
 export default function StudioCreatePage() {
+  const { t } = useLanguage();
   return (
-    <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>Chargement du Studio...</div>}>
+    <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>{t('content.studio.loading')}</div>}>
       <StudioCreateContent />
     </Suspense>
   );

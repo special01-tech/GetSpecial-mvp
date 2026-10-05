@@ -106,7 +106,7 @@
 .tabActive {
   background: var(--color-primary) !important;
   color: var(--color-white) !important;
-  box-shadow: 0 2px 4px rgba(27, 67, 50, 0.2);
+  box-shadow: 0 2px 4px rgba(22, 163, 74,  0.2);
 }
 
 /* Main Content */
@@ -156,7 +156,7 @@
 .badgeHighlight {
   background: var(--color-primary-subtle);
   color: var(--color-primary);
-  border: 1px solid rgba(27, 67, 50, 0.2);
+  border: 1px solid rgba(255, 90, 0,  0.2);
   padding: 2px 7px;
   border-radius: var(--radius-full);
   font-size: 10px;

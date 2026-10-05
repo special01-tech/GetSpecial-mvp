@@ -82,7 +82,7 @@
 
 .barFill {
   width: 100%;
-  background: linear-gradient(180deg, #2D6A4F 0%, var(--color-primary) 100%);
+  background: linear-gradient(180deg, #E04F00 0%, var(--color-primary) 100%);
   border-radius: var(--radius-md);
   position: relative;
   transition: height 0.5s ease-out;
@@ -90,7 +90,7 @@
 }
 
 .barFill:hover {
-  background: #1B4332;
+  background: #FF5A00;
 }
 
 .tooltip {

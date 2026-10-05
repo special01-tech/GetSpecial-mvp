@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, AlertCircle, Sparkles } from 'lucide-react';
 import Logo from '@/components/ui/Logo/Logo';
+import LanguageToggle from '@/components/ui/LanguageToggle';
+import { useLanguage } from '@/i18n';
 import PrimaryButton from '@/components/ui/PrimaryButton/PrimaryButton';
 import EstablishmentTypeCard from '@/components/ui/EstablishmentTypeCard/EstablishmentTypeCard';
 import { ESTABLISHMENT_TYPES } from '@/services/onboarding/establishment-types.data';
@@ -11,6 +13,7 @@ import styles from './establishment-type.module.css';
 
 export default function EstablishmentTypePage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -47,7 +50,7 @@ export default function EstablishmentTypePage() {
 
   const handleNext = () => {
     if (selectedTypes.length === 0) {
-      setErrorMsg('Please select at least one concept category to continue.');
+      setErrorMsg(t('onboarding.establishmentType.validationError'));
       return;
     }
 
@@ -66,7 +69,7 @@ export default function EstablishmentTypePage() {
           <button
             onClick={() => router.push('/onboarding/confirm')}
             className={styles.backButton}
-            aria-label="Back to confirmation"
+            aria-label={t('onboarding.establishmentType.backLabel')}
           >
             <ArrowLeft size={18} />
           </button>
@@ -76,13 +79,14 @@ export default function EstablishmentTypePage() {
             <span className={styles.stepDotDone} />
             <span className={styles.stepDotActive} />
           </div>
+          <LanguageToggle compact />
         </header>
 
         <main className={styles.mainContent}>
           <div className={styles.titleArea}>
-            <h1 className={styles.title}>What type of establishment?</h1>
+            <h1 className={styles.title}>{t('onboarding.establishmentType.title')}</h1>
             <p className={styles.subtitle}>
-              GetSpecial adapts sports, weather, and foot traffic signals to your unique concept.
+              {t('onboarding.establishmentType.subtitle')}
             </p>
           </div>
 
@@ -110,13 +114,13 @@ export default function EstablishmentTypePage() {
               disabled={selectedTypes.length === 0}
               icon={<ArrowRight size={18} />}
             >
-              Next: Hours & Peak Times
+              {t('onboarding.establishmentType.nextCta')}
             </PrimaryButton>
 
             <div className={styles.helperRow}>
               <Sparkles size={14} className={styles.sparkleIcon} />
               <span className={styles.helperText}>
-                You can select multiple categories (e.g., Casual Dining + Sports Bar).
+                {t('onboarding.establishmentType.helper')}
               </span>
             </div>
           </footer>

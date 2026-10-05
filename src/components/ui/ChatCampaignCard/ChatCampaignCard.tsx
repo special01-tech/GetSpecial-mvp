@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Sparkles, ArrowRight, X, Clock, Percent, Share2 } from 'lucide-react';
 import { CampaignData } from '@/services/campaign/campaign.data';
+import { useLanguage } from '@/i18n';
 import styles from './ChatCampaignCard.module.css';
 
 interface ChatCampaignCardProps {
@@ -17,13 +18,14 @@ export default function ChatCampaignCard({
   status = 'pending',
   onReject,
 }: ChatCampaignCardProps) {
+  const { t } = useLanguage();
   return (
     <div className={styles.card}>
       {/* Badge Top Header */}
       <div className={styles.header}>
         <div className={styles.badge}>
           <Sparkles size={13} className={styles.sparkleIcon} />
-          <span>Opportunité détectée</span>
+          <span>{t('common.components.chatCampaignCard.opportunityBadge')}</span>
         </div>
         <span className={styles.discountPill}>
           <Percent size={11} strokeWidth={2.5} />
@@ -56,7 +58,7 @@ export default function ChatCampaignCard({
 
       {/* Plateformes suggérées */}
       <div className={styles.platformsRow}>
-        <span className={styles.platformLabel}>Diffusion :</span>
+        <span className={styles.platformLabel}>{t('common.components.chatCampaignCard.broadcastLabel')}</span>
         <div className={styles.platformTags}>
           {campaign.platforms.map((plat) => {
             const labels: Record<string, string> = {
@@ -76,13 +78,13 @@ export default function ChatCampaignCard({
       {/* Statut si refusé ou accepté */}
       {status === 'rejected' && (
         <div className={styles.statusBannerRejected}>
-          <span>Campagne refusée</span>
+          <span>{t('common.components.chatCampaignCard.rejectedBanner')}</span>
         </div>
       )}
 
       {status === 'scheduled' && (
         <div className={styles.statusBannerScheduled}>
-          <span>Publication programmée pour ce soir à 18h</span>
+          <span>{t('common.components.chatCampaignCard.scheduledBanner')}</span>
         </div>
       )}
 
@@ -93,7 +95,7 @@ export default function ChatCampaignCard({
             href={`/dashboard/campaign/${campaign.id}`}
             className={styles.detailLink}
           >
-            <span>Voir le détail</span>
+            <span>{t('common.components.chatCampaignCard.viewDetail')}</span>
             <ArrowRight size={14} />
           </Link>
 
@@ -103,7 +105,7 @@ export default function ChatCampaignCard({
             className={styles.rejectButton}
           >
             <X size={14} />
-            <span>Refuser</span>
+            <span>{t('common.components.chatCampaignCard.reject')}</span>
           </button>
         </div>
       )}

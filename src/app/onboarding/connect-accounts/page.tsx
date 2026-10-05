@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Share2, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 import Logo from '@/components/ui/Logo/Logo';
+import LanguageToggle from '@/components/ui/LanguageToggle';
+import { useLanguage } from '@/i18n';
 import PrimaryButton from '@/components/ui/PrimaryButton/PrimaryButton';
 import SocialAccountCard from '@/components/ui/SocialAccountCard/SocialAccountCard';
 import {
@@ -27,6 +29,7 @@ import styles from './connect-accounts.module.css';
  */
 export default function ConnectAccountsPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [accounts, setAccounts] = useState<SocialAccountConfig[]>(DEFAULT_SOCIAL_ACCOUNTS);
   const [loadingPlatform, setLoadingPlatform] = useState<SocialPlatformId | null>(null);
@@ -70,7 +73,7 @@ export default function ConnectAccountsPage() {
                   ? '@restaurant_officiel'
                   : acc.id === 'facebook'
                   ? 'facebook.com/restaurant'
-                  : 'Fiche Google vérifiée',
+                  : t('onboarding.connectAccounts.googleVerified'),
             };
           }
         }
@@ -115,23 +118,24 @@ export default function ConnectAccountsPage() {
           <button
             onClick={() => router.push('/onboarding/brand-style')}
             className={styles.backButton}
-            aria-label="Retour au style de marque"
+            aria-label={t('onboarding.connectAccounts.backLabel')}
           >
             <ArrowLeft size={18} />
           </button>
           <Logo size="md" showTagline={false} />
           <div className={styles.stepBadge}>
             <Share2 size={13} />
-            <span>Étape 6</span>
+            <span>{t('onboarding.connectAccounts.stepBadge')}</span>
           </div>
+          <LanguageToggle compact />
         </header>
 
         {/* Titre & Sous-titre */}
         <main className={styles.mainContent}>
           <div className={styles.titleArea}>
-            <h1 className={styles.title}>Connectez vos comptes</h1>
+            <h1 className={styles.title}>{t('onboarding.connectAccounts.title')}</h1>
             <p className={styles.subtitle}>
-              Liez vos pages pour planifier et publier vos opportunités en 1 clic.
+              {t('onboarding.connectAccounts.subtitle')}
             </p>
           </div>
 
@@ -140,8 +144,10 @@ export default function ConnectAccountsPage() {
             <ShieldCheck size={16} className={styles.shieldIcon} />
             <span>
               {connectedCount > 0
-                ? `${connectedCount} canal${connectedCount > 1 ? 'aux' : ''} connecté${connectedCount > 1 ? 's' : ''} • Prêt pour la diffusion`
-                : 'Connexion sécurisée via OAuth officiel'}
+                ? connectedCount > 1
+                  ? t('onboarding.connectAccounts.syncReadyMany', { count: connectedCount })
+                  : t('onboarding.connectAccounts.syncReadyOne', { count: connectedCount })
+                : t('onboarding.connectAccounts.syncSecure')}
             </span>
           </div>
 
@@ -164,7 +170,7 @@ export default function ConnectAccountsPage() {
               onClick={handleSkip}
               className={styles.skipButton}
             >
-              Vous pouvez continuer sans connecter de compte.
+              {t('onboarding.connectAccounts.skipCta')}
             </button>
           </div>
 
@@ -174,12 +180,12 @@ export default function ConnectAccountsPage() {
               onClick={handleNext}
               icon={<ArrowRight size={18} />}
             >
-              Suivant
+              {t('onboarding.connectAccounts.next')}
             </PrimaryButton>
 
             <div className={styles.helperNotice}>
               <Sparkles size={14} className={styles.sparkleIcon} />
-              <span>Vous pourrez connecter ou déconnecter vos réseaux à tout moment.</span>
+              <span>{t('onboarding.connectAccounts.helperNote')}</span>
             </div>
           </footer>
         </main>

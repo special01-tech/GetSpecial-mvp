@@ -5,21 +5,12 @@
   text-decoration: none;
 }
 
-.iconWrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--color-primary);
-  border-radius: 10px;
-  color: #FFFFFF;
-  box-shadow: 0 4px 10px rgba(27, 67, 50, 0.18);
+/* Pictogramme : toujours Orange GetSpecial */
+.mark {
+  display: block;
+  color: var(--color-primary);
   flex-shrink: 0;
-}
-
-.lettermark {
-  font-family: var(--font-family);
-  font-weight: 700;
-  line-height: 1;
+  width: auto;
 }
 
 .textWrapper {
@@ -27,17 +18,13 @@
   flex-direction: column;
 }
 
+/* Wordmark : noir sur fond clair, blanc sur fond sombre (suit le thème) */
 .brandName {
   font-family: var(--font-family);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--color-primary);
-  line-height: 1.1;
-}
-
-.brandAccent {
-  color: var(--color-primary-hover);
   font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--color-text-primary);
+  line-height: 1.1;
 }
 
 .tagline {
@@ -50,37 +37,22 @@
 }
 
 /* Tailles */
-.sm .iconWrapper {
-  width: 28px;
+.sm .mark {
   height: 28px;
-  border-radius: 8px;
-}
-.sm .lettermark {
-  font-size: 16px;
 }
 .sm .brandName {
   font-size: 18px;
 }
 
-.md .iconWrapper {
-  width: 36px;
+.md .mark {
   height: 36px;
-  border-radius: 10px;
-}
-.md .lettermark {
-  font-size: 20px;
 }
 .md .brandName {
   font-size: 22px;
 }
 
-.lg .iconWrapper {
-  width: 46px;
+.lg .mark {
   height: 46px;
-  border-radius: 12px;
-}
-.lg .lettermark {
-  font-size: 26px;
 }
 .lg .brandName {
   font-size: 28px;

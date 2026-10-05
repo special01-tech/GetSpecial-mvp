@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ChartDataPoint } from '@/services/insights/insights.data';
+import { useLanguage } from '@/i18n';
 import styles from './AnalyticsChart.module.css';
 
 interface AnalyticsChartProps {
@@ -9,6 +10,7 @@ interface AnalyticsChartProps {
 }
 
 export default function AnalyticsChart({ data }: AnalyticsChartProps) {
+  const { t, locale } = useLanguage();
   const maxViews = Math.max(...data.map((d) => d.views), 1);
 
   return (
@@ -17,14 +19,16 @@ export default function AnalyticsChart({ data }: AnalyticsChartProps) {
         <div className={styles.legendGroup}>
           <div className={styles.legendItem}>
             <span className={`${styles.legendDot} ${styles.viewsDot}`} />
-            <span>Vues totales</span>
+            <span>{t('common.components.analyticsChart.viewsLegend')}</span>
           </div>
           <div className={styles.legendItem}>
             <span className={`${styles.legendDot} ${styles.interactionsDot}`} />
-            <span>Interactions</span>
+            <span>{t('common.components.analyticsChart.interactionsLegend')}</span>
           </div>
         </div>
-        <span className={styles.periodLabel}>4 dernières semaines</span>
+        <span className={styles.periodLabel}>
+          {t('common.components.analyticsChart.periodLabel')}
+        </span>
       </div>
 
       {/* Barres d'histogramme SVG/CSS stylisées */}
@@ -39,7 +43,9 @@ export default function AnalyticsChart({ data }: AnalyticsChartProps) {
                   className={styles.barFill}
                   style={{ height: `${heightPercent}%` }}
                 >
-                  <span className={styles.tooltip}>{point.views.toLocaleString('fr-FR')}</span>
+                  <span className={styles.tooltip}>
+                    {point.views.toLocaleString(locale === 'en' ? 'en-US' : 'fr-FR')}
+                  </span>
                 </div>
               </div>
               <span className={styles.colLabel}>{point.day}</span>

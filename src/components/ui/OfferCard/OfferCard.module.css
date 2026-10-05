@@ -132,15 +132,15 @@
 }
 
 .statusActive {
-  background: #E8F5E9;
-  color: #1B5E20;
-  border: 1px solid #A5D6A7;
+  background: #DCFCE7;
+  color: #15803D;
+  border: 1px solid #86EFAC;
 }
 
 .statusScheduled {
   background: var(--color-primary-subtle);
   color: var(--color-primary);
-  border: 1px solid rgba(27, 67, 50, 0.2);
+  border: 1px solid rgba(255, 90, 0,  0.2);
 }
 
 .statusDraft {
@@ -152,6 +152,6 @@
 .statusDot {
   width: 5px;
   height: 5px;
-  background-color: #1B5E20;
+  background-color: #15803D;
   border-radius: 50%;
 }

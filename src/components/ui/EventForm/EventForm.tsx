@@ -17,6 +17,7 @@ import {
   EventCategory,
   EVENT_CATEGORIES,
 } from '@/services/restaurant/restaurant-events.data';
+import { useLanguage } from '@/i18n';
 import styles from './EventForm.module.css';
 
 interface EventFormProps {
@@ -26,6 +27,7 @@ interface EventFormProps {
 }
 
 export default function EventForm({ initialEvent, onSave, onCancel }: EventFormProps) {
+  const { t } = useLanguage();
   const isEditing = Boolean(initialEvent);
 
   const [title, setTitle] = useState(initialEvent?.title || '');
@@ -70,10 +72,12 @@ export default function EventForm({ initialEvent, onSave, onCancel }: EventFormP
             </div>
             <div>
               <h2 className={styles.title}>
-                {isEditing ? 'Modifier l’événement' : 'Nouvel événement local'}
+                {isEditing
+                  ? t('common.components.eventForm.editTitle')
+                  : t('common.components.eventForm.createTitle')}
               </h2>
               <p className={styles.subtitle}>
-                Permet à l&apos;IA d&apos;anticiper l&apos;affluence de votre quartier
+                {t('common.components.eventForm.subtitle')}
               </p>
             </div>
           </div>
@@ -82,7 +86,7 @@ export default function EventForm({ initialEvent, onSave, onCancel }: EventFormP
             type="button"
             onClick={onCancel}
             className={styles.closeBtn}
-            aria-label="Fermer"
+            aria-label={t('common.components.eventForm.closeAria')}
           >
             <X size={18} />
           </button>
@@ -93,13 +97,13 @@ export default function EventForm({ initialEvent, onSave, onCancel }: EventFormP
           {/* Titre */}
           <div className={styles.fieldGroup}>
             <label htmlFor="evtTitle" className={styles.label}>
-              Nom de l&apos;événement *
+              {t('common.components.eventForm.nameLabel')}
             </label>
             <input
               id="evtTitle"
               type="text"
               required
-              placeholder="Ex : Concert Live Jazz ou Match PSG"
+              placeholder={t('common.components.eventForm.namePlaceholder')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className={styles.input}
@@ -109,7 +113,7 @@ export default function EventForm({ initialEvent, onSave, onCancel }: EventFormP
           {/* Catégorie */}
           <div className={styles.fieldGroup}>
             <label htmlFor="evtCategory" className={styles.label}>
-              Catégorie *
+              {t('common.components.eventForm.categoryLabel')}
             </label>
             <select
               id="evtCategory"
@@ -119,7 +123,7 @@ export default function EventForm({ initialEvent, onSave, onCancel }: EventFormP
             >
               {EVENT_CATEGORIES.map((cat) => (
                 <option key={cat.id} value={cat.id}>
-                  {cat.label}
+                  {t(`common.eventCategories.${cat.id}`)}
                 </option>
               ))}
             </select>
@@ -129,13 +133,13 @@ export default function EventForm({ initialEvent, onSave, onCancel }: EventFormP
           <div className={styles.dateTimeGrid}>
             <div className={styles.fieldGroup}>
               <label htmlFor="evtDate" className={styles.label}>
-                Date *
+                {t('common.components.eventForm.dateLabel')}
               </label>
               <input
                 id="evtDate"
                 type="text"
                 required
-                placeholder="Ex : Vendredi 2 Oct. 2026"
+                placeholder={t('common.components.eventForm.datePlaceholder')}
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 className={styles.input}
@@ -144,7 +148,7 @@ export default function EventForm({ initialEvent, onSave, onCancel }: EventFormP
 
             <div className={styles.fieldGroup}>
               <label htmlFor="evtTime" className={styles.label}>
-                Heure
+                {t('common.components.eventForm.timeLabel')}
               </label>
               <input
                 id="evtTime"
@@ -159,7 +163,7 @@ export default function EventForm({ initialEvent, onSave, onCancel }: EventFormP
           {/* Image */}
           <div className={styles.fieldGroup}>
             <label htmlFor="evtImage" className={styles.label}>
-              Illustration (URL)
+              {t('common.components.eventForm.imageLabel')}
             </label>
             <div className={styles.inputWithIcon}>
               <ImageIcon size={14} className={styles.inputIcon} />
@@ -176,12 +180,12 @@ export default function EventForm({ initialEvent, onSave, onCancel }: EventFormP
           {/* Description */}
           <div className={styles.fieldGroup}>
             <label htmlFor="evtDesc" className={styles.label}>
-              Description / Précisions
+              {t('common.components.eventForm.descriptionLabel')}
             </label>
             <textarea
               id="evtDesc"
               rows={2}
-              placeholder="Détails pour calibrer les offres spéciales..."
+              placeholder={t('common.components.eventForm.descriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className={styles.textarea}
@@ -191,9 +195,11 @@ export default function EventForm({ initialEvent, onSave, onCancel }: EventFormP
           {/* Toggle Actif */}
           <div className={styles.toggleRow}>
             <div>
-              <span className={styles.toggleTitle}>Événement actif</span>
+              <span className={styles.toggleTitle}>
+                {t('common.components.eventForm.activeToggleTitle')}
+              </span>
               <p className={styles.toggleSubtitle}>
-                Prendre en compte dans les propositions IA du dashboard
+                {t('common.components.eventForm.activeToggleSubtitle')}
               </p>
             </div>
             <button
@@ -209,10 +215,12 @@ export default function EventForm({ initialEvent, onSave, onCancel }: EventFormP
           {/* Modal Footer */}
           <div className={styles.modalFooter}>
             <button type="button" onClick={onCancel} className={styles.cancelBtn}>
-              Annuler
+              {t('common.components.eventForm.cancel')}
             </button>
             <PrimaryButton type="submit" fullWidth={false}>
-              {isEditing ? 'Enregistrer les modifications' : 'Ajouter l’événement'}
+              {isEditing
+                ? t('common.components.eventForm.saveChanges')
+                : t('common.components.eventForm.addEvent')}
             </PrimaryButton>
           </div>
         </form>

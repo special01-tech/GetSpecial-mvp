@@ -13,6 +13,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import RestaurantAccountCard from '@/components/ui/RestaurantAccountCard/RestaurantAccountCard';
+import { useLanguage } from '@/i18n';
 import {
   ConnectedAccountData,
   INITIAL_CONNECTED_ACCOUNTS,
@@ -44,6 +45,7 @@ import cardStyles from '@/components/ui/RestaurantAccountCard/RestaurantAccountC
  * Modale de confirmation avant déconnexion.
  */
 export default function RestaurantAccountsPage() {
+  const { t } = useLanguage();
   const [restaurantName, setRestaurantName] = useState('Le Petit Bistrot');
   const [accounts, setAccounts] = useState<ConnectedAccountData[]>(INITIAL_CONNECTED_ACCOUNTS);
   const [confirmAccount, setConfirmAccount] = useState<ConnectedAccountData | null>(null);
@@ -89,7 +91,7 @@ export default function RestaurantAccountsPage() {
         );
         saveAccounts(
           updated,
-          `Compte ${account.name} connecté avec succès ! La diffusion automatique est active.`
+          t('restaurant.accounts.connectedNotice', { name: account.name })
         );
         setLoadingId(null);
       }, 500);
@@ -109,7 +111,7 @@ export default function RestaurantAccountsPage() {
       );
       saveAccounts(
         updated,
-        `Compte ${target.name} déconnecté. Vos futures publications ne seront plus diffusées sur ce canal.`
+        t('restaurant.accounts.disconnectedNotice', { name: target.name })
       );
       setLoadingId(null);
     }, 400);
@@ -126,7 +128,7 @@ export default function RestaurantAccountsPage() {
             </div>
             <div>
               <h1 className={styles.headerTitle}>{restaurantName}</h1>
-              <p className={styles.headerSubtitle}>Gestion de l&apos;établissement & IA</p>
+              <p className={styles.headerSubtitle}>{t('restaurant.header.subtitle')}</p>
             </div>
           </div>
         </header>
@@ -140,20 +142,20 @@ export default function RestaurantAccountsPage() {
         )}
 
         {/* Navigation Interne (Tabs) */}
-        <nav className={styles.tabsNav} aria-label="Sections du restaurant">
+        <nav className={styles.tabsNav} aria-label={t('restaurant.tabs.label')}>
           <Link href="/dashboard/restaurant" className={styles.tabBtn}>
             <Store size={14} />
-            <span>Profil</span>
+            <span>{t('restaurant.tabs.profile')}</span>
           </Link>
 
           <Link href="/dashboard/restaurant/offers" className={styles.tabBtn}>
             <Tag size={14} />
-            <span>Offres</span>
+            <span>{t('restaurant.tabs.offers')}</span>
           </Link>
 
           <Link href="/dashboard/restaurant/events" className={styles.tabBtn}>
             <Calendar size={14} />
-            <span>Événements</span>
+            <span>{t('restaurant.tabs.events')}</span>
           </Link>
 
           <Link
@@ -161,7 +163,7 @@ export default function RestaurantAccountsPage() {
             className={`${styles.tabBtn} ${styles.tabActive}`}
           >
             <Share2 size={14} />
-            <span>Comptes</span>
+            <span>{t('restaurant.tabs.accounts')}</span>
           </Link>
         </nav>
 
@@ -169,9 +171,13 @@ export default function RestaurantAccountsPage() {
         <main className={styles.mainContent}>
           <div className={styles.offersHeaderRow}>
             <div>
-              <h2 className={styles.tabSectionTitle}>Comptes & Réseaux sociaux</h2>
+              <h2 className={styles.tabSectionTitle}>{t('restaurant.accounts.title')}</h2>
               <p className={styles.tabSectionSubtitle}>
-                {accounts.filter((a) => a.isConnected).length} connecté{accounts.filter((a) => a.isConnected).length > 1 ? 's' : ''} sur {accounts.length} canaux disponibles
+                {t('restaurant.accounts.summary', {
+                  connected: accounts.filter((a) => a.isConnected).length,
+                  plural: accounts.filter((a) => a.isConnected).length > 1 ? 's' : '',
+                  total: accounts.length,
+                })}
               </p>
             </div>
           </div>
@@ -198,13 +204,12 @@ export default function RestaurantAccountsPage() {
               </div>
 
               <h3 className={styles.confirmTitle}>
-                Déconnecter {confirmAccount.name} ?
+                {t('restaurant.accounts.disconnectTitle', { name: confirmAccount.name })}
               </h3>
 
               <p className={styles.confirmMessage}>
-                Êtes-vous sûr de vouloir déconnecter le compte{' '}
-                <strong>{confirmAccount.username}</strong> ? L&apos;IA ne pourra plus y diffuser vos
-                offres ni vos posts automatiques.
+                {t('restaurant.accounts.confirmPrefix')}{' '}
+                <strong>{confirmAccount.username}</strong> {t('restaurant.accounts.confirmSuffix')}
               </p>
 
               <div className={styles.confirmActionsRow}>
@@ -213,7 +218,7 @@ export default function RestaurantAccountsPage() {
                   onClick={() => setConfirmAccount(null)}
                   className={styles.cancelConfirmBtn}
                 >
-                  Annuler
+                  {t('restaurant.accounts.cancel')}
                 </button>
 
                 <button
@@ -221,7 +226,7 @@ export default function RestaurantAccountsPage() {
                   onClick={handleConfirmDisconnect}
                   className={styles.destructiveBtn}
                 >
-                  Confirmer la déconnexion
+                  {t('restaurant.accounts.confirmDisconnect')}
                 </button>
               </div>
             </div>

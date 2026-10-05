@@ -22,6 +22,7 @@ import {
   ChatAiService,
   QuickSuggestion,
 } from '@/services/chat/chat.service';
+import { useLanguage } from '@/i18n';
 import styles from './chat.module.css';
 
 /**
@@ -41,7 +42,14 @@ import styles from './chat.module.css';
  * - Navigation bottom bar
  */
 export default function ChatPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_CHAT_MESSAGES);
+  const { t, formatDate } = useLanguage();
+  const [messages, setMessages] = useState<ChatMessage[]>(() =>
+    INITIAL_CHAT_MESSAGES.map((msg) => ({
+      ...msg,
+      text: t('engagement.chat.initialGreeting'),
+      timestamp: t('engagement.chat.justNow'),
+    }))
+  );
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -85,10 +93,9 @@ export default function ChatPage() {
     if (!text || isTyping) return;
 
     const userMsgId = `user_${Date.now()}`;
-    const nowTime = new Date().toLocaleTimeString('en-US', {
+    const nowTime = formatDate(new Date(), {
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true,
     });
 
     const userMessage: ChatMessage = {
@@ -106,10 +113,9 @@ export default function ChatPage() {
 
     try {
       const response = await ChatAiService.sendMessage(text, restaurantId, messages);
-      const assistantMsgTime = new Date().toLocaleTimeString('en-US', {
+      const assistantMsgTime = formatDate(new Date(), {
         hour: 'numeric',
         minute: '2-digit',
-        hour12: true,
       });
 
       const assistantMessage: ChatMessage = {
@@ -124,7 +130,7 @@ export default function ChatPage() {
       const errorMsg: ChatMessage = {
         id: `err_${Date.now()}`,
         sender: 'assistant',
-        text: 'Sorry, I encountered a brief network glitch. Would you like to retry?',
+        text: t('engagement.chat.networkError'),
         timestamp: nowTime,
       };
       saveMessages((prev) => [...prev, errorMsg]);
@@ -154,7 +160,7 @@ export default function ChatPage() {
 
     // Réponse de confirmation de refus
     setTimeout(() => {
-      const nowTime = new Date().toLocaleTimeString('fr-FR', {
+      const nowTime = formatDate(new Date(), {
         hour: '2-digit',
         minute: '2-digit',
       });
@@ -163,7 +169,7 @@ export default function ChatPage() {
         {
           id: `asst_refuse_${Date.now()}`,
           sender: 'assistant',
-          text: 'Entendu, j’ai archivé cette opportunité. Je continue de surveiller la météo et les événements pour vous proposer d’autres moments opportuns.',
+          text: t('engagement.chat.refuseReply'),
           timestamp: nowTime,
         },
       ]);
@@ -181,12 +187,12 @@ export default function ChatPage() {
               <span className={styles.statusOnline} />
             </div>
             <div className={styles.identityDetails}>
-              <h1 className={styles.botName}>Assistant GetSpecial</h1>
-              <span className={styles.botStatus}>En ligne • Prêt à optimiser</span>
+              <h1 className={styles.botName}>{t('engagement.chat.title')}</h1>
+              <span className={styles.botStatus}>{t('engagement.chat.status')}</span>
             </div>
           </div>
 
-          <Link href="/dashboard" className={styles.closeChatBtn} aria-label="Retour dashboard">
+          <Link href="/dashboard" className={styles.closeChatBtn} aria-label={t('engagement.chat.backLabel')}>
             <ArrowLeft size={18} />
           </Link>
         </header>
@@ -238,7 +244,7 @@ export default function ChatPage() {
               </div>
               <div className={`${styles.bubble} ${styles.bubbleAsst} ${styles.typingBubble}`}>
                 <Loader2 size={15} className={styles.spinner} />
-                <span>GetSpecial analyse votre demande...</span>
+                <span>{t('engagement.chat.typing')}</span>
               </div>
             </div>
           )}
@@ -256,7 +262,7 @@ export default function ChatPage() {
                 onClick={() => handleSuggestionClick(sug)}
                 className={styles.suggestionPill}
               >
-                <span>{sug.label}</span>
+                <span>{t(`engagement.chat.suggestions.${sug.id}`)}</span>
               </button>
             ))}
           </div>
@@ -272,18 +278,18 @@ export default function ChatPage() {
         >
           <input
             type="text"
-            placeholder="Ex : Parfait ! Programme-la pour ce soir."
+            placeholder={t('engagement.chat.inputPlaceholder')}
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             className={styles.textInput}
-            aria-label="Message à GetSpecial"
+            aria-label={t('engagement.chat.inputLabel')}
           />
 
           <button
             type="submit"
             disabled={!inputText.trim() || isTyping}
             className={styles.sendButton}
-            aria-label="Envoyer le message"
+            aria-label={t('engagement.chat.sendLabel')}
           >
             <Send size={18} />
           </button>

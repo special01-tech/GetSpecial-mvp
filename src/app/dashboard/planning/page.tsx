@@ -14,11 +14,11 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import PlanningEventCard from '@/components/ui/PlanningEventCard/PlanningEventCard';
+import { useLanguage } from '@/i18n';
 import {
   PlanningItem,
   PlanningStatus,
   MOCK_PLANNING_ITEMS,
-  PLANNING_STATUS_LABELS,
 } from '@/services/planning/planning.data';
 import styles from './planning.module.css';
 
@@ -26,6 +26,7 @@ type FilterOption = 'all' | PlanningStatus;
 
 export default function PlanningPage() {
   const router = useRouter();
+  const { t, formatDate } = useLanguage();
   const [selectedFilter, setSelectedFilter] = useState<FilterOption>('all');
   const [events, setEvents] = useState<PlanningItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,19 +41,19 @@ export default function PlanningPage() {
       .then((json) => {
         if (json.success && Array.isArray(json.data) && json.data.length > 0) {
           const liveItems: PlanningItem[] = json.data.map((p: any) => {
-            const text = p.text || p.content || 'Campaign post';
+            const text = p.text || p.content || t('content.planning.fallbackPost');
             return {
               id: p.id,
               campaignId: p.id,
               title: text.slice(0, 48) + (text.length > 48 ? '...' : ''),
               description: text,
               date: p.publishedAt
-                ? 'Publié aujourd\'hui'
+                ? t('content.planning.publishedToday')
                 : p.scheduledAt
-                ? new Date(p.scheduledAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
-                : 'Aujourd\'hui',
+                ? formatDate(p.scheduledAt, { day: 'numeric', month: 'short' })
+                : t('content.planning.today'),
               time: p.scheduledAt
-                ? new Date(p.scheduledAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+                ? formatDate(p.scheduledAt, { hour: '2-digit', minute: '2-digit' })
                 : '18:00',
               type: 'special_offer',
               status: p.status === 'published' ? 'published' : p.status === 'scheduled' ? 'programmed' : p.status === 'approved' ? 'approved' : 'to_validate',
@@ -99,8 +100,8 @@ export default function PlanningPage() {
               <CalendarIcon size={20} className={styles.calendarIcon} />
             </div>
             <div>
-              <h1 className={styles.pageTitle}>Planning Marketing</h1>
-              <p className={styles.pageSubtitle}>Actions et opportunités de la semaine</p>
+              <h1 className={styles.pageTitle}>{t('content.planning.title')}</h1>
+              <p className={styles.pageSubtitle}>{t('content.planning.subtitle')}</p>
             </div>
           </div>
 
@@ -108,15 +109,15 @@ export default function PlanningPage() {
             type="button"
             onClick={() => router.push('/dashboard/chat')}
             className={styles.aiActionBtn}
-            title="Demander une action à l'IA"
+            title={t('content.planning.newActionTitle')}
           >
             <Sparkles size={16} />
-            <span>Nouveau</span>
+            <span>{t('content.planning.newButton')}</span>
           </button>
         </header>
 
         {/* Barre de filtres par statut */}
-        <section className={styles.filtersSection} aria-label="Filtres par statut">
+        <section className={styles.filtersSection} aria-label={t('content.planning.filtersLabel')}>
           <div className={styles.filtersRow}>
             <button
               type="button"
@@ -125,7 +126,7 @@ export default function PlanningPage() {
                 selectedFilter === 'all' ? styles.filterActive : ''
               }`}
             >
-              <span>Tous</span>
+              <span>{t('content.planning.filters.all')}</span>
               <span className={styles.filterBadge}>{counts.all}</span>
             </button>
 
@@ -137,7 +138,7 @@ export default function PlanningPage() {
               }`}
             >
               <AlertCircle size={12} />
-              <span>À valider</span>
+              <span>{t('content.planning.filters.toValidate')}</span>
               <span className={styles.filterBadge}>{counts.to_validate}</span>
             </button>
 
@@ -149,7 +150,7 @@ export default function PlanningPage() {
               }`}
             >
               <CheckCircle2 size={12} />
-              <span>Approuvé</span>
+              <span>{t('content.planning.filters.approved')}</span>
               <span className={styles.filterBadge}>{counts.approved}</span>
             </button>
 
@@ -161,7 +162,7 @@ export default function PlanningPage() {
               }`}
             >
               <Clock size={12} />
-              <span>Programmé</span>
+              <span>{t('content.planning.filters.programmed')}</span>
               <span className={styles.filterBadge}>{counts.programmed}</span>
             </button>
 
@@ -173,7 +174,7 @@ export default function PlanningPage() {
               }`}
             >
               <CheckCircle2 size={12} />
-              <span>Publié</span>
+              <span>{t('content.planning.filters.published')}</span>
               <span className={styles.filterBadge}>{counts.published}</span>
             </button>
           </div>
@@ -183,8 +184,8 @@ export default function PlanningPage() {
         <main className={styles.mainContent}>
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '16px 0' }}>
-              <div style={{ height: 80, borderRadius: 12, background: '#F8FAFC', border: '1px solid #E2E8F0', animation: 'pulse 1.5s infinite' }} />
-              <div style={{ height: 80, borderRadius: 12, background: '#F8FAFC', border: '1px solid #E2E8F0', animation: 'pulse 1.5s infinite' }} />
+              <div style={{ height: 80, borderRadius: 12, background: '#F7F7F7', border: '1px solid #E5E5E5', animation: 'pulse 1.5s infinite' }} />
+              <div style={{ height: 80, borderRadius: 12, background: '#F7F7F7', border: '1px solid #E5E5E5', animation: 'pulse 1.5s infinite' }} />
             </div>
           ) : filteredEvents.length === 0 ? (
             <div className={styles.emptyState}>
@@ -192,12 +193,12 @@ export default function PlanningPage() {
                 <CalendarIcon size={24} />
               </div>
               <h3 className={styles.emptyTitle}>
-                {events.length === 0 ? 'Aucune publication programmée' : 'Aucun post pour ce filtre'}
+                {events.length === 0 ? t('content.planning.emptyNoPosts') : t('content.planning.emptyNoFilter')}
               </h3>
               <p className={styles.emptyText}>
                 {events.length === 0
-                  ? 'Vos publications validées depuis le tableau de bord ou générées par l\'IA apparaîtront ici automatiquement.'
-                  : 'Aucun événement ne correspond au statut sélectionné pour le moment.'}
+                  ? t('content.planning.emptyNoPostsText')
+                  : t('content.planning.emptyNoFilterText')}
               </p>
               {events.length === 0 ? (
                 <button
@@ -205,7 +206,7 @@ export default function PlanningPage() {
                   onClick={() => router.push('/dashboard')}
                   className={styles.resetFilterBtn}
                 >
-                  Découvrir les opportunités du jour
+                  {t('content.planning.discoverButton')}
                 </button>
               ) : (
                 <button
@@ -213,7 +214,7 @@ export default function PlanningPage() {
                   onClick={() => setSelectedFilter('all')}
                   className={styles.resetFilterBtn}
                 >
-                  Afficher toutes les actions
+                  {t('content.planning.showAllButton')}
                 </button>
               )}
             </div>

@@ -11,7 +11,7 @@
 }
 
 .cardConnected {
-  border-color: rgba(27, 67, 50, 0.25);
+  border-color: rgba(22, 163, 74,  0.25);
   background: #FFFFFF;
 }
 
@@ -90,9 +90,9 @@
 }
 
 .statusConnected {
-  background: #E8F5E9;
-  color: #1B5E20;
-  border: 1px solid #A5D6A7;
+  background: #DCFCE7;
+  color: #15803D;
+  border: 1px solid #86EFAC;
 }
 
 .statusDisconnected {
@@ -138,7 +138,7 @@
   background: var(--color-primary);
   color: #FFFFFF;
   border: 1px solid var(--color-primary);
-  box-shadow: 0 2px 5px rgba(27, 67, 50, 0.2);
+  box-shadow: 0 2px 5px rgba(255, 90, 0,  0.2);
 }
 
 .connectBtn:hover:not(:disabled) {

@@ -26,25 +26,8 @@
 .logo {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
   padding: 0 var(--space-5);
   margin-bottom: var(--space-6);
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-primary);
-}
-
-.logoIcon {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-sm);
-  background-color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-white);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-bold);
 }
 
 /* Zone de navigation principale */
@@ -99,6 +82,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Bascule de langue en bas de sidebar */
+.localeRow {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-3) 0 var(--space-1);
 }
 
 /* Masquer sur mobile */

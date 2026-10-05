@@ -15,6 +15,7 @@ import {
   BrandToneId,
   AVAILABLE_BRAND_TONES,
 } from '@/services/onboarding/brand-profile.types';
+import { useLanguage } from '@/i18n';
 import styles from './BrandToneSelector.module.css';
 
 interface BrandToneSelectorProps {
@@ -37,6 +38,7 @@ export default function BrandToneSelector({
   onToggleTone,
   maxTones = 3,
 }: BrandToneSelectorProps) {
+  const { t } = useLanguage();
   return (
     <div className={styles.container}>
       <div className={styles.grid}>
@@ -66,15 +68,22 @@ export default function BrandToneSelector({
               </div>
 
               <div className={styles.cardBody}>
-                <span className={styles.label}>{tone.label}</span>
-                <span className={styles.description}>{tone.description}</span>
+                <span className={styles.label}>
+                  {t(`common.components.brandToneSelector.tones.${tone.id}.label`)}
+                </span>
+                <span className={styles.description}>
+                  {t(`common.components.brandToneSelector.tones.${tone.id}.description`)}
+                </span>
               </div>
             </button>
           );
         })}
       </div>
       <p className={styles.counter}>
-        {selectedTones.length} / {maxTones} tonalités sélectionnées
+        {t('common.components.brandToneSelector.selectedCounter', {
+          selected: selectedTones.length,
+          max: maxTones,
+        })}
       </p>
     </div>
   );

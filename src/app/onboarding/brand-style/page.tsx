@@ -3,7 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Sparkles, Palette, PenTool, Check, AlertCircle } from 'lucide-react';
+import { useLanguage } from '@/i18n';
 import Logo from '@/components/ui/Logo/Logo';
+import LanguageToggle from '@/components/ui/LanguageToggle';
 import PrimaryButton from '@/components/ui/PrimaryButton/PrimaryButton';
 import BrandProfile from '@/components/ui/BrandProfile/BrandProfile';
 import BrandToneSelector from '@/components/ui/BrandToneSelector/BrandToneSelector';
@@ -17,14 +19,14 @@ import {
 import styles from './brand-style.module.css';
 
 const PRESET_COLOR_SWATCHES = [
-  { hex: '#1B4332', name: 'Vert Forêt' },
-  { hex: '#D4A373', name: 'Terracotta' },
-  { hex: '#FAEDCD', name: 'Ivoire' },
-  { hex: '#2B2D42', name: 'Ardoise' },
-  { hex: '#C2593F', name: 'Brique Rouge' },
-  { hex: '#E76F51', name: 'Corail Doux' },
-  { hex: '#264653', name: 'Bleu Océan' },
-  { hex: '#E9C46A', name: 'Moutarde' },
+  { hex: '#1B4332', id: 'presetForest' },
+  { hex: '#D4A373', id: 'presetTerracotta' },
+  { hex: '#FAEDCD', id: 'presetIvory' },
+  { hex: '#2B2D42', id: 'presetSlate' },
+  { hex: '#C2593F', id: 'presetBrick' },
+  { hex: '#E76F51', id: 'presetCoral' },
+  { hex: '#264653', id: 'presetOcean' },
+  { hex: '#E9C46A', id: 'presetMustard' },
 ];
 
 /**
@@ -44,6 +46,7 @@ const PRESET_COLOR_SWATCHES = [
  */
 export default function BrandStylePage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [profile, setProfile] = useState<BrandProfileData>(DEFAULT_BRAND_PROFILE);
   const [isCustomizing, setIsCustomizing] = useState(false);
@@ -69,7 +72,7 @@ export default function BrandStylePage() {
       const exists = prev.tones.includes(id);
       if (exists) {
         if (prev.tones.length <= 1) {
-          setErrorMsg('Veuillez conserver au minimum 1 tonalité.');
+          setErrorMsg(t('onboarding.brandStyle.toneMinError'));
           return prev;
         }
         return { ...prev, tones: prev.tones.filter((t) => t !== id) };
@@ -122,23 +125,24 @@ export default function BrandStylePage() {
           <button
             onClick={() => router.push('/onboarding/hours')}
             className={styles.backButton}
-            aria-label="Retour aux horaires"
+            aria-label={t('onboarding.brandStyle.backLabel')}
           >
             <ArrowLeft size={18} />
           </button>
           <Logo size="md" showTagline={false} />
           <div className={styles.stepBadge}>
             <Sparkles size={13} />
-            <span>Étape 5</span>
+            <span>{t('onboarding.brandStyle.stepBadge')}</span>
           </div>
+          <LanguageToggle compact />
         </header>
 
         {/* Titre & Message IA */}
         <main className={styles.mainContent}>
           <div className={styles.titleArea}>
-            <h1 className={styles.title}>On a analysé vos dernières publications.</h1>
+            <h1 className={styles.title}>{t('onboarding.brandStyle.title')}</h1>
             <p className={styles.subtitle}>
-              L&apos;IA a capté l&apos;ADN de votre restaurant pour générer des posts fidèles à votre identité.
+              {t('onboarding.brandStyle.subtitle')}
             </p>
           </div>
 
@@ -153,8 +157,8 @@ export default function BrandStylePage() {
           {isCustomizing && (
             <div className={styles.customizeDrawer}>
               <div className={styles.drawerHeader}>
-                <h2 className={styles.drawerTitle}>Personnaliser votre identité</h2>
-                <span className={styles.drawerSub}>Ajustez les paramètres selon vos préférences</span>
+                <h2 className={styles.drawerTitle}>{t('onboarding.brandStyle.customizeTitle')}</h2>
+                <span className={styles.drawerSub}>{t('onboarding.brandStyle.customizeSubtitle')}</span>
               </div>
 
               {errorMsg && (
@@ -166,7 +170,7 @@ export default function BrandStylePage() {
 
               {/* 1. Tonalité de marque */}
               <div className={styles.fieldSection}>
-                <label className={styles.fieldLabel}>Tonalités de marque (1 à 3 choix)</label>
+                <label className={styles.fieldLabel}>{t('onboarding.brandStyle.tonesLabel')}</label>
                 <BrandToneSelector
                   selectedTones={profile.tones}
                   onToggleTone={handleToggleTone}
@@ -177,8 +181,8 @@ export default function BrandStylePage() {
               {/* 2. Palette de couleurs */}
               <div className={styles.fieldSection}>
                 <div className={styles.fieldLabelRow}>
-                  <label className={styles.fieldLabel}>Couleurs de votre univers</label>
-                  <span className={styles.fieldHelper}>Cliquez pour ajouter ou retirer</span>
+                  <label className={styles.fieldLabel}>{t('onboarding.brandStyle.colorsLabel')}</label>
+                  <span className={styles.fieldHelper}>{t('onboarding.brandStyle.colorsHint')}</span>
                 </div>
                 <div className={styles.swatchesPalette}>
                   {PRESET_COLOR_SWATCHES.map((swatch) => {
@@ -187,10 +191,12 @@ export default function BrandStylePage() {
                       <button
                         key={swatch.hex}
                         type="button"
-                        onClick={() => handleToggleColor(swatch)}
+                        onClick={() =>
+                          handleToggleColor({ hex: swatch.hex, name: t(`onboarding.brandStyle.${swatch.id}`) })
+                        }
                         className={`${styles.swatchBtn} ${isSelected ? styles.swatchActive : ''}`}
                         style={{ backgroundColor: swatch.hex }}
-                        title={swatch.name}
+                        title={t(`onboarding.brandStyle.${swatch.id}`)}
                       >
                         {isSelected && <Check size={14} className={styles.swatchCheck} />}
                       </button>
@@ -201,7 +207,7 @@ export default function BrandStylePage() {
 
               {/* 3. Style rédactionnel */}
               <div className={styles.fieldSection}>
-                <label className={styles.fieldLabel}>Style rédactionnel souhaité</label>
+                <label className={styles.fieldLabel}>{t('onboarding.brandStyle.editorialLabel')}</label>
                 <div className={styles.editorialGrid}>
                   {AVAILABLE_EDITORIAL_STYLES.map((styleOpt) => {
                     const isSelected = profile.editorialStyle === styleOpt.id;
@@ -213,10 +219,14 @@ export default function BrandStylePage() {
                         className={`${styles.editorialCard} ${isSelected ? styles.editorialSelected : ''}`}
                       >
                         <div className={styles.editorialRow}>
-                          <span className={styles.editorialTitle}>{styleOpt.label}</span>
+                          <span className={styles.editorialTitle}>
+                            {t(`onboarding.brandStyle.editorial.${styleOpt.id}.label`)}
+                          </span>
                           {isSelected && <Check size={14} className={styles.editorialCheck} />}
                         </div>
-                        <span className={styles.editorialDesc}>{styleOpt.description}</span>
+                        <span className={styles.editorialDesc}>
+                          {t(`onboarding.brandStyle.editorial.${styleOpt.id}.description`)}
+                        </span>
                       </button>
                     );
                   })}
@@ -231,11 +241,11 @@ export default function BrandStylePage() {
               onClick={handleNext}
               icon={<ArrowRight size={18} />}
             >
-              Suivant
+              {t('onboarding.brandStyle.next')}
             </PrimaryButton>
 
             <p className={styles.footerDisclaimer}>
-              Vos opportunités quotidiennes adopteront automatiquement ce ton.
+              {t('onboarding.brandStyle.footerNote')}
             </p>
           </footer>
         </main>

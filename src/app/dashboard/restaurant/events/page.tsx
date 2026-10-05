@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import EventCard from '@/components/ui/EventCard/EventCard';
 import EventForm from '@/components/ui/EventForm/EventForm';
+import { useLanguage } from '@/i18n';
 import {
   RestaurantEvent,
   INITIAL_RESTAURANT_EVENTS,
@@ -51,6 +52,7 @@ import styles from '../restaurant.module.css';
  * - activation / désactivation
  */
 export default function RestaurantEventsPage() {
+  const { t } = useLanguage();
   const [restaurantName, setRestaurantName] = useState('Le Petit Bistrot');
   const [events, setEvents] = useState<RestaurantEvent[]>(INITIAL_RESTAURANT_EVENTS);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -80,13 +82,16 @@ export default function RestaurantEventsPage() {
             const live = json.data.event;
             const liveEventItem: RestaurantEvent = {
               id: 'evt_live_ticketmaster_signal',
-              title: live.title || 'Concert / Événement en direct',
-              date: "Aujourd'hui / Ce soir",
+              title: live.title || t('restaurant.events.liveTitleFallback'),
+              date: t('restaurant.events.liveDateLabel'),
               time: live.time || '20:00',
               category: 'concert',
               imageUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80',
               isActive: true,
-              description: `Détecté en direct par Ticketmaster à proximité : ${live.venue || ''} (${live.distance || 'Zone locale'}). Utilisé pour les opportunités IA.`,
+              description: t('restaurant.events.liveDescription', {
+                venue: live.venue || '',
+                distance: live.distance || t('restaurant.events.localZone'),
+              }),
             };
             setEvents((prev) => [liveEventItem, ...prev.filter((e) => e.id !== 'evt_live_ticketmaster_signal')]);
           }
@@ -110,10 +115,10 @@ export default function RestaurantEventsPage() {
   const handleSaveEvent = async (savedEvent: RestaurantEvent) => {
     if (editingEvent) {
       const updated = events.map((e) => (e.id === savedEvent.id ? savedEvent : e));
-      saveEventsList(updated, `Événement "${savedEvent.title}" mis à jour.`);
+      saveEventsList(updated, t('restaurant.events.updated', { title: savedEvent.title }));
     } else {
       const updated = [savedEvent, ...events];
-      saveEventsList(updated, `Événement "${savedEvent.title}" ajouté avec succès.`);
+      saveEventsList(updated, t('restaurant.events.added', { title: savedEvent.title }));
 
       // Synchronisation immédiate avec le moteur de signaux & opportunités IA
       try {
@@ -127,7 +132,7 @@ export default function RestaurantEventsPage() {
             description:
               savedEvent.description && savedEvent.description.length >= 5
                 ? savedEvent.description
-                : `Événement ${savedEvent.title} organisé à l'établissement.`,
+                : t('restaurant.events.manualDescriptionFallback', { title: savedEvent.title }),
             dateTime: savedEvent.date + ' ' + (savedEvent.time || '20:00'),
             intensity: 1.0,
           }),
@@ -150,7 +155,7 @@ export default function RestaurantEventsPage() {
   const handleDelete = (id: string) => {
     const target = events.find((e) => e.id === id);
     const updated = events.filter((e) => e.id !== id);
-    saveEventsList(updated, `Événement "${target?.title || ''}" supprimé.`);
+    saveEventsList(updated, t('restaurant.events.deleted', { title: target?.title || '' }));
   };
 
   // 4. Toggle activation / désactivation
@@ -162,8 +167,8 @@ export default function RestaurantEventsPage() {
     saveEventsList(
       updated,
       target?.isActive
-        ? `Événement "${target.title}" activé pour l’IA.`
-        : `Événement "${target?.title}" mis en veille.`
+        ? t('restaurant.events.activated', { title: target.title })
+        : t('restaurant.events.snoozed', { title: target?.title || '' })
     );
   };
 
@@ -178,7 +183,7 @@ export default function RestaurantEventsPage() {
             </div>
             <div>
               <h1 className={styles.headerTitle}>{restaurantName}</h1>
-              <p className={styles.headerSubtitle}>Gestion de l&apos;établissement & IA</p>
+              <p className={styles.headerSubtitle}>{t('restaurant.header.subtitle')}</p>
             </div>
           </div>
         </header>
@@ -192,15 +197,15 @@ export default function RestaurantEventsPage() {
         )}
 
         {/* Navigation Interne (Tabs) */}
-        <nav className={styles.tabsNav} aria-label="Sections du restaurant">
+        <nav className={styles.tabsNav} aria-label={t('restaurant.tabs.label')}>
           <Link href="/dashboard/restaurant" className={styles.tabBtn}>
             <Store size={14} />
-            <span>Profil</span>
+            <span>{t('restaurant.tabs.profile')}</span>
           </Link>
 
           <Link href="/dashboard/restaurant/offers" className={styles.tabBtn}>
             <Tag size={14} />
-            <span>Offres</span>
+            <span>{t('restaurant.tabs.offers')}</span>
           </Link>
 
           <Link
@@ -208,12 +213,12 @@ export default function RestaurantEventsPage() {
             className={`${styles.tabBtn} ${styles.tabActive}`}
           >
             <Calendar size={14} />
-            <span>Événements</span>
+            <span>{t('restaurant.tabs.events')}</span>
           </Link>
 
           <Link href="/dashboard/restaurant/accounts" className={styles.tabBtn}>
             <Share2 size={14} />
-            <span>Comptes</span>
+            <span>{t('restaurant.tabs.accounts')}</span>
           </Link>
         </nav>
 
@@ -222,9 +227,14 @@ export default function RestaurantEventsPage() {
           {/* Header d'actions des événements */}
           <div className={styles.offersHeaderRow}>
             <div>
-              <h2 className={styles.tabSectionTitle}>Événements du quartier</h2>
+              <h2 className={styles.tabSectionTitle}>{t('restaurant.events.title')}</h2>
               <p className={styles.tabSectionSubtitle}>
-                {events.filter((e) => e.isActive).length} actif{events.filter((e) => e.isActive).length > 1 ? 's' : ''} sur {events.length} configuré{events.length > 1 ? 's' : ''}
+                {t('restaurant.events.summary', {
+                  active: events.filter((e) => e.isActive).length,
+                  plural: events.filter((e) => e.isActive).length > 1 ? 's' : '',
+                  total: events.length,
+                  pluralTotal: events.length > 1 ? 's' : '',
+                })}
               </p>
             </div>
 
@@ -239,14 +249,14 @@ export default function RestaurantEventsPage() {
                   borderRadius: 10,
                   fontSize: 13,
                   fontWeight: 600,
-                  backgroundColor: '#FFF7ED',
-                  border: '1px solid #FFEDD5',
-                  color: '#EA580C',
+                  backgroundColor: '#FFF3EC',
+                  border: '1px solid #FFE0CC',
+                  color: '#E04F00',
                   textDecoration: 'none',
                 }}
               >
                 <Sparkles size={14} strokeWidth={1.75} />
-                <span>Studio Affiche & Légende</span>
+                <span>{t('restaurant.events.studio')}</span>
               </Link>
 
               <button
@@ -258,7 +268,7 @@ export default function RestaurantEventsPage() {
                 className={styles.addOfferBtn}
               >
                 <Plus size={15} />
-                <span>+ Ajouter</span>
+                <span>{t('restaurant.events.add')}</span>
               </button>
             </div>
           </div>

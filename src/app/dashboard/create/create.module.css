@@ -1,7 +1,7 @@
 .screenWrapper {
   min-height: 100%;
   padding: 1.5rem 1rem 5rem 1rem;
-  background-color: var(--color-bg-app, #F8FAFC);
+  background-color: var(--color-bg-app, #F7F7F7);
 }
 
 .container {
@@ -37,25 +37,25 @@
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #FF6B4A 0%, #FF8A65 100%);
+  background: linear-gradient(135deg, #FF5A00 0%, #FF7A2E 100%);
   color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(255, 107, 74, 0.25);
+  box-shadow: 0 4px 12px rgba(255, 90, 0,  0.25);
 }
 
 .pageTitle {
   font-size: 1.6rem;
   font-weight: 800;
-  color: var(--color-text-primary, #0F172A);
+  color: var(--color-text-primary, #0D0D0D);
   letter-spacing: -0.02em;
   margin: 0;
 }
 
 .pageSubtitle {
   font-size: 0.95rem;
-  color: var(--color-text-secondary, #64748B);
+  color: var(--color-text-secondary, #6B6B6B);
   margin: 0;
   line-height: 1.4;
 }
@@ -66,8 +66,8 @@
   gap: 6px;
   font-size: 12px;
   font-weight: 700;
-  color: #047857;
-  background-color: #ECFDF5;
+  color: #15803D;
+  background-color: #DCFCE7;
   border: 1px solid #A7F3D0;
   padding: 4px 10px;
   border-radius: 9999px;
@@ -87,9 +87,9 @@
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  background-color: #ECFDF5;
+  background-color: #FFF0E8;
   border: 1px solid #6EE7B7;
-  color: #065F46;
+  color: #15803D;
   border-radius: 12px;
   font-size: 0.9rem;
   font-weight: 600;
@@ -113,7 +113,7 @@
 /* Carte Formulaire */
 .card {
   background-color: #FFFFFF;
-  border: 1px solid var(--color-border, #E2E8F0);
+  border: 1px solid var(--color-border, #E5E5E5);
   border-radius: 16px;
   padding: 1.5rem;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
@@ -126,14 +126,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--color-border, #E2E8F0);
+  border-bottom: 1px solid var(--color-border, #E5E5E5);
   padding-bottom: 1rem;
 }
 
 .cardTitle {
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--color-text-primary, #0F172A);
+  color: var(--color-text-primary, #0D0D0D);
   margin: 0;
   display: flex;
   align-items: center;
@@ -145,7 +145,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  background-color: #F1F5F9;
+  background-color: #F2F2F2;
   padding: 5px;
   border-radius: 12px;
 }
@@ -162,14 +162,14 @@
   border-radius: 8px;
   font-size: 0.78rem;
   font-weight: 600;
-  color: #64748B;
+  color: #6B6B6B;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .typeBtnActive {
   background-color: #FFFFFF;
-  color: var(--color-primary, #FF6B4A);
+  color: var(--color-primary, #FF5A00);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
@@ -183,25 +183,25 @@
 .label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #334155;
+  color: #2E2E2E;
 }
 
 .select, .input, .textarea {
   width: 100%;
   padding: 10px 14px;
   border-radius: 10px;
-  border: 1px solid #CBD5E1;
+  border: 1px solid #D4D4D4;
   font-size: 0.9rem;
   font-family: inherit;
-  color: #0F172A;
+  color: #0D0D0D;
   background-color: #FFFFFF;
   transition: border-color 0.15s ease;
 }
 
 .select:focus, .input:focus, .textarea:focus {
   outline: none;
-  border-color: #FF6B4A;
-  box-shadow: 0 0 0 3px rgba(255, 107, 74, 0.15);
+  border-color: #FF5A00;
+  box-shadow: 0 0 0 3px rgba(255, 90, 0,  0.15);
 }
 
 .textarea {
@@ -222,19 +222,19 @@
   gap: 6px;
   padding: 6px 12px;
   border-radius: 20px;
-  border: 1px solid #E2E8F0;
-  background-color: #F8FAFC;
+  border: 1px solid #E5E5E5;
+  background-color: #F7F7F7;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #475569;
+  color: #4B4B4B;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .platformChipActive {
-  background-color: #FFF7ED;
-  border-color: #FF8A65;
-  color: #EA580C;
+  background-color: #FFF3EC;
+  border-color: #FF7A2E;
+  color: #E04F00;
 }
 
 /* Sélecteur de styles d'affiche */
@@ -250,19 +250,19 @@
   gap: 8px;
   padding: 8px 12px;
   border-radius: 10px;
-  border: 1px solid #E2E8F0;
+  border: 1px solid #E5E5E5;
   background-color: #FAFAFA;
   cursor: pointer;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #334155;
+  color: #2E2E2E;
   transition: all 0.15s ease;
 }
 
 .styleCardActive {
-  border-color: #FF6B4A;
-  background-color: #FFF5F2;
-  color: #FF6B4A;
+  border-color: #FF5A00;
+  background-color: #FFF3EC;
+  color: #FF5A00;
 }
 
 /* Bouton principal Générer */
@@ -275,18 +275,18 @@
   padding: 13px;
   border-radius: 12px;
   border: none;
-  background: linear-gradient(135deg, #FF6B4A 0%, #E04B26 100%);
+  background: linear-gradient(135deg, #FF5A00 0%, #E04F00 100%);
   color: #FFFFFF;
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(255, 107, 74, 0.35);
+  box-shadow: 0 4px 14px rgba(255, 90, 0,  0.35);
   transition: all 0.2s ease;
 }
 
 .generateBtn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(255, 107, 74, 0.45);
+  box-shadow: 0 6px 18px rgba(255, 90, 0,  0.45);
 }
 
 .generateBtn:disabled {
@@ -304,7 +304,7 @@
 
 .mockupCard {
   background-color: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  border: 1px solid #E5E5E5;
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
@@ -315,7 +315,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 1px solid #F1F5F9;
+  border-bottom: 1px solid #F2F2F2;
 }
 
 .mockupUser {
@@ -328,7 +328,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FF6B4A, #FFA07A);
+  background: linear-gradient(135deg, #FF5A00, #FF9A5C);
   color: #FFFFFF;
   display: flex;
   align-items: center;
@@ -345,12 +345,12 @@
 .mockupName {
   font-size: 0.88rem;
   font-weight: 700;
-  color: #0F172A;
+  color: #0D0D0D;
 }
 
 .mockupTime {
   font-size: 0.72rem;
-  color: #94A3B8;
+  color: #8A8A8A;
 }
 
 /* Cadre de l'Affiche Visuelle */
@@ -359,7 +359,7 @@
   width: 100%;
   aspect-ratio: 4 / 3;
   overflow: hidden;
-  background-color: #0F172A;
+  background-color: #0D0D0D;
 }
 
 .posterImage {
@@ -434,8 +434,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 16px;
-  background-color: #F8FAFC;
-  border-bottom: 1px solid #F1F5F9;
+  background-color: #F7F7F7;
+  border-bottom: 1px solid #F2F2F2;
 }
 
 .switchPosterBtn {
@@ -444,7 +444,7 @@
   gap: 5px;
   background: transparent;
   border: none;
-  color: #64748B;
+  color: #6B6B6B;
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
@@ -454,8 +454,8 @@
 }
 
 .switchPosterBtn:hover {
-  background-color: #E2E8F0;
-  color: #0F172A;
+  background-color: #E5E5E5;
+  color: #0D0D0D;
 }
 
 /* Zone de la légende */
@@ -477,18 +477,18 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #64748B;
+  color: #6B6B6B;
 }
 
 .editCaptionInput {
   width: 100%;
   padding: 12px;
-  border: 1px solid #E2E8F0;
+  border: 1px solid #E5E5E5;
   border-radius: 10px;
   font-family: inherit;
   font-size: 0.88rem;
   line-height: 1.5;
-  color: #1E293B;
+  color: #222222;
   background-color: #FDFDFD;
   resize: vertical;
   min-height: 120px;
@@ -496,7 +496,7 @@
 
 .editCaptionInput:focus {
   outline: none;
-  border-color: #FF6B4A;
+  border-color: #FF5A00;
   background-color: #FFFFFF;
 }
 
@@ -537,8 +537,8 @@
   gap: 6px;
   padding: 12px 16px;
   background-color: #FFFFFF;
-  border: 1px solid #CBD5E1;
-  color: #334155;
+  border: 1px solid #D4D4D4;
+  color: #2E2E2E;
   border-radius: 12px;
   font-size: 0.9rem;
   font-weight: 600;
@@ -547,8 +547,8 @@
 }
 
 .scheduleBtn:hover {
-  background-color: #F8FAFC;
-  border-color: #94A3B8;
+  background-color: #F7F7F7;
+  border-color: #8A8A8A;
 }
 
 /* Modal de programmation */
@@ -586,22 +586,22 @@
 .modalTitle {
   font-size: 1.15rem;
   font-weight: 700;
-  color: #0F172A;
+  color: #0D0D0D;
   margin: 0;
 }
 
 .closeBtn {
   background: transparent;
   border: none;
-  color: #94A3B8;
+  color: #8A8A8A;
   cursor: pointer;
   padding: 4px;
   border-radius: 6px;
 }
 
 .closeBtn:hover {
-  color: #0F172A;
-  background-color: #F1F5F9;
+  color: #0D0D0D;
+  background-color: #F2F2F2;
 }
 
 @keyframes fadeIn {

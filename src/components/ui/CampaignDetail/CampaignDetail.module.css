@@ -26,7 +26,7 @@
 .imageGradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(22, 29, 26, 0.1) 0%, rgba(22, 29, 26, 0.65) 100%);
+  background: linear-gradient(180deg, rgba(13, 13, 13,  0.1) 0%, rgba(13, 13, 13,  0.65) 100%);
 }
 
 .imageBadges {
@@ -152,7 +152,7 @@
 /* Explanation Block */
 .explanationBlock {
   background-color: var(--color-primary-subtle);
-  border: 1px solid rgba(27, 67, 50, 0.15);
+  border: 1px solid rgba(255, 90, 0,  0.15);
   border-radius: var(--radius-xl);
   padding: 14px 16px;
   display: flex;

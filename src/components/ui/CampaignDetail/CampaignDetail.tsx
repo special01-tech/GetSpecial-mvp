@@ -13,6 +13,7 @@ import {
   Share2,
 } from 'lucide-react';
 import { CampaignData, CampaignPlatform } from '@/services/campaign/campaign.data';
+import { useLanguage } from '@/i18n';
 import styles from './CampaignDetail.module.css';
 
 interface CampaignDetailProps {
@@ -20,6 +21,7 @@ interface CampaignDetailProps {
 }
 
 export default function CampaignDetail({ campaign }: CampaignDetailProps) {
+  const { t } = useLanguage();
   const getPlatformLabel = (p: CampaignPlatform) => {
     switch (p) {
       case 'instagram':
@@ -61,7 +63,7 @@ export default function CampaignDetail({ campaign }: CampaignDetailProps) {
 
       {/* 3. Plateformes proposées */}
       <div className={styles.platformsSection}>
-        <span className={styles.subHeading}>Plateformes de diffusion</span>
+        <span className={styles.subHeading}>{t('common.components.campaignDetail.platformsHeading')}</span>
         <div className={styles.pillsList}>
           {campaign.platforms.map((platform) => (
             <div key={platform} className={styles.platformPill}>
@@ -85,7 +87,7 @@ export default function CampaignDetail({ campaign }: CampaignDetailProps) {
       <div className={styles.explanationBlock}>
         <div className={styles.explanationHeader}>
           <Sparkles size={14} className={styles.sparkleIcon} />
-          <span>Pourquoi cette opportunité ?</span>
+          <span>{t('common.components.campaignDetail.whyOpportunity')}</span>
         </div>
         <p className={styles.explanationText}>
           {campaign.opportunityExplanation}
@@ -96,11 +98,11 @@ export default function CampaignDetail({ campaign }: CampaignDetailProps) {
       <div className={styles.publishTimeCard}>
         <div className={styles.publishHeader}>
           <Clock size={16} className={styles.clockIcon} />
-          <span className={styles.publishLabel}>Heure de publication recommandée</span>
+          <span className={styles.publishLabel}>{t('common.components.campaignDetail.publishTimeLabel')}</span>
         </div>
         <div className={styles.timeDisplay}>
           <span className={styles.timeValue}>{campaign.publishTime}</span>
-          <span className={styles.timeContext}>Optimisé pour un impact maximal</span>
+          <span className={styles.timeContext}>{t('common.components.campaignDetail.optimizedContext')}</span>
         </div>
       </div>
     </div>

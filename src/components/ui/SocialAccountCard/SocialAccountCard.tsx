@@ -6,6 +6,7 @@ import {
   SocialAccountConfig,
   SocialPlatformId,
 } from '@/services/onboarding/social-accounts.types';
+import { useLanguage } from '@/i18n';
 import styles from './SocialAccountCard.module.css';
 
 interface SocialAccountCardProps {
@@ -21,6 +22,7 @@ export default function SocialAccountCard({
 }: SocialAccountCardProps) {
   const isConnected = account.status === 'connected' || account.status === 'verified';
   const isGoogle = account.id === 'google_business';
+  const { t } = useLanguage();
 
   return (
     <article className={`${styles.card} ${isConnected ? styles.cardConnected : ''}`}>
@@ -96,7 +98,7 @@ export default function SocialAccountCard({
           {isGoogle && (
             <span className={styles.localBadge}>
               <MapPin size={10} />
-              <span>Référencement local</span>
+              <span>{t('common.components.socialAccountCard.localBadge')}</span>
             </span>
           )}
         </div>
@@ -108,7 +110,11 @@ export default function SocialAccountCard({
             }`}
           >
             <span className={styles.statusDot} />
-            <span>{isConnected ? 'Connecté' : 'Non connecté'}</span>
+            <span>
+              {isConnected
+                ? t('common.components.socialAccountCard.connected')
+                : t('common.components.socialAccountCard.disconnected')}
+            </span>
           </span>
 
           {account.accountHandle && isConnected && (
@@ -116,7 +122,9 @@ export default function SocialAccountCard({
           )}
         </div>
 
-        <p className={styles.benefitsText}>{account.benefits}</p>
+        <p className={styles.benefitsText}>
+          {t(`common.socialAccounts.${account.id}.benefits`)}
+        </p>
       </div>
 
       {/* Colonne Droite : Bouton d'action Connecter / Déconnecter */}
@@ -126,17 +134,25 @@ export default function SocialAccountCard({
           onClick={() => onToggleConnect(account.id)}
           disabled={isLoading}
           className={`${styles.connectBtn} ${isConnected ? styles.connectedBtn : styles.primaryActionBtn}`}
-          aria-label={isConnected ? `Déconnecter ${account.name}` : `Connecter ${account.name}`}
+          aria-label={
+            isConnected
+              ? t('common.components.socialAccountCard.disconnectAria', {
+                  name: account.name,
+                })
+              : t('common.components.socialAccountCard.connectAria', {
+                  name: account.name,
+                })
+          }
         >
           {isLoading ? (
             <Loader2 size={15} className="spin" style={{ animation: 'spin 1s linear infinite' }} />
           ) : isConnected ? (
             <>
               <Check size={14} strokeWidth={2.5} />
-              <span>Connecté</span>
+              <span>{t('common.components.socialAccountCard.connectedButton')}</span>
             </>
           ) : (
-            <span>Connecter</span>
+            <span>{t('common.components.socialAccountCard.connectButton')}</span>
           )}
         </button>
       </div>

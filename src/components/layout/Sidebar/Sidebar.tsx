@@ -2,6 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import Logo from '@/components/ui/Logo/Logo';
+import LanguageToggle from '@/components/ui/LanguageToggle';
+import { useLanguage } from '@/i18n';
 import {
   Sparkles,
   MessageSquare,
@@ -16,24 +19,24 @@ import styles from './Sidebar.module.css';
 
 /** Élément de navigation dans la sidebar */
 interface NavItem {
-  label: string;
+  labelKey: string;
   href: string;
   icon: LucideIcon;
 }
 
 /** Liens de navigation principaux */
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Today', href: '/dashboard', icon: Sparkles },
-  { label: 'Studio IA', href: '/dashboard/create', icon: PenTool },
-  { label: 'Chat', href: '/dashboard/chat', icon: MessageSquare },
-  { label: 'Planning', href: '/dashboard/planning', icon: Calendar },
-  { label: 'Restaurant', href: '/dashboard/restaurant', icon: Store },
-  { label: 'Settings', href: '/dashboard/settings', icon: Settings },
+  { labelKey: 'nav.today', href: '/dashboard', icon: Sparkles },
+  { labelKey: 'nav.studio', href: '/dashboard/create', icon: PenTool },
+  { labelKey: 'nav.chat', href: '/dashboard/chat', icon: MessageSquare },
+  { labelKey: 'nav.planning', href: '/dashboard/planning', icon: Calendar },
+  { labelKey: 'nav.restaurant', href: '/dashboard/restaurant', icon: Store },
+  { labelKey: 'nav.settings', href: '/dashboard/settings', icon: Settings },
 ];
 
 /** Lien secondaire (bas de sidebar) */
 const BOTTOM_ITEMS: NavItem[] = [
-  { label: 'Analytics', href: '/dashboard/insights', icon: BarChart3 },
+  { labelKey: 'nav.analytics', href: '/dashboard/insights', icon: BarChart3 },
 ];
 
 /**
@@ -45,6 +48,7 @@ const BOTTOM_ITEMS: NavItem[] = [
  */
 export default function Sidebar() {
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   /** Construit les classes CSS d'un lien selon son état actif */
   const linkClasses = (href: string) => {
@@ -61,8 +65,7 @@ export default function Sidebar() {
     <aside className={styles.sidebar}>
       {/* Logo */}
       <div className={styles.logo}>
-        <span className={styles.logoIcon}>G</span>
-        <span>GetSpecial</span>
+        <Logo size="sm" />
       </div>
 
       {/* Navigation principale */}
@@ -70,11 +73,11 @@ export default function Sidebar() {
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           return (
-            <Link key={item.label} href={item.href} className={linkClasses(item.href)}>
+            <Link key={item.href} href={item.href} className={linkClasses(item.href)}>
               <span className={styles.navIcon}>
                 <Icon size={18} strokeWidth={2} />
               </span>
-              <span>{item.label}</span>
+              <span>{t(item.labelKey)}</span>
             </Link>
           );
         })}
@@ -85,14 +88,17 @@ export default function Sidebar() {
         {BOTTOM_ITEMS.map((item) => {
           const Icon = item.icon;
           return (
-            <Link key={item.label} href={item.href} className={linkClasses(item.href)}>
+            <Link key={item.href} href={item.href} className={linkClasses(item.href)}>
               <span className={styles.navIcon}>
                 <Icon size={18} strokeWidth={2} />
               </span>
-              <span>{item.label}</span>
+              <span>{t(item.labelKey)}</span>
             </Link>
           );
         })}
+        <div className={styles.localeRow}>
+          <LanguageToggle />
+        </div>
       </div>
     </aside>
   );

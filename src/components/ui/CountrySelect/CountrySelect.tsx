@@ -7,6 +7,7 @@ import {
   CountryItem,
   findCountry,
 } from '@/services/country/countries.data';
+import { useLanguage } from '@/i18n';
 import styles from './CountrySelect.module.css';
 
 interface CountrySelectProps {
@@ -20,8 +21,15 @@ export default function CountrySelect({
   value,
   onChange,
   id = 'country',
-  placeholder = 'Sélectionnez ou recherchez votre pays...',
+  placeholder,
 }: CountrySelectProps) {
+  const { t, locale } = useLanguage();
+  const resolvedPlaceholder =
+    placeholder ?? t('common.components.countrySelect.placeholder');
+
+  /** Nom du pays dans la langue active */
+  const countryName = (country: CountryItem) =>
+    locale === 'en' ? country.nameEn : country.nameFr;
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(0);
@@ -32,7 +40,7 @@ export default function CountrySelect({
 
   // Pays actuellement sélectionné selon la prop value
   const activeCountry = useMemo(() => findCountry(value), [value]);
-  const displayName = activeCountry ? activeCountry.nameFr : value || '';
+  const displayName = activeCountry ? countryName(activeCountry) : value || '';
 
   // Synchronisation du champ de texte :
   // Quand le menu est fermé, on affiche le pays sélectionné
@@ -92,8 +100,8 @@ export default function CountrySelect({
     if (clean && clean !== displayName) {
       const match = findCountry(clean);
       if (match) {
-        onChange(match.code, match.nameFr);
-        setSearchTerm(match.nameFr);
+        onChange(match.code, countryName(match));
+        setSearchTerm(countryName(match));
       } else {
         // Pays personnalisé (ex: Micronésie ou nouveau pays)
         onChange(clean.slice(0, 3).toUpperCase(), clean);
@@ -106,8 +114,8 @@ export default function CountrySelect({
 
   // Sélection d'un pays
   const handleSelect = (country: CountryItem) => {
-    onChange(country.code, country.nameFr);
-    setSearchTerm(country.nameFr);
+    onChange(country.code, countryName(country));
+    setSearchTerm(countryName(country));
     setIsOpen(false);
     inputRef.current?.blur();
   };
@@ -181,7 +189,7 @@ export default function CountrySelect({
           if (!isOpen) handleOpen();
         }}
       >
-        <span className={styles.flagIcon} title="Pays">
+        <span className={styles.flagIcon} title={t('common.components.countrySelect.countryTitle')}>
           <Globe size={18} strokeWidth={1.75} />
         </span>
 
@@ -194,7 +202,7 @@ export default function CountrySelect({
           onChange={handleInputChange}
           onFocus={handleOpen}
           onKeyDown={handleKeyDown}
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
           autoComplete="off"
         />
 
@@ -204,7 +212,7 @@ export default function CountrySelect({
               type="button"
               className={styles.clearBtn}
               onClick={handleClear}
-              title="Effacer la recherche"
+              title={t('common.components.countrySelect.clearSearchTitle')}
               tabIndex={-1}
             >
               <X size={15} strokeWidth={2} />
@@ -222,7 +230,11 @@ export default function CountrySelect({
               }
             }}
             tabIndex={-1}
-            title={isOpen ? 'Fermer la liste' : 'Ouvrir la liste des pays'}
+            title={
+              isOpen
+                ? t('common.components.countrySelect.closeListTitle')
+                : t('common.components.countrySelect.openListTitle')
+            }
           >
             <ChevronDown size={17} strokeWidth={1.75} />
           </button>
@@ -251,7 +263,7 @@ export default function CountrySelect({
                 >
                   <span className={styles.optionCodeBadge}>{item.code}</span>
                   <span className={styles.optionName}>
-                    {item.nameFr}
+                    {countryName(item)}
                     {item.phonePrefix && (
                       <span className={styles.optionPrefix}> ({item.phonePrefix})</span>
                     )}
@@ -279,10 +291,11 @@ export default function CountrySelect({
               </span>
               <div className={styles.customOptionContent}>
                 <span className={styles.customOptionTitle}>
-                  Pays non répertorié : &quot;<strong>{searchTerm}</strong>&quot;
+                  {t('common.components.countrySelect.unlistedPrefix')} &quot;
+                  <strong>{searchTerm}</strong>&quot;
                 </span>
                 <span className={styles.customOptionSubtitle}>
-                  Cliquez ou appuyez sur Entrée pour valider ce pays
+                  {t('common.components.countrySelect.unlistedHint')}
                 </span>
               </div>
             </li>

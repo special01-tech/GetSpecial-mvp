@@ -3,6 +3,7 @@
 import React from 'react';
 import { Check, Loader2, Unplug, MapPin } from 'lucide-react';
 import { ConnectedAccountData } from '@/services/restaurant/restaurant-accounts.data';
+import { useLanguage } from '@/i18n';
 import styles from './RestaurantAccountCard.module.css';
 
 interface RestaurantAccountCardProps {
@@ -17,6 +18,7 @@ export default function RestaurantAccountCard({
   isLoading = false,
 }: RestaurantAccountCardProps) {
   const isGoogle = account.id === 'google_business';
+  const { t } = useLanguage();
 
   return (
     <article
@@ -94,7 +96,7 @@ export default function RestaurantAccountCard({
           {isGoogle && (
             <span className={styles.localBadge}>
               <MapPin size={10} />
-              <span>Maps & Local</span>
+              <span>{t('common.components.socialAccountCard.localBadge')}</span>
             </span>
           )}
         </div>
@@ -110,11 +112,17 @@ export default function RestaurantAccountCard({
             }`}
           >
             <span className={styles.statusDot} />
-            <span>{account.isConnected ? 'Connecté' : 'Non connecté'}</span>
+            <span>
+              {account.isConnected
+                ? t('common.components.restaurantAccountCard.connected')
+                : t('common.components.restaurantAccountCard.disconnected')}
+            </span>
           </span>
         </div>
 
-        <p className={styles.description}>{account.description}</p>
+        <p className={styles.description}>
+          {t(`common.connectedAccounts.${account.id}.description`)}
+        </p>
       </div>
 
       {/* Colonne Droite : Bouton Connecter / Déconnecter */}
@@ -128,16 +136,20 @@ export default function RestaurantAccountCard({
           }`}
           aria-label={
             account.isConnected
-              ? `Déconnecter ${account.name}`
-              : `Connecter ${account.name}`
+              ? t('common.components.restaurantAccountCard.disconnectAria', {
+                  name: account.name,
+                })
+              : t('common.components.restaurantAccountCard.connectAria', {
+                  name: account.name,
+                })
           }
         >
           {isLoading ? (
             <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
           ) : account.isConnected ? (
-            <span>Déconnecter</span>
+            <span>{t('common.components.restaurantAccountCard.disconnectButton')}</span>
           ) : (
-            <span>Connecter</span>
+            <span>{t('common.components.restaurantAccountCard.connectButton')}</span>
           )}
         </button>
       </div>

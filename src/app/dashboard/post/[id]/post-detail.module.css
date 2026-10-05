@@ -74,9 +74,9 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  background: #E8F5E9;
-  color: #1B5E20;
-  border: 1px solid #A5D6A7;
+  background: #FFF0E8;
+  color: #15803D;
+  border: 1px solid #FFD2B8;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   font-size: var(--text-xs);

@@ -18,6 +18,8 @@ import {
   Globe,
 } from 'lucide-react';
 import Logo from '@/components/ui/Logo/Logo';
+import LanguageToggle from '@/components/ui/LanguageToggle';
+import { useLanguage } from '@/i18n';
 import PrimaryButton from '@/components/ui/PrimaryButton/PrimaryButton';
 import SummaryItem from '@/components/ui/SummaryItem/SummaryItem';
 import { getCountryDisplayName } from '@/services/country/countries.data';
@@ -35,19 +37,20 @@ interface RecapState {
   ambiance: string;
 }
 
-const DEFAULT_RECAP: RecapState = {
-  restaurantName: 'Mon Établissement',
-  type: 'Restaurant',
-  specialties: 'Spécialités de la maison',
-  hours: '11:30 - 23:00 • Lun - Dim',
-  country: 'France',
-  hasTerrace: true,
-  hasDelivery: false,
-  ambiance: 'Convivial & Chaleureux',
-};
-
 export default function OnboardingSummaryPage() {
   const router = useRouter();
+  const { t } = useLanguage();
+
+  const DEFAULT_RECAP: RecapState = {
+    restaurantName: t('onboarding.summary.defaultName'),
+    type: t('onboarding.summary.defaultType'),
+    specialties: t('onboarding.summary.defaultSpecialties'),
+    hours: t('onboarding.summary.defaultHours'),
+    country: t('onboarding.summary.defaultCountry'),
+    hasTerrace: true,
+    hasDelivery: false,
+    ambiance: t('onboarding.summary.defaultAmbiance'),
+  };
 
   const [recap, setRecap] = useState<RecapState>(DEFAULT_RECAP);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -81,14 +84,14 @@ export default function OnboardingSummaryPage() {
         const parsedTypes: string[] = JSON.parse(storedTypes);
         if (parsedTypes.length > 0) {
           const typeLabels: Record<string, string> = {
-            restaurant: 'Restaurant',
-            bar: 'Bar & Lounge',
-            sports_bar: 'Sports Bar',
-            brasserie: 'Bistro',
-            cafe: 'Café & Coffee Shop',
-            fast_food: 'Fast Casual',
-            pizzeria: 'Pizzeria',
-            autre: 'Eatery',
+            restaurant: t('onboarding.summary.typeRestaurant'),
+            bar: t('onboarding.summary.typeBar'),
+            sports_bar: t('onboarding.summary.typeSportsBar'),
+            brasserie: t('onboarding.summary.typeBrasserie'),
+            cafe: t('onboarding.summary.typeCafe'),
+            fast_food: t('onboarding.summary.typeFastFood'),
+            pizzeria: t('onboarding.summary.typePizzeria'),
+            autre: t('onboarding.summary.typeOther'),
           };
           currentType = parsedTypes.map((t) => typeLabels[t] || t).join(', ');
         }
@@ -98,12 +101,12 @@ export default function OnboardingSummaryPage() {
         const parsedBrand = JSON.parse(storedBrand);
         if (parsedBrand.tones && parsedBrand.tones.length > 0) {
           const toneLabels: Record<string, string> = {
-            chaleureux: 'Warm & Friendly',
-            convivial: 'Welcoming',
-            gourmand: 'Foodie & Craft',
-            festif: 'Lively & Upbeat',
-            chic_elegant: 'Sophisticated & Upscale',
-            decontracte: 'Casual & Relaxed',
+            chaleureux: t('onboarding.summary.toneWarm'),
+            convivial: t('onboarding.summary.toneWelcoming'),
+            gourmand: t('onboarding.summary.toneFoodie'),
+            festif: t('onboarding.summary.toneLively'),
+            chic_elegant: t('onboarding.summary.toneUpscale'),
+            decontracte: t('onboarding.summary.toneCasual'),
           };
           currentAmbiance = parsedBrand.tones.map((t: string) => toneLabels[t] || t).join(', ');
         }
@@ -205,8 +208,9 @@ export default function OnboardingSummaryPage() {
           <Logo size="md" showTagline={false} />
           <div className={styles.successBadge}>
             <CheckCircle2 size={14} className={styles.checkIcon} />
-            <span>Setup Complete</span>
+            <span>{t('onboarding.summary.badgeDone')}</span>
           </div>
+          <LanguageToggle compact />
         </header>
 
         <main className={styles.mainContent}>
@@ -214,9 +218,9 @@ export default function OnboardingSummaryPage() {
             <div className={styles.celebrationIconWrapper}>
               <Rocket size={24} className={styles.rocketIcon} />
             </div>
-            <h1 className={styles.title}>All set! Ready to launch.</h1>
+            <h1 className={styles.title}>{t('onboarding.summary.title')}</h1>
             <p className={styles.subtitle}>
-              Here is your marketing profile. GetSpecial will now monitor local weather, sports, and foot traffic to boost your tables.
+              {t('onboarding.summary.subtitle')}
             </p>
           </div>
 
@@ -229,53 +233,53 @@ export default function OnboardingSummaryPage() {
 
           <section className={styles.recapCard}>
             <div className={styles.recapHeader}>
-              <span className={styles.recapTitle}>Restaurant Profile</span>
-              <span className={styles.liveTag}>Active</span>
+              <span className={styles.recapTitle}>{t('onboarding.summary.profileTitle')}</span>
+              <span className={styles.liveTag}>{t('onboarding.summary.activeTag')}</span>
             </div>
 
             <div className={styles.itemsList}>
               <SummaryItem
                 icon={Store}
-                label="Restaurant"
+                label={t('onboarding.summary.labelRestaurant')}
                 value={recap.restaurantName}
               />
               <SummaryItem
                 icon={Globe}
-                label="Country / Region"
+                label={t('onboarding.summary.labelCountry')}
                 value={recap.country}
               />
               <SummaryItem
                 icon={Tag}
-                label="Category"
+                label={t('onboarding.summary.labelCategory')}
                 value={recap.type}
               />
               <SummaryItem
                 icon={Utensils}
-                label="Specialties"
+                label={t('onboarding.summary.labelSpecialties')}
                 value={recap.specialties}
               />
               <SummaryItem
                 icon={Clock}
-                label="Hours"
+                label={t('onboarding.summary.labelHours')}
                 value={recap.hours}
               />
               <SummaryItem
                 icon={Sun}
-                label="Patio / Terrace"
-                value={recap.hasTerrace ? 'Yes' : 'No'}
-                badge={recap.hasTerrace ? 'Weather-aware' : undefined}
+                label={t('onboarding.summary.labelTerrace')}
+                value={recap.hasTerrace ? t('onboarding.summary.yes') : t('onboarding.summary.no')}
+                badge={recap.hasTerrace ? t('onboarding.summary.badgeWeather') : undefined}
                 isPositive={recap.hasTerrace}
               />
               <SummaryItem
                 icon={Bike}
-                label="Delivery"
-                value={recap.hasDelivery ? 'Yes' : 'No'}
-                badge={recap.hasDelivery ? 'Active' : 'Disabled'}
+                label={t('onboarding.summary.labelDelivery')}
+                value={recap.hasDelivery ? t('onboarding.summary.yes') : t('onboarding.summary.no')}
+                badge={recap.hasDelivery ? t('onboarding.summary.activeTag') : t('onboarding.summary.badgeDisabled')}
                 isPositive={recap.hasDelivery}
               />
               <SummaryItem
                 icon={Sparkles}
-                label="Brand Voice"
+                label={t('onboarding.summary.labelVoice')}
                 value={recap.ambiance}
               />
             </div>
@@ -293,11 +297,11 @@ export default function OnboardingSummaryPage() {
                 )
               }
             >
-              {isSubmitting ? 'Starting AI Engine...' : 'Launch GetSpecial'}
+              {isSubmitting ? t('onboarding.summary.launching') : t('onboarding.summary.launchCta')}
             </PrimaryButton>
 
             <p className={styles.footerDisclaimer}>
-              Your daily smart marketing recommendations will update each morning.
+              {t('onboarding.summary.footerNote')}
             </p>
           </footer>
         </main>

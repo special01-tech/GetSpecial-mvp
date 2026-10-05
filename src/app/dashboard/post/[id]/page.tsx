@@ -14,12 +14,14 @@ import {
   MOCK_DETAILED_POST,
   DetailedPostStats,
 } from '@/services/insights/post-insights.data';
+import { useLanguage } from '@/i18n';
 import styles from './post-detail.module.css';
 
 export default function PostDetailPage() {
   const router = useRouter();
   const params = useParams();
   const postId = params?.id as string;
+  const { t, formatDate } = useLanguage();
 
   const [post, setPost] = useState<DetailedPostStats>(MOCK_DETAILED_POST);
   const [notice, setNotice] = useState<string | null>(null);
@@ -38,12 +40,12 @@ export default function PostDetailPage() {
               title: matched.content.slice(0, 60) + (matched.content.length > 60 ? '...' : ''),
               imageUrl: matched.thumbnailUrl || MOCK_DETAILED_POST.imageUrl,
               platform: matched.platform || 'tiktok',
-              date: new Date(matched.publishedAt).toLocaleDateString('en-US', {
+              date: formatDate(matched.publishedAt, {
                 month: 'short',
                 day: 'numeric',
                 year: 'numeric',
               }),
-              time: new Date(matched.publishedAt).toLocaleTimeString('en-US', {
+              time: formatDate(matched.publishedAt, {
                 hour: 'numeric',
                 minute: '2-digit',
               }),
@@ -68,7 +70,7 @@ export default function PostDetailPage() {
   }, [postId]);
 
   const handleViewPost = () => {
-    setNotice(`Redirection vers la publication en direct sur ${post.platform.toUpperCase()}...`);
+    setNotice(t('content.postDetail.redirectNotice', { platform: post.platform.toUpperCase() }));
     setTimeout(() => {
       window.open(post.postUrl, '_blank');
       setNotice(null);
@@ -84,14 +86,14 @@ export default function PostDetailPage() {
             type="button"
             onClick={() => router.push('/dashboard/insights')}
             className={styles.backBtn}
-            aria-label="Retour aux insights"
+            aria-label={t('content.postDetail.backLabel')}
           >
             <ArrowLeft size={18} />
           </button>
 
           <div className={styles.headerTitleGroup}>
-            <h1 className={styles.pageTitle}>Détail de la publication</h1>
-            <span className={styles.statusLive}>Diffusé via IA</span>
+            <h1 className={styles.pageTitle}>{t('content.postDetail.title')}</h1>
+            <span className={styles.statusLive}>{t('content.postDetail.liveBadge')}</span>
           </div>
 
           <button
@@ -103,12 +105,12 @@ export default function PostDetailPage() {
                   url: post.postUrl,
                 });
               } else {
-                setNotice('Lien copié dans le presse-papier !');
+                setNotice(t('content.postDetail.copiedNotice'));
                 setTimeout(() => setNotice(null), 2500);
               }
             }}
             className={styles.shareIconBtn}
-            aria-label="Partager les statistiques"
+            aria-label={t('content.postDetail.shareLabel')}
           >
             <Share2 size={16} />
           </button>

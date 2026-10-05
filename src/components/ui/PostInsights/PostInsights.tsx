@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { DetailedPostStats } from '@/services/insights/post-insights.data';
 import PrimaryButton from '@/components/ui/PrimaryButton/PrimaryButton';
+import { useLanguage } from '@/i18n';
 import styles from './PostInsights.module.css';
 
 interface PostInsightsProps {
@@ -20,6 +21,7 @@ interface PostInsightsProps {
 }
 
 export default function PostInsights({ post, onViewPost }: PostInsightsProps) {
+  const { t } = useLanguage();
   const getPlatformLabel = (platform: string) => {
     switch (platform) {
       case 'instagram':
@@ -67,7 +69,7 @@ export default function PostInsights({ post, onViewPost }: PostInsightsProps) {
               onClick={handleOpenOriginalPost}
               className={styles.viewPostBtn}
             >
-              <span>Voir le post</span>
+              <span>{t('common.components.postInsights.viewPost')}</span>
               <ExternalLink size={14} />
             </button>
           </div>
@@ -76,7 +78,7 @@ export default function PostInsights({ post, onViewPost }: PostInsightsProps) {
 
       {/* 2. Statistiques Principales (4 métriques) */}
       <section className={styles.sectionBlock}>
-        <h3 className={styles.sectionHeading}>Statistiques du post</h3>
+        <h3 className={styles.sectionHeading}>{t('common.components.postInsights.statsHeading')}</h3>
 
         <div className={styles.statsGrid}>
           {/* 2 421 vues */}
@@ -88,7 +90,7 @@ export default function PostInsights({ post, onViewPost }: PostInsightsProps) {
               <span className={styles.statValue}>
                 {post.views.toLocaleString('fr-FR')}
               </span>
-              <span className={styles.statLabel}>Vues</span>
+              <span className={styles.statLabel}>{t('common.components.postInsights.viewsLabel')}</span>
             </div>
           </div>
 
@@ -101,7 +103,7 @@ export default function PostInsights({ post, onViewPost }: PostInsightsProps) {
               <span className={styles.statValue}>
                 {post.likes.toLocaleString('fr-FR')}
               </span>
-              <span className={styles.statLabel}>Likes</span>
+              <span className={styles.statLabel}>{t('common.components.postInsights.likesLabel')}</span>
             </div>
           </div>
 
@@ -112,7 +114,7 @@ export default function PostInsights({ post, onViewPost }: PostInsightsProps) {
             </div>
             <div className={styles.statNumbers}>
               <span className={styles.statValue}>{post.comments}</span>
-              <span className={styles.statLabel}>Commentaires</span>
+              <span className={styles.statLabel}>{t('common.components.postInsights.commentsLabel')}</span>
             </div>
           </div>
 
@@ -123,7 +125,7 @@ export default function PostInsights({ post, onViewPost }: PostInsightsProps) {
             </div>
             <div className={styles.statNumbers}>
               <span className={styles.statValue}>{post.shares}</span>
-              <span className={styles.statLabel}>Partages</span>
+              <span className={styles.statLabel}>{t('common.components.postInsights.sharesLabel')}</span>
             </div>
           </div>
         </div>
@@ -134,18 +136,21 @@ export default function PostInsights({ post, onViewPost }: PostInsightsProps) {
         <div className={styles.sectionHeaderRow}>
           <div className={styles.titleWithIcon}>
             <Users size={17} className={styles.usersIcon} />
-            <h3 className={styles.sectionHeading}>Démographie</h3>
+            <h3 className={styles.sectionHeading}>{t('common.components.postInsights.demographicsHeading')}</h3>
           </div>
-          <span className={styles.badgeAudience}>Audience touchée</span>
+          <span className={styles.badgeAudience}>{t('common.components.postInsights.audienceBadge')}</span>
         </div>
 
         <div className={styles.demographicsCard}>
           {/* Répartition Hommes / Femmes */}
           <div className={styles.genderBlock}>
             <div className={styles.genderHeader}>
-              <span className={styles.subHeading}>Hommes / Femmes</span>
+              <span className={styles.subHeading}>{t('common.components.postInsights.genderHeading')}</span>
               <span className={styles.genderRatioText}>
-                {post.demographics.gender.women}% Femmes • {post.demographics.gender.men}% Hommes
+                {t('common.components.postInsights.genderRatio', {
+                  women: post.demographics.gender.women,
+                  men: post.demographics.gender.men,
+                })}
               </span>
             </div>
 
@@ -154,30 +159,42 @@ export default function PostInsights({ post, onViewPost }: PostInsightsProps) {
               <div
                 className={styles.womenSegment}
                 style={{ width: `${post.demographics.gender.women}%` }}
-                title={`Femmes: ${post.demographics.gender.women}%`}
+                title={t('common.components.postInsights.womenTitle', {
+                  pct: post.demographics.gender.women,
+                })}
               />
               <div
                 className={styles.menSegment}
                 style={{ width: `${post.demographics.gender.men}%` }}
-                title={`Hommes: ${post.demographics.gender.men}%`}
+                title={t('common.components.postInsights.menTitle', {
+                  pct: post.demographics.gender.men,
+                })}
               />
             </div>
 
             <div className={styles.genderLegend}>
               <div className={styles.legendItem}>
                 <span className={`${styles.legendDot} ${styles.dotWomen}`} />
-                <span>Femmes ({post.demographics.gender.women}%)</span>
+                <span>
+                  {t('common.components.postInsights.womenLegend', {
+                    pct: post.demographics.gender.women,
+                  })}
+                </span>
               </div>
               <div className={styles.legendItem}>
                 <span className={`${styles.legendDot} ${styles.dotMen}`} />
-                <span>Hommes ({post.demographics.gender.men}%)</span>
+                <span>
+                  {t('common.components.postInsights.menLegend', {
+                    pct: post.demographics.gender.men,
+                  })}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Tranches d'âge */}
           <div className={styles.ageBlock}>
-            <span className={styles.subHeading}>Tranches d&apos;âge</span>
+            <span className={styles.subHeading}>{t('common.components.postInsights.ageRangesHeading')}</span>
 
             <div className={styles.ageBarsList}>
               {post.demographics.ageRanges.map((age) => (

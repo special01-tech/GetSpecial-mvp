@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import SettingsSection from '@/components/ui/SettingsSection/SettingsSection';
 import PrimaryButton from '@/components/ui/PrimaryButton/PrimaryButton';
+import { useLanguage } from '@/i18n';
 import {
   RestaurantProfileData,
   INITIAL_RESTAURANT_PROFILE,
@@ -36,6 +37,7 @@ import styles from './restaurant.module.css';
  * - Comptes
  */
 export default function RestaurantProfilePage() {
+  const { t } = useLanguage();
   const [profile, setProfile] = useState<RestaurantProfileData>(INITIAL_RESTAURANT_PROFILE);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [isEditingHours, setIsEditingHours] = useState(false);
@@ -109,8 +111,8 @@ export default function RestaurantProfilePage() {
     }
     setSavedNotice(
       nextMode
-        ? 'Mode sombre activé (thème global GetSpecial appliqué).'
-        : 'Mode clair activé.'
+        ? t('restaurant.profile.darkEnabled')
+        : t('restaurant.profile.lightEnabled')
     );
     setTimeout(() => setSavedNotice(null), 3000);
   };
@@ -143,8 +145,8 @@ export default function RestaurantProfilePage() {
     saveProfile(
       updated,
       updated.hasTerrace
-        ? 'Terrasse activée pour les opportunités météo.'
-        : 'Terrasse désactivée.'
+        ? t('restaurant.profile.terraceOn')
+        : t('restaurant.profile.terraceOff')
     );
   };
 
@@ -153,8 +155,8 @@ export default function RestaurantProfilePage() {
     saveProfile(
       updated,
       updated.hasDelivery
-        ? 'Livraison activée pour les jours pluvieux.'
-        : 'Livraison désactivée.'
+        ? t('restaurant.profile.deliveryOn')
+        : t('restaurant.profile.deliveryOff')
     );
   };
 
@@ -170,8 +172,8 @@ export default function RestaurantProfilePage() {
     newHours[index] = {
       ...current,
       isOpen: !current.isOpen,
-      lunch: !current.isOpen ? '12h00 - 14h30' : 'Fermé',
-      dinner: !current.isOpen ? '19h00 - 22h30' : 'Fermé',
+      lunch: !current.isOpen ? '12h00 - 14h30' : t('restaurant.profile.closed'),
+      dinner: !current.isOpen ? '19h00 - 22h30' : t('restaurant.profile.closed'),
     };
     setProfile({ ...profile, openingHours: newHours });
   };
@@ -187,7 +189,7 @@ export default function RestaurantProfilePage() {
             </div>
             <div>
               <h1 className={styles.headerTitle}>{profile.name}</h1>
-              <p className={styles.headerSubtitle}>Gestion de l&apos;établissement & IA</p>
+              <p className={styles.headerSubtitle}>{t('restaurant.header.subtitle')}</p>
             </div>
           </div>
 
@@ -196,18 +198,18 @@ export default function RestaurantProfilePage() {
             type="button"
             onClick={toggleTheme}
             className={styles.themeToggleBtn}
-            title={isDarkMode ? 'Passer en mode clair' : 'Passer en mode sombre'}
-            aria-label={isDarkMode ? 'Activer mode clair' : 'Activer mode sombre'}
+            title={isDarkMode ? t('restaurant.profile.themeToLight') : t('restaurant.profile.themeToDark')}
+            aria-label={isDarkMode ? t('restaurant.profile.activateLight') : t('restaurant.profile.activateDark')}
           >
             {isDarkMode ? (
               <>
                 <SunMedium size={15} className={styles.sunIcon} />
-                <span>Clair</span>
+                <span>{t('restaurant.profile.light')}</span>
               </>
             ) : (
               <>
                 <Moon size={15} className={styles.moonIcon} />
-                <span>Sombre</span>
+                <span>{t('restaurant.profile.dark')}</span>
               </>
             )}
           </button>
@@ -222,13 +224,13 @@ export default function RestaurantProfilePage() {
         )}
 
         {/* Navigation Interne (Tabs) */}
-        <nav className={styles.tabsNav} aria-label="Sections du restaurant">
+        <nav className={styles.tabsNav} aria-label={t('restaurant.tabs.label')}>
           <Link
             href="/dashboard/restaurant"
             className={`${styles.tabBtn} ${styles.tabActive}`}
           >
             <Store size={14} />
-            <span>Profil</span>
+            <span>{t('restaurant.tabs.profile')}</span>
           </Link>
 
           <Link
@@ -236,7 +238,7 @@ export default function RestaurantProfilePage() {
             className={styles.tabBtn}
           >
             <Tag size={14} />
-            <span>Offres</span>
+            <span>{t('restaurant.tabs.offers')}</span>
           </Link>
 
           <Link
@@ -244,7 +246,7 @@ export default function RestaurantProfilePage() {
             className={styles.tabBtn}
           >
             <Calendar size={14} />
-            <span>Événements</span>
+            <span>{t('restaurant.tabs.events')}</span>
           </Link>
 
           <Link
@@ -252,7 +254,7 @@ export default function RestaurantProfilePage() {
             className={styles.tabBtn}
           >
             <Share2 size={14} />
-            <span>Comptes</span>
+            <span>{t('restaurant.tabs.accounts')}</span>
           </Link>
         </nav>
 
@@ -260,15 +262,15 @@ export default function RestaurantProfilePage() {
           <main className={styles.mainContent}>
             {/* Section 1 : Informations Générales */}
             <SettingsSection
-              title="Informations générales"
-              description="Identité du restaurant et style utilisé par l'IA"
+              title={t('restaurant.profile.infoTitle')}
+              description={t('restaurant.profile.infoDescription')}
               icon={Store}
               action={
                 <button
                   type="button"
                   onClick={() => {
                     if (isEditingInfo) {
-                      saveProfile(profile, 'Informations générales mises à jour.');
+                      saveProfile(profile, t('restaurant.profile.infoUpdated'));
                     }
                     setIsEditingInfo(!isEditingInfo);
                   }}
@@ -277,12 +279,12 @@ export default function RestaurantProfilePage() {
                   {isEditingInfo ? (
                     <>
                       <Check size={13} />
-                      <span>Enregistrer</span>
+                      <span>{t('restaurant.profile.save')}</span>
                     </>
                   ) : (
                     <>
                       <Edit2 size={13} />
-                      <span>Modifier</span>
+                      <span>{t('restaurant.profile.edit')}</span>
                     </>
                   )}
                 </button>
@@ -291,7 +293,7 @@ export default function RestaurantProfilePage() {
               <div className={styles.fieldsGrid}>
                 {/* Nom */}
                 <div className={styles.fieldItem}>
-                  <label className={styles.fieldLabel}>Nom du Restaurant</label>
+                  <label className={styles.fieldLabel}>{t('restaurant.profile.nameLabel')}</label>
                   {isEditingInfo ? (
                     <input
                       type="text"
@@ -306,19 +308,19 @@ export default function RestaurantProfilePage() {
 
                 {/* Type */}
                 <div className={styles.fieldItem}>
-                  <label className={styles.fieldLabel}>Type d&apos;établissement</label>
+                  <label className={styles.fieldLabel}>{t('restaurant.profile.typeLabel')}</label>
                   {isEditingInfo ? (
                     <select
                       value={profile.type}
                       onChange={(e) => setProfile({ ...profile, type: e.target.value })}
                       className={styles.selectInput}
                     >
-                      <option value="Restaurant">Restaurant</option>
-                      <option value="Bar">Bar</option>
-                      <option value="Brasserie">Brasserie</option>
-                      <option value="Pizzeria">Pizzeria</option>
-                      <option value="Café">Café</option>
-                      <option value="Fast Food">Fast Food</option>
+                      <option value="Restaurant">{t('restaurant.profile.types.restaurant')}</option>
+                      <option value="Bar">{t('restaurant.profile.types.bar')}</option>
+                      <option value="Brasserie">{t('restaurant.profile.types.brasserie')}</option>
+                      <option value="Pizzeria">{t('restaurant.profile.types.pizzeria')}</option>
+                      <option value="Café">{t('restaurant.profile.types.cafe')}</option>
+                      <option value="Fast Food">{t('restaurant.profile.types.fastFood')}</option>
                     </select>
                   ) : (
                     <span className={styles.fieldValue}>{profile.type}</span>
@@ -327,7 +329,7 @@ export default function RestaurantProfilePage() {
 
                 {/* Ton de marque */}
                 <div className={styles.fieldItem}>
-                  <label className={styles.fieldLabel}>Ton de marque IA</label>
+                  <label className={styles.fieldLabel}>{t('restaurant.profile.toneLabel')}</label>
                   {isEditingInfo ? (
                     <input
                       type="text"
@@ -345,7 +347,7 @@ export default function RestaurantProfilePage() {
 
                 {/* Palette de couleurs */}
                 <div className={styles.fieldItem}>
-                  <label className={styles.fieldLabel}>Couleurs de marque</label>
+                  <label className={styles.fieldLabel}>{t('restaurant.profile.colorsLabel')}</label>
                   <div className={styles.colorPalette}>
                     {profile.colors.map((c, i) => (
                       <div
@@ -362,8 +364,8 @@ export default function RestaurantProfilePage() {
 
             {/* Section 2 : Équipements & Services (Terrasse & Livraison) */}
             <SettingsSection
-              title="Services & Aménagements"
-              description="Facteurs pris en compte pour vos suggestions météo et affluence"
+              title={t('restaurant.profile.servicesTitle')}
+              description={t('restaurant.profile.servicesDescription')}
               icon={Sun}
             >
               <div className={styles.toggleRow}>
@@ -372,9 +374,9 @@ export default function RestaurantProfilePage() {
                     <Sun size={16} />
                   </div>
                   <div>
-                    <span className={styles.toggleTitle}>Terrasse extérieure</span>
+                    <span className={styles.toggleTitle}>{t('restaurant.profile.terraceTitle')}</span>
                     <p className={styles.toggleSubtitle}>
-                      Active les campagnes ensoleillées et afterwork plein air
+                      {t('restaurant.profile.terraceSubtitle')}
                     </p>
                   </div>
                 </div>
@@ -384,7 +386,7 @@ export default function RestaurantProfilePage() {
                   onClick={handleToggleTerrace}
                   className={`${styles.switchBtn} ${profile.hasTerrace ? styles.switchOn : styles.switchOff}`}
                   aria-pressed={profile.hasTerrace}
-                  aria-label="Basculer terrasse"
+                  aria-label={t('restaurant.profile.terraceToggle')}
                 >
                   <span className={styles.switchHandle} />
                 </button>
@@ -396,9 +398,9 @@ export default function RestaurantProfilePage() {
                     <Truck size={16} />
                   </div>
                   <div>
-                    <span className={styles.toggleTitle}>Service de livraison</span>
+                    <span className={styles.toggleTitle}>{t('restaurant.profile.deliveryTitle')}</span>
                     <p className={styles.toggleSubtitle}>
-                      Active les opportunités de commande à emporter lors d&apos;intempéries
+                      {t('restaurant.profile.deliverySubtitle')}
                     </p>
                   </div>
                 </div>
@@ -408,7 +410,7 @@ export default function RestaurantProfilePage() {
                   onClick={handleToggleDelivery}
                   className={`${styles.switchBtn} ${profile.hasDelivery ? styles.switchOn : styles.switchOff}`}
                   aria-pressed={profile.hasDelivery}
-                  aria-label="Basculer livraison"
+                  aria-label={t('restaurant.profile.deliveryToggle')}
                 >
                   <span className={styles.switchHandle} />
                 </button>
@@ -417,15 +419,15 @@ export default function RestaurantProfilePage() {
 
             {/* Section 3 : Horaires d'ouverture */}
             <SettingsSection
-              title="Horaires d'ouverture"
-              description="Affichage et paramétrage détaillé par jour de la semaine"
+              title={t('restaurant.profile.hoursTitle')}
+              description={t('restaurant.profile.hoursDescription')}
               icon={Clock}
               action={
                 <button
                   type="button"
                   onClick={() => {
                     if (isEditingHours) {
-                      saveProfile(profile, 'Horaires d’ouverture mis à jour.');
+                      saveProfile(profile, t('restaurant.profile.hoursUpdated'));
                     }
                     setIsEditingHours(!isEditingHours);
                   }}
@@ -434,12 +436,12 @@ export default function RestaurantProfilePage() {
                   {isEditingHours ? (
                     <>
                       <Check size={13} />
-                      <span>Enregistrer</span>
+                      <span>{t('restaurant.profile.save')}</span>
                     </>
                   ) : (
                     <>
                       <Edit2 size={13} />
-                      <span>Modifier</span>
+                      <span>{t('restaurant.profile.edit')}</span>
                     </>
                   )}
                 </button>
@@ -453,7 +455,7 @@ export default function RestaurantProfilePage() {
                   >
                     <div className={styles.dayCol}>
                       <span className={styles.dayName}>{item.day}</span>
-                      {!item.isOpen && <span className={styles.closedPill}>Fermé</span>}
+                      {!item.isOpen && <span className={styles.closedPill}>{t('restaurant.profile.closed')}</span>}
                     </div>
 
                     {isEditingHours ? (
@@ -463,7 +465,7 @@ export default function RestaurantProfilePage() {
                           onClick={() => handleToggleDayOpen(index)}
                           className={styles.openCloseToggle}
                         >
-                          {item.isOpen ? 'Fermer le jour' : 'Ouvrir le jour'}
+                          {item.isOpen ? t('restaurant.profile.closeDay') : t('restaurant.profile.openDay')}
                         </button>
 
                         {item.isOpen && (
@@ -473,14 +475,14 @@ export default function RestaurantProfilePage() {
                               value={item.lunch}
                               onChange={(e) => handleHourChange(index, 'lunch', e.target.value)}
                               className={styles.timeSlotInput}
-                              placeholder="Midi"
+                              placeholder={t('restaurant.profile.lunchPlaceholder')}
                             />
                             <input
                               type="text"
                               value={item.dinner}
                               onChange={(e) => handleHourChange(index, 'dinner', e.target.value)}
                               className={styles.timeSlotInput}
-                              placeholder="Soir"
+                              placeholder={t('restaurant.profile.dinnerPlaceholder')}
                             />
                           </div>
                         )}
@@ -494,7 +496,7 @@ export default function RestaurantProfilePage() {
                             <span className={styles.slotText}>{item.dinner}</span>
                           </>
                         ) : (
-                          <span className={styles.closedText}>Fermé toute la journée</span>
+                          <span className={styles.closedText}>{t('restaurant.profile.closedAllDay')}</span>
                         )}
                       </div>
                     )}

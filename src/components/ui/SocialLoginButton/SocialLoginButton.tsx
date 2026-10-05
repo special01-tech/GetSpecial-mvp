@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useLanguage } from '@/i18n';
 import styles from './SocialLoginButton.module.css';
 
 interface SocialLoginButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -15,6 +16,8 @@ export default function SocialLoginButton({
   className = '',
   ...props
 }: SocialLoginButtonProps) {
+  const { t } = useLanguage();
+
   return (
     <button
       className={`${styles.socialBtn} ${className}`}
@@ -44,7 +47,7 @@ export default function SocialLoginButton({
       </div>
 
       <span className={styles.btnText}>
-        {isLoading ? 'Connexion en cours...' : 'Continuer avec Google'}
+        {isLoading ? t('login.googleConnecting') : t('login.googleContinue')}
       </span>
     </button>
   );

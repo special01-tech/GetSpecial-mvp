@@ -15,7 +15,7 @@
 }
 
 .dayClosed {
-  background-color: #FAFAF8;
+  background-color: #F7F7F7;
   opacity: 0.85;
 }
 
@@ -43,7 +43,7 @@
   gap: 5px;
   background-color: var(--color-primary-subtle);
   color: var(--color-primary);
-  border: 1px solid rgba(27, 67, 50, 0.15);
+  border: 1px solid rgba(255, 90, 0,  0.15);
   border-radius: 999px;
   padding: 4px 10px;
   font-size: 11px;
@@ -65,7 +65,7 @@
 .closedNotice {
   padding: 8px 10px;
   border-radius: var(--radius-md);
-  background-color: #F5F5F0;
+  background-color: #F5F5F5;
   color: var(--color-text-muted);
   font-size: 12px;
   font-style: italic;

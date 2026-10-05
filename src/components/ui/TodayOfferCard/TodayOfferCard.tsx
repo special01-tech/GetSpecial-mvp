@@ -3,6 +3,7 @@
 import React from 'react';
 import { Tag, Clock, Sparkles, Check, ArrowRight } from 'lucide-react';
 import { TodayOffer } from '@/services/today/today.data';
+import { useLanguage } from '@/i18n';
 import styles from './TodayOfferCard.module.css';
 
 interface TodayOfferCardProps {
@@ -11,6 +12,7 @@ interface TodayOfferCardProps {
 }
 
 export default function TodayOfferCard({ offer, onActivateToggle }: TodayOfferCardProps) {
+  const { t } = useLanguage();
   return (
     <div className={styles.card}>
       <div className={styles.leftAccent} />
@@ -34,7 +36,7 @@ export default function TodayOfferCard({ offer, onActivateToggle }: TodayOfferCa
         <div className={styles.actionRow}>
           <span className={styles.activeIndicator}>
             <span className={styles.statusDot} />
-            <span>Prêt pour diffusion réseaux</span>
+            <span>{t('common.components.todayOfferCard.readyLabel')}</span>
           </span>
 
           <button
@@ -42,7 +44,7 @@ export default function TodayOfferCard({ offer, onActivateToggle }: TodayOfferCa
             onClick={() => onActivateToggle && onActivateToggle(offer.id)}
             className={styles.boostBtn}
           >
-            <span>Pousser l&apos;offre</span>
+            <span>{t('common.components.todayOfferCard.boostButton')}</span>
             <ArrowRight size={13} />
           </button>
         </div>
