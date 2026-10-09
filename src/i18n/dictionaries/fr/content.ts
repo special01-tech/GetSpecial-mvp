@@ -5,10 +5,35 @@
 
 export const content = {
   planning: {
-    title: 'Planning Marketing',
-    subtitle: 'Actions et opportunités de la semaine',
+    title: 'Planifié',
+    subtitle: 'Une vue calendrier de vos publications planifiées.',
     newButton: 'Nouveau',
-    newActionTitle: "Demander une action à l'IA",
+    newActionTitle: 'Créer une nouvelle publication',
+    banner: {
+      title: 'Installer GetSpecial',
+      subtitle: 'Ajoutez-la à votre écran d’accueil pour un accès rapide en plein écran.',
+      installBtn: 'Installer',
+    },
+    calendar: {
+      todayBadge: "Aujourd'hui",
+      hint: 'Cliquez sur une date pour consulter les publications planifiées et les gérer directement depuis le calendrier.',
+      selectedDayPosts: 'Publications planifiées pour le {date}',
+      createForDay: 'Planifier pour ce jour',
+    },
+    upcomingEvents: {
+      title: 'ÉVÉNEMENTS À VENIR',
+      subtitle: 'Événements marketing et jours fériés à {city}.',
+      holidayBadge: 'JOUR FÉRIÉ',
+    },
+    upcomingPosts: {
+      badge: 'À VENIR',
+      title: 'Prochaines publications planifiées',
+      empty: 'Aucune publication planifiée pour l’instant. Créez une publication pour l’ajouter au calendrier.',
+    },
+    calendarSupport: {
+      title: 'Support calendrier',
+      description: 'Gérez votre planning au même endroit et gardez chaque publication sur les rails.',
+    },
     filtersLabel: 'Filtres par statut',
     filters: {
       all: 'Tous',
@@ -17,7 +42,7 @@ export const content = {
       programmed: 'Programmé',
       published: 'Publié',
     },
-    fallbackPost: 'Campaign post',
+    fallbackPost: 'Publication planifiée',
     publishedToday: "Publié aujourd'hui",
     today: "Aujourd'hui",
     emptyNoPosts: 'Aucune publication programmée',

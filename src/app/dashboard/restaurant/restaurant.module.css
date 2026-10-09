@@ -4,81 +4,152 @@
   display: flex;
   justify-content: center;
   font-family: var(--font-body);
+  width: 100%;
 }
 
 .container {
   width: 100%;
-  max-width: 480px;
+  max-width: 980px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  padding: var(--space-4) var(--space-3);
-  gap: var(--space-4);
+  padding: 0 0 3rem 0;
+  gap: 1.25rem;
 }
 
-/* Header */
+/* Header & Banner Mon Resto */
 .header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.headerTexts {
+  display: flex;
+  flex-direction: column;
+}
+
+.pageMainTitle {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.15;
+}
+
+.pageMainSubtitle {
+  font-size: 0.92rem;
+  color: #6B7280;
+  margin: 4px 0 0 0;
+  line-height: 1.4;
+}
+
+/* Carte Hero Restaurant */
+.heroCard {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 18px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: var(--space-2);
+  flex-wrap: wrap;
+  gap: 1.25rem;
 }
 
-.headerContent {
+.heroLeft {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: 1rem;
 }
 
 .storeAvatar {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-full);
-  background: var(--color-primary-subtle);
-  border: 1.5px solid var(--color-primary);
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: #FFF2EB;
+  border: 1.5px solid #FF5A00;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  color: #FF5A00;
+  box-shadow: 0 2px 6px rgba(255, 90, 0, 0.15);
 }
 
 .storeIcon {
-  color: var(--color-primary);
+  color: #FF5A00;
 }
 
-.headerTitle {
-  font-size: var(--text-lg);
-  font-weight: 700;
-  color: var(--color-text-main);
+.heroMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.heroNameRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.restaurantNameTitle {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #111827;
   margin: 0;
   line-height: 1.2;
 }
 
-.headerSubtitle {
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  margin: 2px 0 0 0;
+.restaurantTypeBadge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #FF5A00;
+  background-color: #FFF2EB;
+  padding: 2px 8px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.heroAddressRow {
+  font-size: 0.82rem;
+  color: #6B7280;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.heroRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .themeToggleBtn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--color-bg-surface);
-  border: 1.5px solid var(--color-border);
-  color: var(--color-text-main);
-  padding: 6px 12px;
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  color: #374151;
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-fast);
   box-shadow: var(--shadow-sm);
+  font-family: inherit;
 }
 
 .themeToggleBtn:hover {
-  background: var(--color-primary-subtle);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  background: #F9FAFB;
+  border-color: #D1D5DB;
+  color: #111827;
 }
 
 .sunIcon {
@@ -86,19 +157,19 @@
 }
 
 .moonIcon {
-  color: var(--color-primary);
+  color: #FF5A00;
 }
 
 .savedNotice {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  background: var(--color-primary-subtle);
-  color: var(--color-primary);
-  border: 1px solid var(--color-primary-light);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
-  font-size: var(--text-xs);
+  background: #ECFDF5;
+  color: #065F46;
+  border: 1px solid #A7F3D0;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 0.82rem;
   font-weight: 600;
   animation: fadeIn 0.25s ease-out;
 }
@@ -114,43 +185,65 @@
   }
 }
 
-/* Internal Tabs */
+/* Navigation interne par onglets (3 onglets modernes) */
 .tabsNav {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
-  background: var(--color-bg-surface);
-  border: 1.5px solid var(--color-border);
-  padding: 4px;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  padding: 5px;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  width: fit-content;
 }
 
 .tabBtn {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 5px;
+  gap: 7px;
   background: transparent;
   border: none;
-  padding: 8px 6px;
-  border-radius: var(--radius-md);
-  font-size: var(--text-xs);
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.84rem;
   font-weight: 600;
-  color: var(--color-text-muted);
+  color: #6B7280;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.15s ease;
+  text-decoration: none;
 }
 
 .tabBtn:hover {
-  color: var(--color-text-main);
-  background: var(--color-bg-app);
+  color: #111827;
+  background: #F9FAFB;
 }
 
 .tabActive {
-  background: var(--color-primary) !important;
-  color: var(--color-white) !important;
-  box-shadow: 0 2px 4px rgba(22, 163, 74,  0.2);
+  background: #FF5A00 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 6px rgba(255, 90, 0, 0.25);
+}
+
+/* Grille principale 2 colonnes pour Mon Resto */
+.restaurantGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (min-width: 960px) {
+  .restaurantGrid {
+    grid-template-columns: 1.15fr 1fr;
+  }
+}
+
+.columnLeft,
+.columnRight {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 /* Main Content */
@@ -164,28 +257,35 @@
 .editToggleBtn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: var(--color-primary-subtle);
-  color: var(--color-primary);
-  border: 1px solid rgba(255, 90, 0,  0.2);
-  padding: 5px 10px;
-  border-radius: var(--radius-md);
-  font-size: 11px;
-  font-weight: 600;
+  gap: 5px;
+  background: #FFF2EB;
+  color: #FF5A00;
+  border: 1px solid #FFE2D5;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 0.76rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.15s ease;
+  font-family: inherit;
 }
 
 .editToggleBtn:hover {
-  background: var(--color-primary);
-  color: var(--color-white);
+  background: #FF5A00;
+  color: #FFFFFF;
 }
 
-/* Section 1 : Fields Grid */
+/* Section 1 : Fields Grid (Multi-colonnes réparties) */
 .fieldsGrid {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 600px) {
+  .fieldsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 .fieldItem {
@@ -448,6 +548,170 @@
   gap: var(--space-2);
 }
 
+/* Section Heures Creuses (Créneaux calmes) */
+.offPeakContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.offPeakDesc {
+  font-size: 0.82rem;
+  color: #6B7280;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.offPeakSlotsList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.offPeakSlotItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background-color: #FFFDF8;
+  border: 1px solid #FDE68A;
+  transition: all 0.15s ease;
+}
+
+.offPeakSlotItem:hover {
+  background-color: #FEF9C3;
+}
+
+.offPeakSlotLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.offPeakSlotName {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.offPeakSlotDays {
+  font-size: 0.74rem;
+  color: #6B7280;
+  margin: 0;
+}
+
+.offPeakSlotRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.offPeakTimeBadge {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #B45309;
+  background-color: #FEF3C7;
+  padding: 3px 8px;
+  border-radius: 8px;
+  letter-spacing: 0.02em;
+}
+
+.offPeakDeleteBtn {
+  background: transparent;
+  border: none;
+  color: #9CA3AF;
+  padding: 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.offPeakDeleteBtn:hover {
+  background-color: #FEE2E2;
+  color: #DC2626;
+}
+
+.offPeakFormBox {
+  background-color: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: fadeIn 0.15s ease;
+}
+
+.offPeakFormRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.offPeakFormActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.offPeakCancelBtn {
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  color: #374151;
+  padding: 5px 12px;
+  border-radius: 7px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.offPeakSaveBtn {
+  background: #FF5A00;
+  border: none;
+  color: #FFFFFF;
+  padding: 5px 14px;
+  border-radius: 7px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.addSlotBtn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  color: #FF5A00;
+  border: 1px dashed #FFC2AA;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.addSlotBtn:hover {
+  background-color: #FFF2EB;
+  border-style: solid;
+}
+
+.offPeakEmptyText {
+  font-size: 0.8rem;
+  color: #9CA3AF;
+  font-style: italic;
+  margin: 0;
+}
+
 .placeholderTitle {
   font-size: var(--text-base);
   font-weight: 700;
@@ -528,6 +792,54 @@
   flex-direction: column;
   gap: var(--space-3);
 }
+
+.emptyOffersBox {
+  background: #FFFFFF;
+  border: 1.5px dashed #E5E7EB;
+  border-radius: 16px;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.emptyOffersIcon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background: #FFF2EB;
+  color: #FF5A00;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.emptyOffersTitle {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+}
+
+.emptyOffersText {
+  font-size: 0.85rem;
+  color: #6B7280;
+  max-width: 440px;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.emptyOffersActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 
 /* ÉCRAN 17 : Modale de Confirmation de Déconnexion */
 .confirmModalOverlay {

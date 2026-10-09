@@ -25,6 +25,6 @@ export async function GET(req: NextRequest) {
 
     return success(opportunities);
   } catch (err: any) {
-    return error(err.message, 500);
+    return error(err.stack || err.message || 'Erreur interne', 500);
   }
 }

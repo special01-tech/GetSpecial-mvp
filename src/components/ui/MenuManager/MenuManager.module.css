@@ -1,0 +1,507 @@
+.menuCard {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 18px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.menuHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.menuTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.menuIconCircle {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #FFF2EB;
+  color: #FF5A00;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid #FFE0CC;
+}
+
+.menuTitle {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.menuSubtitle {
+  font-size: 0.85rem;
+  color: #6B7280;
+  margin: 3px 0 0 0;
+}
+
+.aiBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, #FFF2EB, #FFE6D5);
+  color: #FF5A00;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid #FFD1B3;
+}
+
+/* Tabs de source : PDF, Site web, Image */
+.sourceTabsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #F3F4F6;
+  padding-bottom: 0.75rem;
+}
+
+.sourceTabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  color: #4B5563;
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sourceTabBtn:hover {
+  background: #F3F4F6;
+  color: #111827;
+}
+
+.sourceTabActive {
+  background: #111827;
+  color: #FFFFFF;
+  border-color: #111827;
+}
+
+.sourceTabActive:hover {
+  background: #1F2937;
+  color: #FFFFFF;
+}
+
+/* Zone d'upload / saisie */
+.uploadZone {
+  border: 2px dashed #E5E7EB;
+  border-radius: 14px;
+  padding: 1.5rem;
+  text-align: center;
+  background: #FAFAFA;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.uploadZone:hover {
+  border-color: #FF5A00;
+  background: #FFFBF8;
+}
+
+.uploadIcon {
+  color: #9CA3AF;
+  margin-bottom: 4px;
+}
+
+.uploadTitle {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1F2937;
+  margin: 0;
+}
+
+.uploadDesc {
+  font-size: 0.78rem;
+  color: #6B7280;
+  margin: 0;
+}
+
+.fileInputHidden {
+  display: none;
+}
+
+/* Input URL */
+.urlInputRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+}
+
+.urlInput {
+  flex: 1;
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-size: 0.88rem;
+  color: #111827;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.urlInput:focus {
+  border-color: #FF5A00;
+  box-shadow: 0 0 0 3px rgba(255, 90, 0, 0.12);
+}
+
+/* Aperçu du menu actif */
+.activeMenuBox {
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 0.9rem 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.activeMenuInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.activeMenuBadge {
+  background: #111827;
+  color: #FFFFFF;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.activeMenuName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #111827;
+  display: block;
+}
+
+.activeMenuMeta {
+  font-size: 0.78rem;
+  color: #6B7280;
+  display: block;
+  margin-top: 2px;
+}
+
+.activeMenuActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.analyzeBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FF5A00;
+  color: #FFFFFF;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(255, 90, 0, 0.25);
+  transition: all 0.15s ease;
+}
+
+.analyzeBtn:hover:not(:disabled) {
+  background: #E04F00;
+  transform: translateY(-1px);
+}
+
+.analyzeBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.removeMenuBtn {
+  background: transparent;
+  border: 1px solid #E5E7EB;
+  color: #6B7280;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.removeMenuBtn:hover {
+  background: #FEE2E2;
+  color: #DC2626;
+  border-color: #FCA5A5;
+}
+
+/* Modale / Panneau des résultats d'extraction */
+.extractionModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.extractionModalCard {
+  background: #FFFFFF;
+  border-radius: 20px;
+  max-width: 680px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  border: 1px solid #E5E7EB;
+}
+
+.extractionModalHeader {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #F3F4F6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.extractionHeaderTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sparkleCircle {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #FFF2EB;
+  color: #FF5A00;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.extractionModalTitle {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+}
+
+.extractionModalSubtitle {
+  font-size: 0.8rem;
+  color: #6B7280;
+  margin: 2px 0 0 0;
+}
+
+.closeModalBtn {
+  background: transparent;
+  border: none;
+  color: #6B7280;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.closeModalBtn:hover {
+  background: #F3F4F6;
+  color: #111827;
+}
+
+.extractionModalBody {
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.categoriesTagsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.categoryTag {
+  background: #F3F4F6;
+  color: #374151;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.extractedOffersList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.extractedOfferCard {
+  border: 1.5px solid #E5E7EB;
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.extractedOfferCard:hover {
+  border-color: #FF5A00;
+  background: #FFFDFB;
+}
+
+.extractedOfferSelected {
+  border-color: #FF5A00;
+  background: #FFF9F5;
+}
+
+.checkboxCol {
+  margin-top: 2px;
+}
+
+.customCheckbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1.5px solid #D1D5DB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+  color: #FFFFFF;
+  transition: all 0.15s;
+}
+
+.customCheckboxChecked {
+  background: #FF5A00;
+  border-color: #FF5A00;
+}
+
+.extractedOfferContent {
+  flex: 1;
+}
+
+.extractedOfferTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.extractedOfferName {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.extractedOfferPrice {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #FF5A00;
+  background: #FFF2EB;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.extractedOfferDesc {
+  font-size: 0.8rem;
+  color: #6B7280;
+  margin: 4px 0 0 0;
+  line-height: 1.35;
+}
+
+.extractedOfferPeriod {
+  font-size: 0.72rem;
+  color: #9CA3AF;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.extractionModalFooter {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #F3F4F6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FAFAFA;
+}
+
+.selectedCountNotice {
+  font-size: 0.82rem;
+  color: #6B7280;
+  font-weight: 500;
+}
+
+.importSelectedBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #FF5A00;
+  color: #FFFFFF;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.importSelectedBtn:hover:not(:disabled) {
+  background: #E04F00;
+}
+
+.importSelectedBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

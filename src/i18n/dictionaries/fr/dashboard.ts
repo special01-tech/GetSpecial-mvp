@@ -15,6 +15,8 @@ export const dashboard = {
     title: 'Bonjour !',
     subtitle:
       "Voici ce que nous avons découvert pour votre restaurant aujourd'hui.",
+    cta: 'Découvrir les opportunités',
+    ctaBadge: '{count} suggestions',
   },
   studio: {
     title: 'Studio Créatif : Générer une affiche & légende à la demande',
@@ -43,15 +45,54 @@ export const dashboard = {
     eventTime: 'Ce soir',
   },
   opportunities: {
-    title: "Today's Opportunities",
-    count: '{count} live detected',
-    emptyTitle: 'All quiet for today',
+    title: 'Actions marketing du jour',
+    count: '{count} opportunités détectées',
+    emptyTitle: 'Aucune opportunité pour le moment',
     emptyDescription:
-      'We are continuously monitoring local signals for high-impact opportunities.',
-    emptyButton: 'View schedule',
+      "GetSpecial analyse en continu la météo et les événements pour vous proposer les meilleures opportunités.",
+    emptyButton: 'Voir le planning',
   },
   offer: {
-    title: 'Featured Offer',
-    badge: 'Recommended',
+    title: 'Offre spéciale du jour',
+    badge: 'Recommandée par l’IA',
+  },
+  events: {
+    title: 'Événements',
+    badge: '{count} temps forts aujourd’hui',
+  },
+  insights: {
+    title: 'Impact & Performance',
+    badge: 'Derniers 30 jours',
+    viewsLabel: 'Vues totales',
+    viewsSub: 'Sur vos réseaux connectés',
+    engagementLabel: "Taux d'engagement",
+    engagementSub: 'Moyenne secteur : 4.5%',
+    coversLabel: 'Couverts estimés',
+    coversSub: 'Générés par GetSpecial',
+  },
+  stats: {
+    totalPosts: 'Publications totales',
+    totalPostsSub: 'Au total',
+    scheduled: 'Programmées',
+    scheduledSub: 'À venir',
+    published: 'Publiées',
+    publishedSub: 'Historique',
+    thisWeek: 'Cette semaine',
+    thisWeekSub: '7 derniers jours',
+  },
+  marketingContext: {
+    title: 'Contexte Marketing',
+    today: 'Aujourd’hui :',
+    detectedSignals: 'ÉVÉNEMENTS & SIGNAUX DÉTECTÉS',
+    noSignals: 'Aucun signal actif pour le moment.',
+    boostAction: 'Créer un post pour ce signal',
+  },
+  recentPosts: {
+    title: 'Dernières publications',
+    viewAll: 'Voir tout',
+    emptyTitle: 'Aucune publication pour l’instant',
+    emptyDescription: 'Vos publications apparaîtront ici dès que vous les aurez publiées.',
+    empty: 'Aucune publication pour le moment.',
   },
 };
+

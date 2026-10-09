@@ -104,6 +104,8 @@ model SocialAccount {
   platform          String     // facebook, instagram, google_business, tiktok
   outstandAccountId String
   username          String?
+  accessToken       String?    // Page Access Token / Token permanent de publication
+  tokenData         Json?      // Métadonnées étendues (expiration, scopes, refresh token)
   status            String     @default("connected") // connected, reconnect_needed, disconnected
   lastSyncAt        DateTime?
   createdAt         DateTime   @default(now())

@@ -151,37 +151,52 @@
 
 .stepsRow {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  align-items: center;
 }
 
 .stepCol {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   transition: all 0.2s ease;
   min-width: 0;
 }
 
 .stepIndicator {
-  width: 20px;
-  height: 20px;
+  width: 19px;
+  height: 19px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 700;
   flex-shrink: 0;
   transition: all 0.2s ease;
 }
 
 .stepTitle {
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   transition: all 0.2s ease;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.stepTitleFull {
+  display: inline;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stepTitleShort {
+  display: none;
+  white-space: nowrap;
 }
 
 /* Step States */
@@ -219,9 +234,18 @@
   font-weight: 600;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 620px) {
+  .stepTitleFull {
+    display: none;
+  }
+  .stepTitleShort {
+    display: inline;
+  }
   .stepTitle {
-    font-size: 0.7rem;
+    font-size: 0.69rem;
+  }
+  .stepsRow {
+    gap: 4px;
   }
 }
 
@@ -1602,13 +1626,14 @@
 }
 
 .socialIconBoxLarge {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .socialCardName {

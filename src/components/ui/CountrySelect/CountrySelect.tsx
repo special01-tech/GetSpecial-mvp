@@ -97,7 +97,13 @@ export default function CountrySelect({
   const handleClose = () => {
     setIsOpen(false);
     const clean = searchTerm.trim();
-    if (clean && clean !== displayName) {
+    if (!clean) {
+      // Si l'utilisateur a effacé le champ, on autorise la valeur vide (affiche le placeholder)
+      onChange('', '');
+      setSearchTerm('');
+      return;
+    }
+    if (clean !== displayName) {
       const match = findCountry(clean);
       if (match) {
         onChange(match.code, countryName(match));
@@ -122,17 +128,22 @@ export default function CountrySelect({
 
   // Saisie au clavier
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+    const val = e.target.value;
+    setSearchTerm(val);
+    if (!val.trim()) {
+      onChange('', '');
+    }
     if (!isOpen) {
       setIsOpen(true);
     }
   };
 
-  // Effacer la sélection
+  // Effacer la sélection (bouton X)
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
     setSearchTerm('');
-    setIsOpen(true);
+    onChange('', '');
+    setIsOpen(false);
     inputRef.current?.focus();
   };
 
@@ -190,7 +201,11 @@ export default function CountrySelect({
         }}
       >
         <span className={styles.flagIcon} title={t('common.components.countrySelect.countryTitle')}>
-          <Globe size={18} strokeWidth={1.75} />
+          {activeCountry ? (
+            <span className={styles.flagEmoji}>{activeCountry.flag}</span>
+          ) : (
+            <Globe size={18} strokeWidth={1.75} />
+          )}
         </span>
 
         <input
@@ -207,7 +222,7 @@ export default function CountrySelect({
         />
 
         <div className={styles.actions}>
-          {searchTerm && (
+          {(searchTerm || value) && (
             <button
               type="button"
               className={styles.clearBtn}

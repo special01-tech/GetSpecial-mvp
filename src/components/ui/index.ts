@@ -11,6 +11,7 @@ export { default as EmptyState } from './EmptyState/EmptyState';
 export { default as Logo } from './Logo/Logo';
 export { default as WeatherCard } from './WeatherCard/WeatherCard';
 export { default as OpportunityCard } from './OpportunityCard/OpportunityCard';
+export { default as OpportunityDetailModal } from './OpportunityDetailModal/OpportunityDetailModal';
 export { default as TodayEventCard } from './TodayEventCard/TodayEventCard';
 export { default as TodayOfferCard } from './TodayOfferCard/TodayOfferCard';
 export { default as CampaignDetail } from './CampaignDetail/CampaignDetail';

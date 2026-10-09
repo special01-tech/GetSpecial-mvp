@@ -30,9 +30,11 @@ export class ContentGeneratorService {
 
     if (!opp) throw new Error('Opportunité introuvable');
 
-    const restaurant = opp.restaurant;
-    const facts = (opp.factsCited as string[]) || [];
-    const config = getCountryConfig(restaurant.country);
+    const facts = Array.isArray(opp.factsCited)
+      ? opp.factsCited
+      : Array.isArray((opp.factsCited as any)?.facts)
+      ? (opp.factsCited as any).facts
+      : [];
     const cleanName = restaurant.name.replace(/[^a-zA-Z0-9]/g, '');
 
     let postText = '';

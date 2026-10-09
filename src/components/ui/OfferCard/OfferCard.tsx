@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Clock, Percent, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Clock, Percent, AlertCircle, Edit2, Trash2 } from 'lucide-react';
 import { RestaurantOffer, OfferStatus } from '@/services/restaurant/restaurant-offers.data';
 import { PlatformType } from '@/services/planning/planning.data';
 import { useLanguage } from '@/i18n';
@@ -10,32 +10,66 @@ import styles from './OfferCard.module.css';
 interface OfferCardProps {
   offer: RestaurantOffer;
   onClick?: (offer: RestaurantOffer) => void;
+  onEdit?: (offer: RestaurantOffer) => void;
+  onDelete?: (id: string) => void;
+  onToggleStatus?: (id: string) => void;
 }
 
-export default function OfferCard({ offer, onClick }: OfferCardProps) {
+export default function OfferCard({
+  offer,
+  onClick,
+  onEdit,
+  onDelete,
+  onToggleStatus,
+}: OfferCardProps) {
   const { t } = useLanguage();
+
   const getStatusBadge = (status: OfferStatus) => {
     switch (status) {
       case 'active':
         return (
-          <span className={`${styles.statusBadge} ${styles.statusActive}`}>
+          <button
+            type="button"
+            className={`${styles.statusBadge} ${styles.statusActive}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleStatus?.(offer.id);
+            }}
+            title="Cliquez pour changer le statut"
+          >
             <span className={styles.statusDot} />
             <span>Active</span>
-          </span>
+          </button>
         );
       case 'scheduled':
         return (
-          <span className={`${styles.statusBadge} ${styles.statusScheduled}`}>
+          <button
+            type="button"
+            className={`${styles.statusBadge} ${styles.statusScheduled}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleStatus?.(offer.id);
+            }}
+            title="Cliquez pour changer le statut"
+          >
             <Clock size={11} />
             <span>{t('common.components.offerCard.scheduled')}</span>
-          </span>
+          </button>
         );
       case 'draft':
         return (
-          <span className={`${styles.statusBadge} ${styles.statusDraft}`}>
+          <button
+            type="button"
+            className={`${styles.statusBadge} ${styles.statusDraft}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleStatus?.(offer.id);
+            }}
+            title="Cliquez pour changer le statut"
+          >
             <AlertCircle size={11} />
             <span>{t('common.components.offerCard.draft')}</span>
-          </span>
+          </button>
         );
       default:
         return null;
@@ -79,7 +113,40 @@ export default function OfferCard({ offer, onClick }: OfferCardProps) {
       <div className={styles.contentCol}>
         <div className={styles.topRow}>
           <h3 className={styles.name}>{offer.name}</h3>
-          {getStatusBadge(offer.status)}
+
+          <div className={styles.badgeAndActions}>
+            {getStatusBadge(offer.status)}
+
+            {onEdit && (
+              <button
+                type="button"
+                className={styles.actionBtn}
+                title="Modifier cette offre"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(offer);
+                }}
+                aria-label="Modifier"
+              >
+                <Edit2 size={12} />
+              </button>
+            )}
+
+            {onDelete && (
+              <button
+                type="button"
+                className={`${styles.actionBtn} ${styles.actionBtnDelete}`}
+                title="Supprimer cette offre"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(offer.id);
+                }}
+                aria-label="Supprimer"
+              >
+                <Trash2 size={12} />
+              </button>
+            )}
+          </div>
         </div>
 
         <p className={styles.description}>{offer.description}</p>

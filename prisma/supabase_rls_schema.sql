@@ -70,6 +70,8 @@ CREATE TABLE IF NOT EXISTS public.social_accounts (
   platform TEXT NOT NULL,
   "outstandAccountId" TEXT NOT NULL,
   username TEXT,
+  "accessToken" TEXT,
+  "tokenData" JSONB,
   status TEXT NOT NULL DEFAULT 'connected',
   "lastSyncAt" TIMESTAMPTZ,
   "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),

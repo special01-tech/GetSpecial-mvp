@@ -1,69 +1,58 @@
-import { OpportunityCandidate } from './types';
+import { ContextDossier } from './types';
 import { prisma } from '@/server/db/prisma.client';
 
-export interface FilterResult {
+export interface HardFilterResult {
   passed: boolean;
   rejectReason?: string;
 }
 
 export class HardFilters {
   /**
-   * Applique la série de filtres bloquants sans appel IA
+   * Évalue les 4 filtres bloquants stricts sans appel IA (0 coût).
+   * Retourne passed: false si le restaurant ne doit pas recevoir de proposition aujourd'hui.
    */
   static async evaluate(
-    candidate: OpportunityCandidate,
-    restaurant: any,
-    recentDismissals: Set<string>,
-    recentOpportunitiesCount: number
-  ): Promise<FilterResult> {
-    // 1. Restaurant en pause de communication
+    dossier: ContextDossier,
+    restaurant: any
+  ): Promise<HardFilterResult> {
+    // 1. Restaurant en pause explicite
     if (restaurant.isPaused) {
-      return { passed: false, rejectReason: 'Restaurant currently paused by manager' };
+      return {
+        passed: false,
+        rejectReason: 'Restaurant actuellement en pause de communication par le gérant.',
+      };
     }
 
-    // 2. Limite quotidienne de propositions atteinte (Anti-fatigue max 3 opportunités par jour)
-    if (recentOpportunitiesCount >= 3) {
-      return { passed: false, rejectReason: 'Daily opportunity limit reached for restaurant' };
+    // 2. Jour de fermeture de l'établissement
+    if (dossier.currentDay.isClosed) {
+      return {
+        passed: false,
+        rejectReason: `L'établissement est indiqué comme fermé le ${dossier.currentDay.dayNameFr}.`,
+      };
     }
 
-    // 3. Vérification des contraintes explicites du restaurateur (Section 10)
-    const constraints: string[] = restaurant.profile?.constraints || [];
-    for (const c of constraints) {
-      const normConstraint = c.toLowerCase();
-      // Ex: "never talk about sports", "pas d'alcool"
-      if (
-        normConstraint.includes('sport') &&
-        candidate.type === 'event' &&
-        (candidate.suggestedAngle === 'game_night' ||
-         candidate.sourceEvent?.toLowerCase().includes('sport') ||
-         candidate.suggestedTitle.toLowerCase().includes('match') ||
-         candidate.suggestedTitle.toLowerCase().includes('sport'))
-      ) {
-        return { passed: false, rejectReason: `Explicit constraint violated: ${c}` };
-      }
-      if (normConstraint.includes('alcool') && candidate.suggestedAngle.toLowerCase().includes('cocktail')) {
-        return { passed: false, rejectReason: `Explicit constraint violated: ${c}` };
-      }
+    // 3. Plafond d'opportunités du jour (Plafond de 5 opportunités max demandé)
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    let todayCount = 0;
+    try {
+      todayCount = await (prisma as any).opportunity.count({
+        where: {
+          restaurantId: dossier.restaurant.id,
+          status: 'pending',
+          suggestedAt: { gte: todayStart },
+        },
+      });
+    } catch {
+      todayCount = 0;
     }
 
-    // 4. Cooldown de rejet : le gérant a-t-il rejeté un thème identique dans les dernières 48h ?
-    for (const dismissedReason of recentDismissals) {
-      if (
-        candidate.suggestedTitle.toLowerCase().includes(dismissedReason) ||
-        candidate.suggestedAngle.toLowerCase().includes(dismissedReason)
-      ) {
-        return { passed: false, rejectReason: `Theme under active manager cooldown: ${dismissedReason}` };
-      }
-    }
-
-    // 5. Horaires de fermeture : si le restaurant est fermé aujourd'hui
-    const openingHours = restaurant.openingHours || {};
-    const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-    const currentDayKey = days[new Date().getDay()];
-    const todayHours = openingHours[currentDayKey];
-
-    if (todayHours && (todayHours.toLowerCase().includes('ferm') || todayHours.toLowerCase().includes('close'))) {
-      return { passed: false, rejectReason: 'Restaurant is closed on this day' };
+    if (todayCount >= 5) {
+      return {
+        passed: false,
+        rejectReason: 'Plafond quotidien de 5 opportunités en attente déjà atteint pour aujourd’hui.',
+      };
     }
 
     return { passed: true };

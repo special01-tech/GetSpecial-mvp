@@ -40,8 +40,7 @@ export class CalendarificCollector {
     const countryCode = config.code;
 
     if (!this.apiKey) {
-      console.warn(`[CALENDARIFIC_COLLECTOR] Pas de clé CALENDARIFIC_API_KEY. Utilisation des jours fériés légaux pour ${config.name} (${countryCode}).`);
-      return this.getFallbackSignals(config, targetDate);
+      throw new Error(`CALENDARIFIC_API_KEY non configurée pour ${config.name} (${countryCode}).`);
     }
 
     const year = targetDate.getFullYear();
@@ -49,6 +48,7 @@ export class CalendarificCollector {
 
     let attempts = 0;
     const maxAttempts = 3;
+    let lastError: any = null;
 
     while (attempts < maxAttempts) {
       attempts++;
@@ -60,22 +60,27 @@ export class CalendarificCollector {
         clearTimeout(timeout);
 
         if (!res.ok) {
-          throw new Error(`Calendarific HTTP ${res.status}`);
+          throw new Error(`Calendarific HTTP ${res.status} (${res.statusText})`);
         }
 
         const data = await res.json();
+        if (data?.meta?.code && data.meta.code !== 200) {
+          throw new Error(`Calendarific API error (${data.meta.code}): ${data.meta.error_detail || data.meta.error_type || 'Erreur inconnue'}`);
+        }
+
         const holidays: CalendarificHoliday[] = data?.response?.holidays || [];
         return this.filterAndNormalize(holidays, targetDate, config);
-      } catch (err) {
-        console.warn(`[CALENDARIFIC_COLLECTOR] Essai ${attempts}/${maxAttempts} échoué :`, err);
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`[CALENDARIFIC_COLLECTOR] Essai ${attempts}/${maxAttempts} échoué :`, err?.message || err);
         if (attempts >= maxAttempts) {
-          return this.getFallbackSignals(config, targetDate);
+          throw new Error(`Échec Calendarific pour le pays ${countryCode} après ${maxAttempts} tentatives : ${err?.message || err}`);
         }
         await new Promise((r) => setTimeout(r, 1000 * attempts));
       }
     }
 
-    return this.getFallbackSignals(config, targetDate);
+    throw lastError || new Error(`Échec Calendarific pour ${countryCode}`);
   }
 
   private filterAndNormalize(holidays: CalendarificHoliday[], targetDate: Date, config: CountryConfig): NormalizedSignal[] {
@@ -127,101 +132,7 @@ export class CalendarificCollector {
 
     return signals;
   }
-
-  /**
-   * Jours fériés officiels adaptés au pays (fallback sans clé d'API)
-   */
-  private getFallbackSignals(config: CountryConfig, targetDate: Date): NormalizedSignal[] {
-    const year = targetDate.getFullYear();
-
-    const countryHolidays: Record<string, { name: string; month: number; day: number }[]> = {
-      US: [
-        { name: "New Year's Day", month: 0, day: 1 },
-        { name: 'Martin Luther King Jr. Day', month: 0, day: 19 },
-        { name: "Presidents' Day", month: 1, day: 16 },
-        { name: 'Memorial Day', month: 4, day: 25 },
-        { name: 'Juneteenth National Independence Day', month: 5, day: 19 },
-        { name: 'Independence Day (4th of July)', month: 6, day: 4 },
-        { name: 'Labor Day', month: 8, day: 1 },
-        { name: 'Columbus Day / Indigenous Peoples Day', month: 9, day: 12 },
-        { name: 'Veterans Day', month: 10, day: 11 },
-        { name: 'Thanksgiving Day', month: 10, day: 26 },
-        { name: 'Christmas Day', month: 11, day: 25 },
-      ],
-      GB: [
-        { name: "New Year's Day", month: 0, day: 1 },
-        { name: 'Good Friday', month: 3, day: 3 },
-        { name: 'Easter Monday', month: 3, day: 6 },
-        { name: 'Early May Bank Holiday', month: 4, day: 4 },
-        { name: 'Spring Bank Holiday', month: 4, day: 25 },
-        { name: 'Summer Bank Holiday', month: 7, day: 31 },
-        { name: 'Christmas Day', month: 11, day: 25 },
-        { name: 'Boxing Day', month: 11, day: 26 },
-      ],
-      CA: [
-        { name: "New Year's Day", month: 0, day: 1 },
-        { name: 'Victoria Day', month: 4, day: 18 },
-        { name: 'Canada Day', month: 6, day: 1 },
-        { name: 'Labour Day', month: 8, day: 7 },
-        { name: 'Thanksgiving', month: 9, day: 12 },
-        { name: 'Remembrance Day', month: 10, day: 11 },
-        { name: 'Christmas Day', month: 11, day: 25 },
-      ],
-      FR: [
-        { name: "Jour de l'An", month: 0, day: 1 },
-        { name: 'Fête du Travail', month: 4, day: 1 },
-        { name: 'Victoire 1945', month: 4, day: 8 },
-        { name: 'Fête Nationale', month: 6, day: 14 },
-        { name: 'Assomption', month: 7, day: 15 },
-        { name: 'Toussaint', month: 10, day: 1 },
-        { name: 'Armistice 1918', month: 10, day: 11 },
-        { name: 'Noël', month: 11, day: 25 },
-      ],
-      DE: [
-        { name: 'Neujahr', month: 0, day: 1 },
-        { name: 'Tag der Arbeit', month: 4, day: 1 },
-        { name: 'Tag der Deutschen Einheit', month: 9, day: 3 },
-        { name: 'Weihnachten', month: 11, day: 25 },
-      ],
-      ES: [
-        { name: 'Año Nuevo', month: 0, day: 1 },
-        { name: 'Día del Trabajo', month: 4, day: 1 },
-        { name: 'Fiesta Nacional de España', month: 9, day: 12 },
-        { name: 'Navidad', month: 11, day: 25 },
-      ],
-    };
-
-    const list = countryHolidays[config.code] || [
-      { name: "New Year's Day", month: 0, day: 1 },
-      { name: 'International Workers Day', month: 4, day: 1 },
-      { name: 'Christmas Day', month: 11, day: 25 },
-    ];
-
-    const signals: NormalizedSignal[] = [];
-    const now = targetDate.getTime();
-    const sevenDaysInMs = 7 * 24 * 3600 * 1000;
-
-    for (const h of list) {
-      const holidayDate = new Date(year, h.month, h.day);
-      const diffMs = holidayDate.getTime() - now;
-
-      if (diffMs >= -24 * 3600 * 1000 && diffMs <= sevenDaysInMs) {
-        signals.push({
-          type: 'holiday',
-          source: 'calendarific',
-          intensity: 0.9,
-          timestamp: holidayDate.toISOString(),
-          title: config.language === 'fr' ? `Jour férié : ${h.name}` : `Public Holiday: ${h.name}`,
-          summary: config.language === 'fr'
-            ? `${h.name} est un jour férié national. Opportunité d'affluence ou formule spéciale.`
-            : `${h.name} is a national holiday in ${config.name}. High opportunity for group bookings and specials.`,
-          rawPayload: { simulated: true, country: config.code, name: h.name, date: holidayDate.toISOString() },
-        });
-      }
-    }
-
-    return signals;
-  }
 }
 
 export const calendarificCollector = new CalendarificCollector();
+

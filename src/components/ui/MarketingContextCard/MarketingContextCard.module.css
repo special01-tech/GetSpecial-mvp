@@ -1,0 +1,225 @@
+.card {
+  background-color: var(--color-bg-surface, #FFFFFF);
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: var(--radius-2xl, 16px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  border-color: #D1D5DB;
+}
+
+/* Banner Image & Overlay */
+.bannerWrapper {
+  position: relative;
+  width: 100%;
+  height: 145px;
+  background-color: #1F2937;
+  overflow: hidden;
+}
+
+.bannerImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.card:hover .bannerImg {
+  transform: scale(1.03);
+}
+
+.bannerGradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.1) 60%, rgba(0, 0, 0, 0.3) 100%);
+  pointer-events: none;
+}
+
+/* Top Floating Controls on Banner */
+.bannerTopControls {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  z-index: 2;
+}
+
+.tagBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.navControls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.navBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.navBtn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  color: #111827;
+  border-color: #FFFFFF;
+  transform: scale(1.08);
+}
+
+/* Banner Title on bottom */
+.bannerBottomText {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  right: 14px;
+  z-index: 2;
+}
+
+.bannerTitle {
+  font-family: var(--font-family, sans-serif);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  line-height: 1.25;
+  margin: 0;
+}
+
+/* Card Body */
+.cardBody {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Meta Information */
+.metaRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.78rem;
+  color: var(--color-text-secondary, #4B5563);
+}
+
+.metaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+}
+
+.metaIcon {
+  color: var(--color-primary, #FF5A00);
+  flex-shrink: 0;
+}
+
+/* AI Insight Box */
+.insightBox {
+  background: #FFF7ED;
+  border: 1px solid #FFEDD5;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.insightIcon {
+  color: #EA580C;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.insightText {
+  font-size: 0.78rem;
+  color: #7C2D12;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+/* CTA Action Button */
+.actionBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--color-primary, #FF5A00);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(255, 90, 0, 0.2);
+}
+
+.actionBtn:hover {
+  background: #E04F00;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(255, 90, 0, 0.28);
+}
+
+/* Simple Dots Pagination at the bottom (Puces simples sans numéro de page) */
+.dotsRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #E5E7EB;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.25s ease;
+}
+
+.dot:hover {
+  background: #D1D5DB;
+}
+
+.dotActive {
+  width: 22px;
+  background: var(--color-primary, #FF5A00);
+}

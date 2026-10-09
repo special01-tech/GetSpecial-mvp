@@ -1,9 +1,18 @@
 'use client';
 
 import React from 'react';
-import { Zap, Clock, Users, ArrowRight, ChevronRight, Radio } from 'lucide-react';
-import { TodayOpportunity, UrgencyLevel } from '@/services/today/today.data';
-import { useLanguage } from '@/i18n';
+import {
+  Calendar,
+  Sun,
+  Clock,
+  Gift,
+  Zap,
+  ArrowUpRight,
+  Coffee,
+  Sparkles,
+  Bookmark,
+} from 'lucide-react';
+import { TodayOpportunity } from '@/services/today/today.data';
 import styles from './OpportunityCard.module.css';
 
 interface OpportunityCardProps {
@@ -12,127 +21,107 @@ interface OpportunityCardProps {
 }
 
 export default function OpportunityCard({ opportunity, onClick }: OpportunityCardProps) {
-  const { t } = useLanguage();
-  const [showWhy, setShowWhy] = React.useState(false);
-  const isHigh = (opportunity.urgency as string) === 'High' || (opportunity.urgency as string) === 'Haute';
+  const importance = opportunity.importance || 'HIGH';
+  const score = opportunity.impactScore || (importance === 'HIGH' ? 92 : importance === 'MEDIUM' ? 78 : 65);
+  const isHigh = importance === 'HIGH' || score >= 85;
 
-  const handleWhyClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowWhy((prev) => !prev);
+  // Sélection de l'icône et du style pastel selon la catégorie (comme dans l'image de référence)
+  const getIconConfig = () => {
+    switch (opportunity.category) {
+      case 'LOCAL_EVENT':
+        return {
+          icon: <Calendar size={22} strokeWidth={2} />,
+          className: styles.iconBlue,
+        };
+      case 'WEATHER_BOOST':
+        return {
+          icon: <Sun size={22} strokeWidth={2} />,
+          className: styles.iconYellow,
+        };
+      case 'EMPTY_SLOT':
+        return {
+          icon: <Clock size={22} strokeWidth={2} />,
+          className: styles.iconPurple,
+        };
+      case 'OFFER_PROMOTION':
+        return {
+          icon: <Gift size={22} strokeWidth={2} />,
+          className: styles.iconPink,
+        };
+      default:
+        return {
+          icon: isHigh ? <Zap size={22} strokeWidth={2} /> : <Sparkles size={22} strokeWidth={2} />,
+          className: isHigh ? styles.iconOrange : styles.iconBlue,
+        };
+    }
   };
+
+  const { icon, className: iconColorClass } = getIconConfig();
+
+  // Petit signe subtil sur la ligne (sans badge)
+  const getDotClass = () => {
+    if (importance === 'HIGH' || score >= 85) return styles.dotHigh;
+    if (importance === 'MEDIUM' || score >= 70) return styles.dotMedium;
+    return styles.dotModerate;
+  };
+
+  const getStrengthText = () => {
+    if (importance === 'HIGH' || score >= 85) return 'Forte';
+    if (importance === 'MEDIUM' || score >= 70) return 'Moyenne';
+    return 'Modérée';
+  };
+
+  // Sous-texte sobre et contextuel (sans mot-code)
+  const contextSubtitle =
+    opportunity.offer?.validityText ||
+    opportunity.signalOrigin ||
+    opportunity.description;
 
   return (
     <article
       onClick={() => onClick(opportunity)}
-      className={`${styles.card} ${isHigh ? styles.cardHighUrgency : ''}`}
+      className={styles.cardRow}
       role="button"
       tabIndex={0}
+      aria-label={`Opportunité : ${opportunity.title}. Force : ${getStrengthText()}`}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
           onClick(opportunity);
         }
       }}
     >
-      <div className={styles.cardHeader}>
-        <div className={styles.titleCol}>
-          <div className={styles.badgeRow}>
+      {/* Partie Gauche : Icône squircle pastel + Titre & Sous-titre */}
+      <div className={styles.leftSection}>
+        <div className={`${styles.iconSquare} ${iconColorClass}`}>
+          {icon}
+        </div>
+
+        <div className={styles.textColumn}>
+          <h4 className={styles.title}>{opportunity.title}</h4>
+          <p className={styles.subtitle}>{contextSubtitle}</p>
+        </div>
+      </div>
+
+      {/* Partie Droite : Valeur sobre avec signe subtil + Bouton d'action */}
+      <div className={styles.rightSection}>
+        <div className={styles.valueBlock}>
+          <div className={styles.impactRow}>
+            {/* Petit signe subtil sur la ligne */}
             <span
-              className={`${styles.urgencyBadge} ${
-                isHigh ? styles.badgeHigh : styles.badgeMedium
-              }`}
-            >
-              {isHigh ? <Zap size={11} strokeWidth={2.5} /> : <Clock size={11} />}
-              <span>{opportunity.urgency}</span>
-            </span>
-
-            {opportunity.potentialCovers && (
-              <span className={styles.potentialBadge}>
-                <Users size={11} />
-                <span>{opportunity.potentialCovers}</span>
-              </span>
-            )}
+              className={`${styles.subtleDot} ${getDotClass()}`}
+              title={`Force évaluée par l'IA : ${score}%`}
+            />
+            <span className={styles.impactValue}>{getStrengthText()}</span>
           </div>
-
-          <h3 className={styles.title}>{opportunity.title}</h3>
         </div>
 
-        <div className={styles.actionArrow}>
-          <ChevronRight size={18} className={styles.arrowIcon} />
-        </div>
-      </div>
-
-      <p className={styles.description}>{opportunity.description}</p>
-
-      {/* Accordéon Pourquoi cette recommandation */}
-      <div style={{ marginTop: '4px' }}>
-        <button
-          type="button"
-          onClick={handleWhyClick}
-          style={{
-            background: 'none',
-            border: 'none',
-            padding: '2px 0',
-            color: 'var(--color-primary)',
-            fontSize: '0.8rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            textDecoration: 'underline',
-          }}
-        >
-          {showWhy
-            ? t('common.components.opportunityCard.hideJustification')
-            : t('common.components.opportunityCard.showJustification')}
-        </button>
-
-        {showWhy && (
-          <div
-            style={{
-              marginTop: '6px',
-              padding: '8px 12px',
-              borderRadius: '8px',
-              background: 'var(--color-bg-app)',
-              border: '1px solid var(--color-border)',
-              fontSize: '0.8rem',
-              color: 'var(--color-text-secondary)',
-              lineHeight: 1.4,
-            }}
-          >
-            <div style={{ fontWeight: 600, marginBottom: '4px', color: 'var(--color-text-primary)' }}>
-              {t('common.components.opportunityCard.verifiedFactsTitle')}
-            </div>
-            {Array.isArray(opportunity.verifiedFacts) && opportunity.verifiedFacts.length > 0 ? (
-              <ul style={{ margin: 0, paddingLeft: '16px' }}>
-                {opportunity.verifiedFacts.map((fact: string, idx: number) => (
-                  <li key={idx}>{fact}</li>
-                ))}
-              </ul>
-            ) : (
-              <div>
-                {opportunity.signalOrigin ||
-                  t('common.components.opportunityCard.defaultSignalOrigin')}
-              </div>
-            )}
+        {/* Petit bouton d'action discret pastel (comme sur l'image) */}
+        <div className={styles.actionsRow}>
+          <div className={styles.actionButton} title="Voir le détail de l'opportunité">
+            <ArrowUpRight size={17} strokeWidth={2.2} />
           </div>
-        )}
-      </div>
-
-      <div className={styles.footerRow} style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--color-border)' }}>
-        <span className={styles.signalOrigin} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-          <Radio size={14} strokeWidth={1.75} />
-          <span>{opportunity.signalOrigin}</span>
-        </span>
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            color: 'var(--color-primary)',
-          }}
-        >
-          {t('common.components.opportunityCard.createCampaign')} <ArrowRight size={14} />
-        </span>
+        </div>
       </div>
     </article>
   );

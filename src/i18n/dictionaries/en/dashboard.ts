@@ -14,6 +14,8 @@ export const dashboard = {
   greeting: {
     title: 'Hello!',
     subtitle: "Here's what we found for your restaurant today.",
+    cta: 'Discover opportunities',
+    ctaBadge: '{count} suggestions',
   },
   studio: {
     title: 'Creative Studio: Generate a poster & caption on demand',
@@ -41,7 +43,7 @@ export const dashboard = {
     eventTime: 'Tonight',
   },
   opportunities: {
-    title: "Today's Opportunities",
+    title: 'Marketing Actions',
     count: '{count} live detected',
     emptyTitle: 'All quiet for today',
     emptyDescription:
@@ -52,4 +54,43 @@ export const dashboard = {
     title: 'Featured Offer',
     badge: 'Recommended',
   },
+  events: {
+    title: 'Events',
+    badge: '{count} highlights today',
+  },
+  insights: {
+    title: 'Impact & Performance',
+    badge: 'Last 30 Days',
+    viewsLabel: 'Total Views',
+    viewsSub: 'Across connected channels',
+    engagementLabel: 'Engagement Rate',
+    engagementSub: 'Industry average: 4.5%',
+    coversLabel: 'Estimated Covers',
+    coversSub: 'Driven by AI campaigns',
+  },
+  stats: {
+    totalPosts: 'Total posts',
+    totalPostsSub: 'Overall',
+    scheduled: 'Scheduled',
+    scheduledSub: 'Upcoming',
+    published: 'Published',
+    publishedSub: 'All time',
+    thisWeek: 'This week',
+    thisWeekSub: 'Last 7 days',
+  },
+  marketingContext: {
+    title: 'Daily Marketing Context',
+    today: 'Today:',
+    detectedSignals: 'DETECTED EVENTS & SIGNALS',
+    noSignals: 'No active events or signals.',
+    boostAction: 'Create post for this signal',
+  },
+  recentPosts: {
+    title: 'Recent publications',
+    viewAll: 'View all',
+    emptyTitle: 'No publications yet',
+    emptyDescription: 'Your posts will appear here once you publish them.',
+    empty: 'No posts published yet.',
+  },
 };
+

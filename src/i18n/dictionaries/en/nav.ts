@@ -8,7 +8,7 @@ export const nav = {
   studioShort: 'Studio',
   chat: 'Chat',
   planning: 'Schedule',
-  restaurant: 'Restaurant',
+  restaurant: 'My Restaurant',
   settings: 'Settings',
   analytics: 'Analytics',
 };

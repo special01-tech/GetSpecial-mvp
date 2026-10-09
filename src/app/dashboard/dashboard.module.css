@@ -2,14 +2,15 @@
   width: 100%;
   display: flex;
   justify-content: center;
+  padding: 0 16px;
 }
 
 .container {
   width: 100%;
-  max-width: 580px;
+  max-width: 1140px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-5, 20px);
   animation: fadeIn 0.35s ease-out;
 }
 
@@ -32,11 +33,11 @@
 .avatarWrapper {
   width: 44px;
   height: 44px;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-lg, 12px);
   overflow: hidden;
-  background-color: var(--color-primary-subtle);
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
+  background-color: var(--color-primary-subtle, #FFF4ED);
+  border: 1px solid var(--color-border, #E5E7EB);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   flex-shrink: 0;
 }
 
@@ -52,9 +53,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--color-primary);
-  color: var(--color-white);
-  font-family: var(--font-family);
+  background-color: var(--color-primary, #FF5A00);
+  color: #FFFFFF;
+  font-family: var(--font-family, sans-serif);
   font-weight: 700;
   font-size: 15px;
 }
@@ -68,112 +69,393 @@
 .welcomePill {
   font-size: 10px;
   font-weight: 600;
-  color: var(--color-primary);
+  color: var(--color-primary, #FF5A00);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .restaurantName {
-  font-family: var(--font-family);
+  font-family: var(--font-family, sans-serif);
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #111827);
   letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.pauseButton {
+/* Compact Weather Badge in Header (Reste à sa place !) */
+.compactWeatherBadge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  border-radius: 999px;
-  font-family: var(--font-family);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transition-fast);
+  gap: 8px;
+  padding: 6px 12px;
+  background-color: var(--color-bg-surface, #FFFFFF);
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
   flex-shrink: 0;
-  outline: none;
+  cursor: default;
 }
 
-.pauseIdle {
-  background-color: var(--color-bg-surface);
-  border: 1px solid var(--color-border);
-  color: var(--color-text-secondary);
+.compactWeatherBadge:hover {
+  border-color: var(--color-primary, #FF5A00);
+  box-shadow: 0 2px 8px rgba(255, 90, 0, 0.1);
+  transform: translateY(-1px);
 }
 
-.pauseIdle:hover {
-  background-color: rgba(239, 68, 68, 0.08);
-  border-color: rgba(239, 68, 68, 0.2);
-  color: var(--color-error);
+.compactWeatherIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.pausedActive {
-  background-color: #FDF2F2;
-  border: 1px solid #F8D7DA;
-  color: var(--color-error);
-  box-shadow: 0 0 0 3px rgba(185, 56, 56, 0.12);
+.compactWeatherMeta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.compactWeatherTemp {
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+}
+
+.compactWeatherVal {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--color-text-primary, #111827);
+  letter-spacing: -0.02em;
+}
+
+.compactWeatherUnit {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--color-text-muted, #6B7280);
+}
+
+.compactWeatherDesc {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--color-text-secondary, #4B5563);
+  white-space: nowrap;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Welcome Section */
 .welcomeSection {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+
+.welcomeTextGroup {
+  display: flex;
   flex-direction: column;
   gap: 3px;
-  margin-top: 4px;
+  min-width: 0;
 }
 
 .greetingTitle {
-  font-family: var(--font-family);
-  font-size: 1.55rem;
+  font-family: var(--font-family, sans-serif);
+  font-size: 1.6rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #111827);
 }
 
 .greetingSubtext {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
+  font-size: 0.88rem;
+  color: var(--color-text-secondary, #6B7280);
   line-height: 1.4;
 }
 
-/* Notice Banner */
-.noticeBanner {
-  display: flex;
+/* CTA Découvrir les opportunités (Juste en face de Bonjour) */
+.opportunitiesCtaBtn {
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  background-color: var(--color-bg-surface);
-  border: 1px solid var(--color-primary-light);
-  border-left: 3px solid var(--color-primary);
-  border-radius: var(--radius-lg);
-  padding: 10px 14px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--color-primary);
-  box-shadow: var(--shadow-sm);
-  animation: fadeIn 0.25s ease-out;
-}
-
-.noticeIcon {
+  background: linear-gradient(135deg, #FF5A00 0%, #FF7A00 100%);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(255, 90, 0, 0.25);
+  transition: all 0.2s ease;
+  white-space: nowrap;
   flex-shrink: 0;
 }
 
-/* Live Signals Grid (Météo & Match) */
-.liveSignalsGrid {
+.opportunitiesCtaBtn:hover {
+  background: linear-gradient(135deg, #E04F00 0%, #FF6600 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(255, 90, 0, 0.35);
+  color: #FFFFFF;
+}
+
+.opportunitiesCtaBtn:active {
+  transform: translateY(0);
+}
+
+.opportunitiesCtaBadge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+/* ========================================================= */
+/* 4 STATS CARDS ROW (Fidèle à la capture)                   */
+/* ========================================================= */
+.statsGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 900px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========================================================= */
+/* MAIN DASHBOARD GRID (2 COLONNES ASYMÉTRIQUES)             */
+/* ========================================================= */
+.mainGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 390px);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .mainGrid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+}
+
+/* Colonne Gauche : Publications Récentes */
+.recentCol {
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
-/* Section Blocks */
+.opportunitiesList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.recentHeading {
+  font-family: var(--font-family, sans-serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-text-primary, #111827);
+  letter-spacing: -0.01em;
+}
+
+.viewAllBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FFFFFF;
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.viewAllBtn:hover {
+  background: #F9FAFB;
+  border-color: #D1D5DB;
+  color: #111827;
+}
+
+.recentContentCard {
+  background-color: var(--color-bg-surface, #FFFFFF);
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: var(--radius-2xl, 16px);
+  padding: 20px;
+  min-height: 290px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+/* État vide fidèle à la capture d'écran */
+.emptyStateContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+  flex: 1;
+}
+
+.emptyIconCircle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #F3F4F6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  color: #9CA3AF;
+}
+
+.emptyTitle {
+  font-family: var(--font-family, sans-serif);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text-primary, #111827);
+  margin-bottom: 6px;
+}
+
+.emptySubtitle {
+  font-size: 0.85rem;
+  color: var(--color-text-muted, #6B7280);
+  max-width: 320px;
+  line-height: 1.45;
+}
+
+/* Liste des posts récents */
+.postsListContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.postItemRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #F3F4F6;
+  background: #FAFAFA;
+  transition: all 0.15s ease;
+}
+
+.postItemRow:hover {
+  background: #FFFFFF;
+  border-color: #E5E7EB;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.postItemLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.postThumbnail {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid #E5E7EB;
+}
+
+.postMetaGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.postTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.postSubmeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.74rem;
+  color: #6B7280;
+}
+
+.postItemRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.postStatBadge {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #374151;
+  background: #FFFFFF;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #E5E7EB;
+}
+
+/* Colonne Droite : Contexte Marketing & Événements (Carrousel) */
+.contextCol {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Opportunités complémentaires de l'outil */
 .sectionBlock {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  margin-top: var(--space-2);
+  gap: var(--space-3, 12px);
+  margin-top: 4px;
 }
 
 .sectionHeader {
@@ -189,33 +471,71 @@
 }
 
 .sectionIcon {
-  color: var(--color-primary);
+  color: var(--color-primary, #FF5A00);
 }
 
 .sectionHeading {
-  font-family: var(--font-family);
-  font-size: var(--font-size-base);
+  font-family: var(--font-family, sans-serif);
+  font-size: 1.05rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #111827);
   letter-spacing: -0.01em;
+}
+
+.oppsHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .badgeCount {
   font-size: 11px;
   font-weight: 600;
-  background-color: var(--color-primary-subtle);
-  color: var(--color-primary);
+  background-color: var(--color-primary-subtle, #FFF4ED);
+  color: var(--color-primary, #FF5A00);
   padding: 2px 8px;
   border-radius: 999px;
 }
 
-.badgeHighlight {
-  font-size: 11px;
+.refreshOppsBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #FFFFFF;
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: 8px;
+  padding: 3px 9px;
+  font-size: 0.76rem;
   font-weight: 600;
-  background-color: rgba(245, 158, 11, 0.15);
-  color: var(--color-warning);
-  padding: 2px 8px;
-  border-radius: 999px;
+  color: #4B5563;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  font-family: inherit;
+}
+
+.refreshOppsBtn:hover:not(:disabled) {
+  background: #F9FAFB;
+  border-color: #D1D5DB;
+  color: var(--color-primary, #FF5A00);
+}
+
+.refreshOppsBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.spinIcon {
+  animation: spinOpp 0.9s linear infinite;
+}
+
+@keyframes spinOpp {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .opportunitiesList {
@@ -224,36 +544,14 @@
   gap: 10px;
 }
 
-.headerActions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.simulateToggleBtn {
-  background: none;
-  border: none;
-  font-size: 10px;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  text-decoration: underline;
-  padding: 2px 4px;
-  border-radius: var(--radius-sm);
-  transition: color var(--transition-fast);
-}
-
-.simulateToggleBtn:hover {
-  color: var(--color-primary);
-}
-
 .bottomSpacer {
-  height: 24px;
+  height: 32px;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -263,24 +561,10 @@
 
 @media (min-width: 768px) {
   .screenWrapper {
-    padding-top: var(--space-8);
-  }
-
-  .container {
-    max-width: 620px;
+    padding-top: var(--space-6, 24px);
   }
 
   .greetingTitle {
     font-size: 1.75rem;
   }
 }
-
-.spinning {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-

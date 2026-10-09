@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import { useLanguage } from '@/i18n';
 import {
   Home,
-  MessageSquare,
   Calendar,
   Store,
   PenTool,
@@ -25,7 +24,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { labelKey: 'nav.today', href: '/dashboard', icon: Home },
   { labelKey: 'nav.studioShort', href: '/dashboard/create', icon: PenTool },
-  { labelKey: 'nav.chat', href: '/dashboard/chat', icon: MessageSquare },
   { labelKey: 'nav.planning', href: '/dashboard/planning', icon: Calendar },
   { labelKey: 'nav.restaurant', href: '/dashboard/restaurant', icon: Store },
 ];

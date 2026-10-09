@@ -1,204 +1,192 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { prisma } from '@/server/db/prisma.client';
 import { logAudit } from '@/server/lib/audit';
-import { CandidateGenerator } from './candidate-generator';
+import { ContextBuilder } from './context-builder';
 import { HardFilters } from './hard-filters';
-import { OpportunityScorer } from './opportunity-scorer';
-import { FallbackEngine } from './fallback-engine';
-import { OpportunityLlmOutputSchema, OpportunityCandidate, OpportunityLlmOutput } from './types';
+import { OpenRouterClient } from './openrouter-client';
+import {
+  OpportunityEngineResult,
+  ExecutionReport,
+  DemandOpportunityItem,
+} from './types';
+
+/* =============================================================================
+ * Module THINK : Demand Opportunity Engine — Service Principal
+ * ============================================================================= */
 
 export class OpportunityEngineService {
-  private anthropic: Anthropic | null = null;
+  private openRouterClient: OpenRouterClient;
 
   constructor() {
-    if (process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY.includes('...')) {
-      this.anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-    }
+    this.openRouterClient = new OpenRouterClient();
   }
 
   /**
-   * Pipeline d'exécution canonique :
-   * SIGNAL → CONDITION → FILTER → OPPORTUNITY CANDIDATES → EVALUATION → DECISION
+   * Exécute le pipeline complet de bout en bout et retourne les opportunités
+   * avec le rapport d'exécution transparent (incluant la déclaration explicite des mocks).
    */
-  async generateOpportunities(restaurantId: string): Promise<any[]> {
-    // 1. Collecter le contexte complet
-    const restaurant = await (prisma as any).restaurant.findUnique({
-      where: { id: restaurantId },
-      include: {
-        profile: true,
-        offers: { where: { status: 'active' } },
-        signals: {
-          where: { detectedAt: { gte: new Date(Date.now() - 24 * 3600 * 1000) } },
-          orderBy: { detectedAt: 'desc' },
-          take: 20,
+  async generateOpportunitiesWithReport(restaurantId: string): Promise<OpportunityEngineResult> {
+    const timestamp = new Date().toISOString();
+
+    // 1. Construire le dossier VIP factuel (Tolérance totale aux pannes)
+    const { dossier, restaurant } = await ContextBuilder.buildDossier(restaurantId);
+
+    // 2. Évaluer les filtres bloquants sans IA (0 coût)
+    const filterResult = await HardFilters.evaluate(dossier, restaurant);
+
+    if (!filterResult.passed) {
+      await logAudit({
+        restaurantId,
+        action: 'opportunity.pipeline_filtered',
+        entityType: 'opportunity',
+        details: { rejectReason: filterResult.rejectReason },
+      });
+
+      return {
+        opportunities: [],
+        executionReport: {
+          timestamp,
+          restaurantId,
+          modelUsed: process.env.OPENROUTER_MODEL || 'anthropic/claude-3.7-sonnet',
+          isMock: false,
+          signalsConsumed: {
+            weatherAvailable: dossier.weather.available,
+            eventsFound: dossier.events.length,
+            activeOffersCount: dossier.activeOffers.length,
+          },
+          filterStatus: {
+            passed: false,
+            rejectReason: filterResult.rejectReason,
+          },
+          opportunitiesGenerated: 0,
         },
-      },
-    });
+      };
+    }
 
-    if (!restaurant) throw new Error('Restaurant introuvable');
+    // 3. Réflexion IA sous guardrails stricts (OpenRouter / Fallback déterministe)
+    const { output, isMock, mockReason } = await this.openRouterClient.evaluateDossier(dossier);
 
-    // Récupérer les rejets des dernières 48h
-    const recentDismissalsList = await (prisma as any).feedbackEvent.findMany({
-      where: {
+    if (!output.hasOpportunity || output.opportunities.length === 0) {
+      await logAudit({
         restaurantId,
-        type: 'dismiss_opportunity',
-        createdAt: { gte: new Date(Date.now() - 48 * 3600 * 1000) },
-      },
-      select: { reason: true },
-    });
-    const recentDismissals = new Set<string>(
-      recentDismissalsList.map((d: any) => (d.reason || '').toLowerCase().trim()).filter(Boolean)
-    );
+        action: 'opportunity.pipeline_executed',
+        entityType: 'opportunity',
+        details: { status: 'no_opportunity', isMock, mockReason },
+      });
 
-    // Compter les opportunités générées aujourd'hui (Anti-fatigue)
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const recentOppsCount = await (prisma as any).opportunity.count({
-      where: {
-        restaurantId,
-        suggestedAt: { gte: todayStart },
-      },
-    });
-
-    // 2. Générer les candidats à partir des faits réels
-    let candidates = CandidateGenerator.generateCandidates(
-      restaurant,
-      restaurant.signals || [],
-      restaurant.offers || []
-    );
-
-    // 3. Filtrage strict par règles dures (Hard Filters sans IA)
-    const qualifiedCandidates: OpportunityCandidate[] = [];
-    for (const cand of candidates) {
-      const filterResult = await HardFilters.evaluate(
-        cand,
-        restaurant,
-        recentDismissals,
-        recentOppsCount
-      );
-      if (filterResult.passed) {
-        qualifiedCandidates.push(cand);
-      }
+      return {
+        opportunities: [],
+        executionReport: {
+          timestamp,
+          restaurantId,
+          modelUsed: isMock ? 'deterministic-local-fallback' : (process.env.OPENROUTER_MODEL || 'anthropic/claude-3.7-sonnet'),
+          isMock,
+          mockReason,
+          signalsConsumed: {
+            weatherAvailable: dossier.weather.available,
+            eventsFound: dossier.events.length,
+            activeOffersCount: dossier.activeOffers.length,
+          },
+          filterStatus: { passed: true },
+          opportunitiesGenerated: 0,
+        },
+      };
     }
 
-    // 4. Si aucun candidat qualifié, tenter la chaîne de secours (Fallback Engine)
-    if (qualifiedCandidates.length === 0) {
-      const fallback = FallbackEngine.getFallbackCandidate(restaurant, restaurant.offers || []);
-      if (fallback) {
-        qualifiedCandidates.push(fallback);
-      }
-    }
+    // 4. Enregistrement Prisma (Plafonné à 5 opportunités max)
+    const topOpportunities = output.opportunities.slice(0, 5);
+    const createdRecords: any[] = [];
 
-    // Si toujours rien : respecter la règle Section 26 "ne rien inventer, ne rien proposer"
-    if (qualifiedCandidates.length === 0) {
-      return [];
-    }
+    for (const opp of topOpportunities) {
+      // Préparation du payload factsCited compatible (string[] + métadonnées attachées)
+      const formattedFacts = [
+        `Code: ${opp.offer.codeWord}`,
+        `Offre: ${opp.offer.label} (${opp.offer.validityText})`,
+        ...opp.factsUsed,
+        ...opp.reasons.map((r) => `Raison: ${r}`),
+      ];
 
-    // Trier les candidats par score déterministe
-    const scoredCandidates = qualifiedCandidates.map((cand) => {
-      const score = OpportunityScorer.scoreCandidate(cand, recentOppsCount, false);
-      return { candidate: cand, finalScore: score };
-    });
-    scoredCandidates.sort((a, b) => b.finalScore - a.finalScore);
+      const importance = opp.importance || 'HIGH';
+      const impactScore = opp.impactScore || (importance === 'HIGH' ? 90 : importance === 'MEDIUM' ? 78 : 65);
 
-    // Ne retenir que les 1 à 2 meilleures opportunités (règle anti-fatigue)
-    const topCandidates = scoredCandidates.slice(0, 2);
-
-    // 5. Évaluation IA & Mise en forme avec faits vérifiés (Ground Truth)
-    const createdOpportunities = [];
-
-    for (const { candidate, finalScore } of topCandidates) {
-      let evaluation: OpportunityLlmOutput;
-
-      if (!this.anthropic) {
-        // Mode déterministe garanti : zéro hallucination
-        evaluation = {
-          relevant: true,
-          relevance_score: finalScore,
-          title: candidate.suggestedTitle,
-          reason: candidate.facts.join(' • '),
-          recommended_angle: candidate.suggestedAngle,
-          recommended_tone: restaurant.profile?.tone || 'chaleureux',
-          facts_used: candidate.facts,
-        };
-      } else {
-        const prompt = `Tu es l'assistant marketing opérationnel de GetSpecial pour le restaurant "${restaurant.name}".
-RÈGLE ABSOLUE : Tu n'as STRICTEMENT AUCUN DROIT d'inventer des faits. Utilise uniquement la liste ci-dessous.
-Angle suggéré : ${candidate.suggestedAngle}.
-Faits autorisés :
-${candidate.facts.map((f, i) => `${i + 1}. ${f}`).join('\n')}
-
-Format attendu : Réponse JSON stricte :
-{
-  "relevant": true,
-  "relevance_score": ${finalScore},
-  "title": "${candidate.suggestedTitle.slice(0, 60)}",
-  "reason": "phrase concise expliquant au gérant pourquoi cette opportunité est pertinente aujourd'hui",
-  "recommended_angle": "${candidate.suggestedAngle}",
-  "recommended_tone": "${restaurant.profile?.tone || 'chaleureux'}",
-  "facts_used": ${JSON.stringify(candidate.facts)}
-}`;
-
-        try {
-          const resp = await this.anthropic.messages.create({
-            model: 'claude-3-5-sonnet-20241022',
-            max_tokens: 400,
-            messages: [{ role: 'user', content: prompt }],
-          });
-          const text = resp.content[0]?.type === 'text' ? resp.content[0].text : '';
-          const parsed = JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
-          const validated = OpportunityLlmOutputSchema.safeParse(parsed);
-          if (validated.success) {
-            evaluation = validated.data;
-          } else {
-            throw new Error('Sortie LLM invalide');
-          }
-        } catch (err) {
-          console.warn('[OPPORTUNITY_ENGINE] Fallback déterministe appliqué :', err);
-          evaluation = {
-            relevant: true,
-            relevance_score: finalScore,
-            title: candidate.suggestedTitle,
-            reason: candidate.facts.join(' • '),
-            recommended_angle: candidate.suggestedAngle,
-            recommended_tone: restaurant.profile?.tone || 'chaleureux',
-            facts_used: candidate.facts,
-          };
-        }
-      }
-
-      // 6. Décision & Persistance dans la table opportunities
       const created = await (prisma as any).opportunity.create({
         data: {
           restaurantId,
-          signalId: candidate.signalId || null,
-          title: evaluation.title,
-          description: evaluation.reason,
-          urgency: candidate.urgency,
-          recommendedTone: evaluation.recommended_tone,
-          relevanceScore: evaluation.relevance_score,
-          factsCited: evaluation.facts_used,
+          title: opp.title,
+          description: opp.description,
+          urgency: opp.urgency,
+          recommendedTone: dossier.restaurant.tone,
+          relevanceScore: impactScore / 100,
+          factsCited: {
+            facts: formattedFacts,
+            importance,
+            impactScore,
+            offer: opp.offer,
+            reasons: opp.reasons,
+            distribution: opp.distribution,
+            category: opp.category,
+          },
           status: 'pending',
         },
       });
 
-      createdOpportunities.push(created);
+      // Enrichissement de l'objet retourné avec les détails structurés
+      createdRecords.push({
+        ...created,
+        importance,
+        impactScore,
+        offer: opp.offer,
+        reasons: opp.reasons,
+        distribution: opp.distribution,
+        codeWord: opp.offer.codeWord,
+        category: opp.category,
+      });
     }
+
+    const report: ExecutionReport = {
+      timestamp,
+      restaurantId,
+      modelUsed: isMock ? 'deterministic-local-fallback' : (process.env.OPENROUTER_MODEL || 'anthropic/claude-3.7-sonnet'),
+      isMock,
+      mockReason,
+      signalsConsumed: {
+        weatherAvailable: dossier.weather.available,
+        eventsFound: dossier.events.length,
+        activeOffersCount: dossier.activeOffers.length,
+      },
+      filterStatus: { passed: true },
+      opportunitiesGenerated: createdRecords.length,
+    };
 
     await logAudit({
       restaurantId,
       action: 'opportunity.pipeline_executed',
       entityType: 'opportunity',
-      details: { candidatesFound: candidates.length, qualified: createdOpportunities.length },
+      details: {
+        isMock,
+        mockReason,
+        count: createdRecords.length,
+        categories: topOpportunities.map((o) => o.category),
+      },
     });
 
-    return createdOpportunities;
+    return {
+      opportunities: createdRecords,
+      executionReport: report,
+    };
   }
 
   /**
-   * Rejeter une opportunité (alimente la boucle de rétroaction et cooldown)
+   * Méthode canonique pour compatibilité directe avec les routes existantes (retourne un tableau d'opportunités)
    */
-  async dismissOpportunity(opportunityId: string, restaurantId: string, reason?: string) {
+  async generateOpportunities(restaurantId: string): Promise<any[]> {
+    const result = await this.generateOpportunitiesWithReport(restaurantId);
+    return result.opportunities;
+  }
+
+  /**
+   * Rejeter une opportunité (alimente la boucle de rétroaction et cooldown 48h)
+   */
+  async dismissOpportunity(opportunityId: string, restaurantId: string, reason?: string): Promise<void> {
     await (prisma as any).opportunity.update({
       where: { id: opportunityId },
       data: { status: 'dismissed' },
@@ -223,4 +211,5 @@ Format attendu : Réponse JSON stricte :
   }
 }
 
+/** Instance singleton exportée pour l'ensemble du serveur */
 export const opportunityEngineService = new OpportunityEngineService();

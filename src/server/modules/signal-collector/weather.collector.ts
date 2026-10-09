@@ -16,14 +16,14 @@ export class WeatherCollector {
     const config = getCountryConfig(country);
 
     if (!this.apiKey) {
-      console.warn(`[WEATHER_COLLECTOR] Pas de clé OPENWEATHERMAP_API_KEY configurée. Utilisation de données météo simulées (${config.tempUnit}).`);
-      return this.getFallbackSignals(lat, lon, config);
+      throw new Error(`OPENWEATHERMAP_API_KEY non configurée pour (${lat}, ${lon}).`);
     }
 
     const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${this.apiKey}&units=${config.units}&lang=${config.language}`;
 
     let attempts = 0;
     const maxAttempts = 3;
+    let lastError: any = null;
 
     while (attempts < maxAttempts) {
       attempts++;
@@ -35,21 +35,22 @@ export class WeatherCollector {
         clearTimeout(timeout);
 
         if (!res.ok) {
-          throw new Error(`OpenWeatherMap HTTP ${res.status}`);
+          throw new Error(`OpenWeatherMap HTTP ${res.status} (${res.statusText})`);
         }
 
         const data = await res.json();
         return this.normalizeForecast(data, config);
-      } catch (err) {
-        console.warn(`[WEATHER_COLLECTOR] Essai ${attempts}/${maxAttempts} échoué :`, err);
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`[WEATHER_COLLECTOR] Essai ${attempts}/${maxAttempts} échoué :`, err?.message || err);
         if (attempts >= maxAttempts) {
-          return this.getFallbackSignals(lat, lon, config);
+          throw new Error(`Échec OpenWeatherMap après ${maxAttempts} tentatives : ${err?.message || err}`);
         }
         await new Promise((r) => setTimeout(r, 1000 * attempts));
       }
     }
 
-    return this.getFallbackSignals(lat, lon, config);
+    throw lastError || new Error('Échec inconnu lors de la récupération météo');
   }
 
   private normalizeForecast(data: any, config: CountryConfig): NormalizedSignal[] {
@@ -101,34 +102,6 @@ export class WeatherCollector {
     }
 
     return signals;
-  }
-
-  private getFallbackSignals(lat: number, lon: number, config: CountryConfig): NormalizedSignal[] {
-    const isImperial = config.units === 'imperial';
-    const temp = isImperial ? 76 : 22;
-
-    let title = `Sunny & Pleasant Weather (${temp}${config.tempUnit})`;
-    let summary = `Ideal outdoor patio dining weather today (${temp}${config.tempUnit}). Great time for lunch and Happy Hour promotions.`;
-
-    if (config.language === 'fr') {
-      title = `Ciel dégagé et température agréable (${temp}${config.tempUnit})`;
-      summary = `Conditions idéales pour le service en terrasse ce midi (${temp}${config.tempUnit}).`;
-    } else if (config.language === 'es') {
-      title = `Cielo despejado y clima agradable (${temp}${config.tempUnit})`;
-      summary = `Condiciones ideales para disfrutar de la terraza hoy (${temp}${config.tempUnit}).`;
-    }
-
-    return [
-      {
-        type: 'weather',
-        source: 'openweathermap',
-        intensity: 0.7,
-        timestamp: new Date().toISOString(),
-        title,
-        summary,
-        rawPayload: { simulated: true, lat, lon, country: config.code, temp, unit: config.tempUnit },
-      },
-    ];
   }
 }
 

@@ -1,6 +1,7 @@
 import { prisma } from '@/server/db/prisma.client';
 import { outstandService } from './outstand.service';
 import { zernioService } from './zernio.service';
+import { metaPublisherService } from './meta-publisher.service';
 import { postSafetyService } from './post-safety.service';
 
 export class PublicationScheduler {
@@ -28,6 +29,11 @@ export class PublicationScheduler {
           status: 'active',
         },
       },
+      include: {
+        restaurant: {
+          include: { socialAccounts: true },
+        },
+      },
       take: 10,
     });
 
@@ -36,10 +42,28 @@ export class PublicationScheduler {
 
     for (const post of duePosts) {
       try {
-        // Priorité à Zernio si configuré, sinon Outstand
-        const result = process.env.ZERNIO_API_KEY
-          ? await zernioService.publishPost(post.id)
-          : await outstandService.publishPost(post.id);
+        const platform = post.platform.toLowerCase();
+        const directAccount = post.restaurant?.socialAccounts?.find(
+          (acc: any) =>
+            acc.platform.toLowerCase() === platform &&
+            acc.status === 'connected' &&
+            Boolean(acc.accessToken)
+        );
+
+        let result: { success: boolean; publicationId: string; error?: string };
+
+        // 1. Priorité 1 : OAuth Direct (si compte connecté avec Page Access Token)
+        if (directAccount && (platform === 'facebook' || platform === 'instagram')) {
+          result = await metaPublisherService.publishPost(post.id);
+        }
+        // 2. Priorité 2 : Passerelle Zernio
+        else if (process.env.ZERNIO_API_KEY) {
+          result = await zernioService.publishPost(post.id);
+        }
+        // 3. Fallback : Outstand
+        else {
+          result = await outstandService.publishPost(post.id);
+        }
 
         if (result.success) {
           executed++;

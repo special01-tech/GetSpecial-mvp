@@ -80,3 +80,64 @@
   color: var(--color-text-muted);
   flex-shrink: 0;
 }
+
+.navControls {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: #F3F4F6;
+  border-radius: 999px;
+  padding: 1px 4px;
+}
+
+.navBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  color: var(--color-text-muted);
+  border-radius: 50%;
+  transition: all 0.15s ease;
+}
+
+.navBtn:hover {
+  color: var(--color-primary, #FF5A00);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.pageIndicator {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  padding: 0 2px;
+  user-select: none;
+}
+
+.dotsRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.07);
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #D1D5DB;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dotActive {
+  width: 14px;
+  border-radius: 4px;
+  background: var(--color-primary, #FF5A00);
+}

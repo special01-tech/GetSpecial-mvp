@@ -5,10 +5,35 @@
 
 export const content = {
   planning: {
-    title: 'Marketing Planning',
-    subtitle: 'Actions and opportunities of the week',
+    title: 'Scheduled',
+    subtitle: 'A calendar view of your scheduled publications.',
     newButton: 'New',
-    newActionTitle: 'Ask the AI for an action',
+    newActionTitle: 'Create a new publication',
+    banner: {
+      title: 'Install GetSpecial',
+      subtitle: 'Add it to your home screen for quick, fullscreen access.',
+      installBtn: 'Install',
+    },
+    calendar: {
+      todayBadge: 'Today',
+      hint: 'Click on a date to review scheduled publications and manage them directly from the calendar.',
+      selectedDayPosts: 'Scheduled publications for {date}',
+      createForDay: 'Schedule for this day',
+    },
+    upcomingEvents: {
+      title: 'UPCOMING EVENTS',
+      subtitle: 'Marketing events and public holidays in {city}.',
+      holidayBadge: 'PUBLIC HOLIDAY',
+    },
+    upcomingPosts: {
+      badge: 'UPCOMING',
+      title: 'Next scheduled publications',
+      empty: 'No scheduled publications right now. Create a post to add it to the calendar.',
+    },
+    calendarSupport: {
+      title: 'Calendar support',
+      description: 'Manage your schedule in one place and keep every publication on track.',
+    },
     filtersLabel: 'Filter by status',
     filters: {
       all: 'All',
@@ -17,7 +42,7 @@ export const content = {
       programmed: 'Scheduled',
       published: 'Published',
     },
-    fallbackPost: 'Campaign post',
+    fallbackPost: 'Scheduled publication',
     publishedToday: 'Published today',
     today: 'Today',
     emptyNoPosts: 'No scheduled posts yet',

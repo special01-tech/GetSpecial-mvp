@@ -15,41 +15,60 @@ export interface RestaurantOffer {
   platforms: PlatformType[];
 }
 
+export interface RestaurantMenuData {
+  sourceType: 'pdf' | 'url' | 'image';
+  name: string;
+  url?: string;
+  fileSize?: string;
+  uploadedAt: string;
+  detectedCategories?: string[];
+  extractedCount?: number;
+}
+
+export const INITIAL_RESTAURANT_MENU: RestaurantMenuData = {
+  sourceType: 'pdf',
+  name: 'carte_restaurant_saison.pdf',
+  fileSize: '2.1 Mo',
+  uploadedAt: '08 oct. 2026',
+  detectedCategories: ['Formules Déjeuner', 'Plats Signatures', 'Planches & Apéro', 'Desserts Maison'],
+  extractedCount: 3,
+};
+
 export const INITIAL_RESTAURANT_OFFERS: RestaurantOffer[] = [
   {
-    id: 'off_wings_50',
-    name: 'Happy Hour Wings 50% Off',
-    description: 'Enjoy 50% off crispy smoked jumbo wings from 4:30 PM to 6:30 PM before tip-off!',
-    image: 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?auto=format&fit=crop&w=800&q=80',
-    discount: '50% OFF',
-    period: 'Today • 4:30 PM - 6:30 PM',
-    date: '2026-09-30',
-    time: '4:45 PM',
+    id: 'off_formule_midi',
+    name: 'Formule Déjeuner Express (Entrée + Plat)',
+    description: 'Entrée fraîcheur du marché + Plat du jour mijoté + Pain au levain artisanal.',
+    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+    discount: '16,50 €',
+    period: 'Du Lundi au Vendredi • 12h00 - 14h30',
+    date: '2026-10-09',
+    time: '12:00',
     status: 'active',
     platforms: ['instagram', 'facebook', 'google_business'],
   },
   {
     id: 'off_happy_hour',
-    name: 'Happy Hour Cocktails & Sliders',
-    description: 'Signature craft cocktails for $8 and half-price bar sliders from 4 PM to 7 PM.',
+    name: 'Happy Hour Cocktails & Planche Tapas',
+    description: 'Cocktails signature à 8 € et planche apéritive mixte à moitié prix pour l’afterwork.',
     image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=800&q=80',
-    discount: '$8 Cocktails',
-    period: 'Tue - Fri • 4:00 PM - 7:00 PM',
-    date: '2026-10-01',
-    time: '4:00 PM',
-    status: 'scheduled',
+    discount: '-30% sur les verres',
+    period: 'Du Mardi au Vendredi • 17h30 - 19h30',
+    date: '2026-10-09',
+    time: '17:30',
+    status: 'active',
     platforms: ['instagram', 'facebook'],
   },
   {
-    id: 'off_lunch_special',
-    name: 'Quick Express Lunch Combo',
-    description: 'Entrée + side and iced tea for $14.99 served in under 15 minutes for office workers.',
+    id: 'off_brunch_dimanche',
+    name: 'Brunch Gourmand & Buffet Sucré-Salé',
+    description: 'Boissons chaudes à volonté, avocado toast, œufs bio, viennoiseries et jus pressés.',
     image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80',
-    discount: '$14.99 Combo',
-    period: 'Mon - Fri • 11:30 AM - 2:00 PM',
-    date: '2026-10-02',
-    time: '11:00 AM',
-    status: 'draft',
-    platforms: ['google_business'],
+    discount: '26,00 €',
+    period: 'Le Dimanche • 11h00 - 15h00',
+    date: '2026-10-11',
+    time: '11:00',
+    status: 'scheduled',
+    platforms: ['instagram', 'google_business'],
   },
 ];

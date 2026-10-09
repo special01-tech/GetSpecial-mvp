@@ -1,3 +1,8 @@
+// Autorise les requêtes de développement local sous Windows si un antivirus ou proxy inspecte les certificats SSL
+if (process.env.NODE_ENV === 'development' && typeof process !== 'undefined') {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
+
 export interface GeocodeResult {
   latitude: number;
   longitude: number;

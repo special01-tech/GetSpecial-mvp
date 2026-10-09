@@ -1,58 +1,52 @@
-import { NextRequest } from 'next/server';
-import { prisma } from '@/server/db/prisma.client';
-import { success, error } from '@/server/lib/api-response';
-import { logAudit } from '@/server/lib/audit';
+import { NextRequest, NextResponse } from 'next/server';
+import { directOAuthService } from '@/server/modules/social-oauth/direct-oauth.service';
 
 export async function GET(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const platform = searchParams.get('platform');
-    const restaurantId = searchParams.get('state') || searchParams.get('restaurantId');
-    const code = searchParams.get('code') || 'mock_code';
-    const outstandAccountId = searchParams.get('account_id') || `outstand_acc_${platform}_${Date.now()}`;
-    const username = searchParams.get('username') || `@${platform}_restaurant`;
+  const origin = req.nextUrl.origin;
+  const { searchParams } = new URL(req.url);
 
-    if (!platform || !restaurantId) {
-      return error('platform et state (restaurantId) requis', 400);
+  const code = searchParams.get('code');
+  const state = searchParams.get('state');
+  const error = searchParams.get('error');
+  const errorDescription = searchParams.get('error_description');
+
+  // Si l'utilisateur a annulé sur la page d'autorisation
+  if (error) {
+    const errorMsg = errorDescription || error || 'Autorisation refusée par l’utilisateur';
+    return NextResponse.redirect(
+      new URL(`/dashboard/settings?connection=error&message=${encodeURIComponent(errorMsg)}`, origin)
+    );
+  }
+
+  if (!state) {
+    return NextResponse.redirect(
+      new URL('/dashboard/settings?connection=error&message=Paramètre+state+manquant', origin)
+    );
+  }
+
+  try {
+    const result = await directOAuthService.handleCallback({
+      code: code || 'direct_oauth_authorized',
+      state,
+      origin,
+      searchParams,
+    });
+
+    const redirectUrl = new URL('/dashboard/settings', origin);
+    redirectUrl.searchParams.set('connection', 'success');
+    redirectUrl.searchParams.set('platform', result.platform);
+    if (result.account?.username) {
+      redirectUrl.searchParams.set('username', result.account.username);
     }
 
-    const socialAccount = await (prisma as any).socialAccount.upsert({
-      where: {
-        restaurantId_platform: {
-          restaurantId,
-          platform,
-        },
-      },
-      update: {
-        outstandAccountId,
-        username,
-        status: 'connected',
-        lastSyncAt: new Date(),
-      },
-      create: {
-        restaurantId,
-        platform,
-        outstandAccountId,
-        username,
-        status: 'connected',
-        lastSyncAt: new Date(),
-      },
-    });
-
-    await logAudit({
-      restaurantId,
-      action: 'social.connect',
-      entityType: 'social_account',
-      entityId: socialAccount.id,
-      details: { platform, username },
-    });
-
-    return success({
-      connected: true,
-      account: socialAccount,
-      message: `Compte ${platform} connecté avec succès.`,
-    });
+    return NextResponse.redirect(redirectUrl);
   } catch (err: any) {
-    return error(err.message, 500);
+    console.error('[OAUTH_CALLBACK_ERROR]', err);
+    return NextResponse.redirect(
+      new URL(
+        `/dashboard/settings?connection=error&message=${encodeURIComponent(err.message || 'Échec de connexion')}`,
+        origin
+      )
+    );
   }
 }

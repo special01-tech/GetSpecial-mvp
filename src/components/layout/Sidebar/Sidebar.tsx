@@ -7,7 +7,6 @@ import LanguageToggle from '@/components/ui/LanguageToggle';
 import { useLanguage } from '@/i18n';
 import {
   Sparkles,
-  MessageSquare,
   Calendar,
   Store,
   Settings,
@@ -28,7 +27,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { labelKey: 'nav.today', href: '/dashboard', icon: Sparkles },
   { labelKey: 'nav.studio', href: '/dashboard/create', icon: PenTool },
-  { labelKey: 'nav.chat', href: '/dashboard/chat', icon: MessageSquare },
   { labelKey: 'nav.planning', href: '/dashboard/planning', icon: Calendar },
   { labelKey: 'nav.restaurant', href: '/dashboard/restaurant', icon: Store },
   { labelKey: 'nav.settings', href: '/dashboard/settings', icon: Settings },
