@@ -50,6 +50,13 @@
   border-radius: 12px;
 }
 
+@media (max-width: 560px) {
+  .navTabs {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
 .tabBtn {
   background: none;
   border: none;

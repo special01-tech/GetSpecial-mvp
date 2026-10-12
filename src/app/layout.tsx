@@ -17,6 +17,18 @@ export const metadata: Metadata = {
   description:
     "The smart platform turning every event, weather shift and moment into revenue opportunities for your restaurant. / La plateforme intelligente qui transforme chaque événement, météo et moment en opportunités de chiffre d'affaires pour votre restaurant.",
   manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '32x32' },
+      { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
+      { url: '/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
+      { url: '/icons/icon-192x192.png', type: 'image/png', sizes: '192x192' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: ['/favicon.ico'],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',

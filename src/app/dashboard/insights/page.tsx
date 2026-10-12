@@ -223,7 +223,7 @@ export default function InsightsPage() {
         </header>
 
         {/* Onglets de navigation : Tout est accessible directement ici */}
-        <nav className={styles.tabsNav} style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        <nav className={styles.tabsNav}>
           <button
             type="button"
             onClick={() => setActiveTab('comptage')}
