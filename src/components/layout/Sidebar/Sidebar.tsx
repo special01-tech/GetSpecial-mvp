@@ -12,6 +12,7 @@ import {
   Settings,
   BarChart3,
   PenTool,
+  History,
   LucideIcon,
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
@@ -28,6 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   { labelKey: 'nav.today', href: '/dashboard', icon: Sparkles },
   { labelKey: 'nav.studio', href: '/dashboard/create', icon: PenTool },
   { labelKey: 'nav.planning', href: '/dashboard/planning', icon: Calendar },
+  { labelKey: 'nav.history', href: '/dashboard/history', icon: History },
   { labelKey: 'nav.restaurant', href: '/dashboard/restaurant', icon: Store },
   { labelKey: 'nav.settings', href: '/dashboard/settings', icon: Settings },
 ];

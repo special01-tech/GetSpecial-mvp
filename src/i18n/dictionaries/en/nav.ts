@@ -11,4 +11,5 @@ export const nav = {
   restaurant: 'My Restaurant',
   settings: 'Settings',
   analytics: 'Analytics',
+  history: 'History',
 };

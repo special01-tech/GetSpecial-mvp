@@ -8,6 +8,7 @@ import {
   Calendar,
   Store,
   PenTool,
+  History,
   MoreHorizontal,
   LucideIcon,
 } from 'lucide-react';
@@ -24,6 +25,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { labelKey: 'nav.today', href: '/dashboard', icon: Home },
   { labelKey: 'nav.studioShort', href: '/dashboard/create', icon: PenTool },
+  { labelKey: 'nav.history', href: '/dashboard/history', icon: History },
   { labelKey: 'nav.planning', href: '/dashboard/planning', icon: Calendar },
   { labelKey: 'nav.restaurant', href: '/dashboard/restaurant', icon: Store },
 ];
