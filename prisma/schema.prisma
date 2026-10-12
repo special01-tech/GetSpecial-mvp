@@ -57,6 +57,14 @@ model Restaurant {
   feedbackEvents FeedbackEvent[]
   auditLogs      AuditLog[]
 
+  // --- Briques Comptoir, Salle & Clôtures (Section 3) ---
+  dishes         Dish[]
+  scans          Scan[]
+  redemptions    Redemption[]
+  contacts       CustomerContact[]
+  serviceClosings ServiceClosing[]
+  decisions      MorningDecision[]
+
   @@map("restaurants")
 }
 
@@ -69,6 +77,16 @@ model RestaurantProfile {
   offPeakDays    String[]   @default([])           // ["monday", "tuesday"]
   constraints    String[]   @default([])           // ["pas de porc", "menu végétarien"]
   customRules    Json?
+  
+  // Paramètres économiques & sécurité (Sections 2, 3, 8)
+  capacityCovers Int        @default(40)
+  averageTicket  Float      @default(25.0)
+  foodCostPct    Float      @default(0.30)
+  drinkCostPct   Float      @default(0.20)
+  staffPinHash   String?
+  adminPinHash   String?
+  brandColor     String?    @default("#ff6600")
+
   status         String     @default("active")
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
@@ -85,12 +103,20 @@ model Offer {
   title            String
   description      String
   discountValue    String?    // ex: "15%", "1 café offert"
+  codeWord         String?    // mot-code affiché (ex: DOUCEUR, SOLEIL)
+  targetUses       Int        @default(10)
+  startsAt         DateTime?
+  endsAt           DateTime?
   recurrence       String     @default("none") // none, daily, weekly, monthly
   recurrenceDays   String[]   @default([])     // ["tuesday", "thursday"]
   lastPromotedAt   DateTime?
   status           String     @default("active") // active, paused, archived
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
+
+  redemptions      Redemption[]
+  contacts         CustomerContact[]
+  decisions        MorningDecision[]
 
   @@map("offers")
 }
@@ -246,4 +272,121 @@ model AuditLog {
   @@index([restaurantId])
   @@index([action])
   @@map("audit_log")
+}
+
+// =============================================================================
+// MODÈLES ADOPTÉS DU COUNTER & DE LA GESTION EN SALLE (Sections 3 & 4)
+// =============================================================================
+
+model Dish {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  name         String
+  description  String?
+  priceText    String?
+  photoUrl     String?
+  createdAt    DateTime   @default(now())
+
+  @@index([restaurantId])
+  @@map("dishes")
+}
+
+model Scan {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  deviceId     String
+  source       String?    @default("qr") // qr, link, direct
+  createdAt    DateTime   @default(now())
+
+  @@index([restaurantId])
+  @@index([createdAt])
+  @@map("scans")
+}
+
+model Redemption {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  offerId      String
+  offer        Offer      @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  deviceId     String
+  claimToken   String?    // token court de réclamation
+  partySize    Int        @default(1)
+  source       String?    // instagram, facebook, google, passage, ami, autre
+  status       String     @default("claimed") // claimed, confirmed, cancelled
+  confirmedBy  String?    // staff, manual, auto
+  confirmedAt  DateTime?
+  cancelledAt  DateTime?
+  createdAt    DateTime   @default(now())
+
+  @@index([restaurantId])
+  @@index([offerId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("redemptions")
+}
+
+model CustomerContact {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  offerId      String?
+  offer        Offer?     @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  type         String     // email, phone
+  value        String
+  consentText  String
+  source       String?
+  unsubscribed Boolean    @default(false)
+  unsubscribedAt DateTime?
+  createdAt    DateTime   @default(now())
+
+  @@index([restaurantId])
+  @@index([value])
+  @@map("customer_contacts")
+}
+
+model ServiceClosing {
+  id             String     @id @default(cuid())
+  restaurantId   String
+  restaurant     Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  serviceDateStr String     // YYYY-MM-DD
+  service        String     // midi, soir
+  totalCovers    Int
+  hadActiveOffer Boolean    @default(false)
+  notes          String?
+  createdAt      DateTime   @default(now())
+
+  @@unique([restaurantId, serviceDateStr, service])
+  @@index([restaurantId])
+  @@map("service_closings")
+}
+
+model MorningDecision {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  offerId      String
+  offer        Offer      @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  day          String     // YYYY-MM-DD
+  choice       String     // garder, ajuster, laisser
+  note         String?
+  createdAt    DateTime   @default(now())
+
+  @@unique([offerId, day])
+  @@index([restaurantId])
+  @@map("morning_decisions")
+}
+
+model RateLimitEntry {
+  id           String     @id @default(cuid())
+  key          String     @unique // "pin:{restaurantId}:{ip}"
+  failureCount Int        @default(1)
+  lastFailedAt DateTime   @default(now())
+  blockedUntil DateTime?
+  createdAt    DateTime   @default(now())
+
+  @@index([key])
+  @@map("rate_limit_entries")
 }

@@ -107,14 +107,32 @@ export class ContextBuilder {
       };
     });
 
-    // 5. Offres actives du restaurant
-    const activeOffers: ContextDossier['activeOffers'] = (restaurant.offers || []).map((o: any) => ({
-      id: o.id,
-      title: o.title,
-      description: o.description,
-      discountValue: o.discountValue || undefined,
-      lastPromotedAt: o.lastPromotedAt ? new Date(o.lastPromotedAt).toISOString() : undefined,
-    }));
+    // 5. Offres actives du restaurant & données réelles de comptage (Boutons comptoir + QR codes)
+    let counterOffersMap = new Map<string, { total_uses: number }>();
+    try {
+      const redemptions = await (prisma.redemption as any).findMany({
+        where: { restaurantId: restaurant.id, status: { not: 'cancelled' } },
+      });
+      for (const r of redemptions) {
+        const cur = counterOffersMap.get(r.offerId) || { total_uses: 0 };
+        cur.total_uses += 1;
+        counterOffersMap.set(r.offerId, cur);
+      }
+    } catch (e) {
+      // Tolérance en cas de table vide
+    }
+
+    const activeOffers: ContextDossier['activeOffers'] = (restaurant.offers || []).map((o: any) => {
+      const counterStats = counterOffersMap.get(o.id) || counterOffersMap.get(o.codeWord?.toUpperCase()) || { total_uses: 0 };
+      return {
+        id: o.id,
+        title: o.title,
+        description: `${o.description || ''} [Comptabilisations réelles en salle : ${counterStats.total_uses} utilisations]`,
+        discountValue: o.discountValue || undefined,
+        lastPromotedAt: o.lastPromotedAt ? new Date(o.lastPromotedAt).toISOString() : undefined,
+      };
+    });
+
 
     // 6. Assembler le dossier final
     const dossier: ContextDossier = {
