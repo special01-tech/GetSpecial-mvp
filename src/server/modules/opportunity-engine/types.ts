@@ -75,6 +75,7 @@ export const DemandOpportunityItemSchema = z.object({
   factsUsed: z
     .union([z.array(z.string()), z.string().transform((s) => [s])])
     .default([]),
+  oneSentenceSummary: z.string().optional().describe("Synthèse de l'action en une phrase unique"),
 });
 export type DemandOpportunityItem = z.infer<typeof DemandOpportunityItemSchema>;
 

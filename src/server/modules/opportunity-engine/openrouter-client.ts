@@ -4,6 +4,7 @@ import {
   DemandOpportunityOutputSchema,
   DemandOpportunityItem,
 } from './types';
+import { loadKnowledgeSections } from '@/server/modules/knowledge-base/service';
 
 export class OpenRouterClient {
   private readonly apiKey: string | undefined;
@@ -37,21 +38,27 @@ export class OpenRouterClient {
     }
 
     try {
+      const knowledgeContext = loadKnowledgeSections(['5.8', '7', '10', '12', '13']);
+
       const systemPrompt = `Tu es le copilote stratégique de GetSpecial, spécialisé dans l'optimisation et le pilotage de la demande pour les bars et restaurants indépendants.
 Ton objectif est de détecter jusqu'à 5 opportunités commerciales concrètes, ultra-claires et pertinentes aujourd'hui pour cet établissement.
 
-RÈGLES D'OR INTANGIBLES (GUARDRAILS) :
-1. GROUND TRUTH ABSOLU : Tu n'as STRICTEMENT AUCUN DROIT d'inventer des plats, boissons ou concepts absents des spécialités du restaurant. Utilise UNIQUEMENT les spécialités réelles de l'établissement.
-2. DESCRIPTION EXPLICATIVE & PÉDAGOGIQUE POUR LE RESTAURATEUR : La description doit expliquer clairement et concrètement la situation (ce qui se passe à proximité ou le signal météo/jour), l'intérêt commercial et la proposition en 2 phrases complètes, chaleureuses et faciles à comprendre en 10 secondes. Pas de fixette sur le nombre de places assises.
-3. RAISONS ULTRA-CONCISES (2 à 3 MAX) : Dans le champ "reasons", donne 2 à 3 bullet points percutants, courts et directs (1 phrase courte de 10 à 15 mots max chacun). Explique immédiatement le levier fort : pic d'affluence ciblé, marge brute préservée, ou simplicité en cuisine. Pas de remplissage.
-4. OFFRE EN SALLE SIMPLE & DIRECTE : "label" est le nom gourmand et clair de la formule (ex: 'Formule Fan Zone : Burger Charolais & Pinte IPA'). "details" décrit simplement et précisément ce qui est servi.
-5. PAS LIMITÉ AUX JOURS CREUX : Les créneaux calmes sont une opportunité majeure, mais un événement local voisin (concert, match) ou une météo propice (terrasse) constituent aussi d'excellentes opportunités n'importe quel jour.
+RÈGLES D'OR INTANGIBLES (GUARDRAILS & BASE DE CONNAISSANCES) :
+1. GROUND TRUTH ABSOLU : Tu n'as STRICTEMENT AUCUN DROIT d'inventer des plats, boissons ou concepts absents des spécialités ou plats réels du restaurant. Utilise UNIQUEMENT les spécialités réelles de l'établissement.
+2. SYNTHÈSE EN UNE PHRASE DIRECTE (oneSentenceSummary) : Produis pour chaque opportunité une phrase unique limpide qui résume TOUT : [Événement/signal détecté] : promouvez [Plat/formule & avantage] dès [Heure] sur [Réseaux] (mot-code : [CODE]).
+3. HIÉRARCHIE DES OFFRES (Section 5.8) : Priorise : (1) Article offert conditionné (dessert, café, boisson avec un plat : point mort très bas 1-2 couverts), (2) Formule à marge saine (plat + boisson/dessert), (3) Happy hour sur créneau creux précis (15h-18h30), (4) Remise en pourcentage modérée. Évite absolument le "deux pour un".
+4. CE QUE L'IA NE DOIT JAMAIS FAIRE (Section 13) : Ne jamais inventer de chiffres financiers ou de prévisions fantaisistes. Ne jamais promettre de résultats. Ne jamais dépasser la marge brute du restaurant.
+5. DESCRIPTION & RAISONS PÉDAGOGIQUES : 2 phrases complètes, chaleureuses et faciles à comprendre en 10 secondes. Dans "reasons", 2 à 3 bullet points percutants et courts.
 6. MOT-CODE ORAL AU COMPTOIR : Chaque offre DOIT comporter un mot-code court (ex: MATCH15, SOLEIL25, BURGER8) facile à prononcer et mémorisable pour le client et le serveur.
-7. FORCE ET IMPORTANCE : Tu dois évaluer la force/importance de chaque opportunité via "importance" ("HIGH" pour impact majeur/affluence forte, "MEDIUM" pour bon relais, "MODERATE" pour opportunité d'appoint) et "impactScore" (score entier entre 1 et 100).
+7. FORCE ET IMPORTANCE : Tu dois évaluer la force/importance de chaque opportunité via "importance" ("HIGH", "MEDIUM", "MODERATE") et "impactScore" (score entier entre 1 et 100).
 8. "category" doit être STRICTEMENT l'une de ces valeurs : "LOCAL_EVENT", "WEATHER_BOOST", "EMPTY_SLOT", "OFFER_PROMOTION", "SPECIAL_OCCASION".
 9. SOBRIÉTÉ : Si aucune action commerciale n'a de sens crédible aujourd'hui, renvoie hasOpportunity: false et une liste vide.
 10. PLAFOND : Maximum 5 opportunités.
-11. RÉPONSE : Retourne STRICTEMENT un objet JSON valide conforme au schéma demandé, sans aucun markdown ni texte autour.`;
+11. RÉPONSE : Retourne STRICTEMENT un objet JSON valide conforme au schéma demandé, sans aucun markdown ni texte autour.
+
+---
+EXTRAITS OFFICIELS DE LA BASE DE CONNAISSANCES RESTAURATION :
+${knowledgeContext}`;
 
       const userPrompt = `Voici le dossier complet et vérifié de l'établissement :
 ${JSON.stringify(dossier, null, 2)}
@@ -62,6 +69,7 @@ Produis la réponse JSON au format exact suivant :
   "opportunities": [
     {
       "title": "Titre clair et accrocheur",
+      "oneSentenceSummary": "Grand soleil cet après-midi : promouvez la Formule Salade & Boisson à 14€ dès 11h30 sur Instagram & Facebook (mot-code : SOLEIL20)",
       "description": "Explication pédagogique et claire de l'action en 2 phrases",
       "category": "LOCAL_EVENT",
       "urgency": "high",
@@ -198,6 +206,7 @@ Produis la réponse JSON au format exact suivant :
                   publishTimingReason: (typeof item.distribution === 'object' && item.distribution?.publishTimingReason) ? String(item.distribution.publishTimingReason) : 'Pour capter les décisions de sortie.',
                 },
                 factsUsed: Array.isArray(item.factsUsed) ? item.factsUsed : (item.factsUsed ? [String(item.factsUsed)] : []),
+                oneSentenceSummary: item.oneSentenceSummary || `${String(item.title || offerLabel)} : promouvez ${offerLabel} dès ${(typeof item.distribution === 'object' && item.distribution?.recommendedPublishTime) ? String(item.distribution.recommendedPublishTime) : '11:30'} sur ${validChannels.join(' & ')} (mot-code : ${offerCode}).`,
               };
             })
           : [],
