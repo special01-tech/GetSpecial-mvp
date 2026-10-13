@@ -229,6 +229,14 @@ export default function SystemMonitorPage() {
           {/* ============================================================ */}
           {activeTab === 'restaurant' && (
             <div className={styles.gridTwoCols}>
+              {!restaurant && (
+                <div style={{ gridColumn: '1 / -1', padding: '16px', background: '#FFF7ED', border: '1px solid #FFEDD5', borderRadius: '12px', color: '#9A3412', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <strong>Aucun établissement actif en base :</strong> Votre restaurant sera visible ici dès que vous aurez validé la dernière étape de l&apos;Onboarding.
+                  </div>
+                  <a href="/onboarding" style={{ background: '#FF5A00', color: '#FFFFFF', padding: '8px 16px', borderRadius: '8px', textDecoration: 'none', fontWeight: 600, fontSize: '0.85rem' }}>Finaliser l&apos;Onboarding</a>
+                </div>
+              )}
               {/* Carte Profil Restaurant */}
               <div className={styles.card}>
                 <div className={styles.cardHeader}>
