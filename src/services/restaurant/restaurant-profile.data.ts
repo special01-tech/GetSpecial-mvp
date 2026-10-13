@@ -28,12 +28,12 @@ export interface RestaurantProfileData {
 }
 
 export const INITIAL_RESTAURANT_PROFILE: RestaurantProfileData = {
-  name: 'The Brass Pelican',
-  type: 'American Bistro & Craft Bar',
-  tone: 'Warm & Welcoming',
-  colors: ['#1B4332', '#2D6A4F', '#D8F3DC', '#B7E4C7', '#FAFAF7'],
+  name: 'Mon Établissement',
+  type: 'Restaurant traditionnel & Cuisine de saison',
+  tone: 'Chaleureux & Convivial',
+  colors: ['#FF5A00', '#1A1A1A', '#F9FAFB'],
   hasTerrace: true,
-  hasDelivery: true,
+  hasDelivery: false,
   hasOffPeak: true,
   offPeakSlots: [
     {

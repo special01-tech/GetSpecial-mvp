@@ -544,7 +544,10 @@ export default function UnifiedOnboardingPage() {
           ? customRestaurantTypeInput.trim()
           : restaurantType;
 
-      const finalPhotos = selectedGooglePlace?.photoUrl ? [selectedGooglePlace.photoUrl] : [];
+      const finalPhotos =
+        selectedGooglePlace?.photoUrl && !selectedGooglePlace.photoUrl.includes('unsplash.com')
+          ? [selectedGooglePlace.photoUrl]
+          : [];
 
       // Horaires structurés semaine et week-end
       const structuredOpeningHours = {
@@ -927,7 +930,7 @@ export default function UnifiedOnboardingPage() {
                 /* Carte d'établissement lié à Google Places */
                 <div className={styles.selectedPlaceCard}>
                   <div className={styles.selectedPlaceLeft}>
-                    {selectedGooglePlace.photoUrl ? (
+                    {selectedGooglePlace.photoUrl && !selectedGooglePlace.photoUrl.includes('unsplash.com') ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         src={selectedGooglePlace.photoUrl}

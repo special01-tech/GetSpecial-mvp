@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { MapPin, Phone, Clock, Star, CheckCircle, Image as ImageIcon } from 'lucide-react';
+import { MapPin, Phone, Clock, Star, CheckCircle, Image as ImageIcon, Store } from 'lucide-react';
 import { RestaurantSearchResult } from '@/services/restaurant-search/restaurant-search.types';
 import { useLanguage } from '@/i18n';
 import styles from './RestaurantCard.module.css';
@@ -13,21 +13,43 @@ interface RestaurantCardProps {
 
 export default function RestaurantCard({ restaurant, className = '' }: RestaurantCardProps) {
   const { t } = useLanguage();
-  const gallery = restaurant.photoGallery && restaurant.photoGallery.length > 0
-    ? restaurant.photoGallery
-    : [restaurant.photoUrl || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80'];
+  const validPhoto = restaurant.photoUrl && !restaurant.photoUrl.includes('unsplash.com')
+    ? restaurant.photoUrl
+    : undefined;
+
+  const validGallery = (restaurant.photoGallery || []).filter(
+    (img) => img && !img.includes('unsplash.com')
+  );
 
   return (
     <div className={`${styles.card} ${className}`}>
       {/* Photo Principale avec Badge d'Ouverture */}
       <div className={styles.mainImageWrapper}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={restaurant.photoUrl || gallery[0]}
-          alt={restaurant.name}
-          className={styles.mainImage}
-        />
-        <div className={styles.imageOverlay} />
+        {validPhoto ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={validPhoto}
+              alt={restaurant.name}
+              className={styles.mainImage}
+            />
+            <div className={styles.imageOverlay} />
+          </>
+        ) : (
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)',
+              color: '#FF5A00',
+            }}
+          >
+            <Store size={48} strokeWidth={1.5} opacity={0.7} />
+          </div>
+        )}
 
         <div className={styles.topBadges}>
           <span className={`${styles.statusBadge} ${restaurant.isOpenNow !== false ? styles.open : styles.closed}`}>
@@ -87,14 +109,14 @@ export default function RestaurantCard({ restaurant, className = '' }: Restauran
         </div>
 
         {/* Galerie Photos */}
-        {gallery.length > 1 && (
+        {validGallery.length > 1 && (
           <div className={styles.gallerySection}>
             <div className={styles.galleryHeader}>
               <ImageIcon size={14} className={styles.galleryIcon} />
               <span>{t('common.components.restaurantCard.galleryTitle')}</span>
             </div>
             <div className={styles.galleryGrid}>
-              {gallery.slice(0, 3).map((imgUrl, idx) => (
+              {validGallery.slice(0, 3).map((imgUrl, idx) => (
                 <div key={idx} className={styles.galleryThumbWrapper}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img

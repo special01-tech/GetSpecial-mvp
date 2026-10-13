@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
         } else {
           const newUser = await prisma.user.create({
             data: {
-              email: 'owner@brasspelican.com',
+              email: 'owner@getspecial.dev',
               name: 'Restaurant Owner',
             },
           });

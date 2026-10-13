@@ -396,13 +396,15 @@ const COUNTRY_ALIASES: Record<string, string> = {
   JAPON: 'JP',
 };
 
+import { WORLD_COUNTRIES } from '@/services/country/countries.data';
+
 /**
  * Normalise et extrait la configuration d'un pays à partir d'un code ou d'un nom.
  * Fonctionne pour n'importe quel pays au monde avec fallback intelligent.
  */
 export function getCountryConfig(countryInput?: string): CountryConfig {
   if (!countryInput || typeof countryInput !== 'string') {
-    return COUNTRY_REGISTRY['US'];
+    return COUNTRY_REGISTRY['FR'];
   }
 
   const clean = countryInput.trim().toUpperCase().replace(/[\s-]/g, '_');
@@ -420,19 +422,20 @@ export function getCountryConfig(countryInput?: string): CountryConfig {
 
   // 3. Dynamic ISO code fallback for any international country
   const iso2 = clean.length === 2 ? clean : clean.slice(0, 2);
+  const matchedWorldCountry = WORLD_COUNTRIES.find((c) => c.code === iso2);
 
   return {
     code: iso2,
-    name: countryInput.trim(),
-    language: 'en', // International business standard
+    name: matchedWorldCountry?.nameFr || countryInput.trim(),
+    language: 'fr',
     locale: `${iso2.toLowerCase()}-${iso2}`,
-    currencySymbol: '$',
-    currencyCode: 'USD',
+    currencySymbol: iso2 === 'US' ? '$' : iso2 === 'GB' ? '£' : '€',
+    currencyCode: iso2 === 'US' ? 'USD' : iso2 === 'GB' ? 'GBP' : 'EUR',
     units: iso2 === 'US' ? 'imperial' : 'metric',
     tempUnit: iso2 === 'US' ? '°F' : '°C',
     distanceUnit: iso2 === 'US' || iso2 === 'GB' ? 'miles' : 'km',
     speedUnit: iso2 === 'US' || iso2 === 'GB' ? 'mph' : 'km/h',
-    timeFormat: '12h',
-    phonePrefix: '+1',
+    timeFormat: iso2 === 'US' ? '12h' : '24h',
+    phonePrefix: matchedWorldCountry?.phonePrefix || (iso2 === 'US' ? '+1' : ''),
   };
 }

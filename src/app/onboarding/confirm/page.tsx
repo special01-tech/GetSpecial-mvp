@@ -50,7 +50,7 @@ export default function ConfirmRestaurantPage() {
             cuisineType: t('onboarding.confirm.fallbackCuisine'),
             openingHours: t('onboarding.confirm.fallbackHours'),
             isOpenNow: true,
-            photoUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
+            photoUrl: undefined,
             photoGallery: [],
           });
         } else {
