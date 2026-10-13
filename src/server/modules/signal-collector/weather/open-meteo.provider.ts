@@ -2,28 +2,52 @@ import { IWeatherProvider, WeatherDataPayload } from './weather-provider.interfa
 import { NormalizedSignal } from '../signal.types';
 import { getCountryConfig } from '@/server/lib/country-config';
 
+interface WeatherCacheEntry {
+  timestamp: number;
+  signals: NormalizedSignal[];
+}
+
 export class OpenMeteoProvider implements IWeatherProvider {
   name = 'open-meteo';
+  private cache = new Map<string, WeatherCacheEntry>();
+  private readonly CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes de cache
 
   async getWeatherSignals(lat: number, lon: number, country = 'FR'): Promise<NormalizedSignal[]> {
+    const cacheKey = `${lat.toFixed(3)}_${lon.toFixed(3)}_${country}`;
+    const cached = this.cache.get(cacheKey);
+    const now = Date.now();
+
+    if (cached && now - cached.timestamp < this.CACHE_TTL_MS) {
+      return cached.signals;
+    }
+
     const config = getCountryConfig(country);
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m&hourly=temperature_2m,precipitation_probability,rain,weather_code&timezone=auto&forecast_days=2`;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    const timeout = setTimeout(() => controller.abort(), 12000);
 
     try {
       const res = await fetch(url, { signal: controller.signal });
       clearTimeout(timeout);
 
       if (!res.ok) {
+        // Si 503 ou rate limit, retourner le cache même expiré s'il existe
+        if (cached) {
+          return cached.signals;
+        }
         throw new Error(`Open-Meteo HTTP ${res.status}`);
       }
 
       const data = await res.json();
-      return this.transformOpenMeteo(data, config);
+      const signals = this.transformOpenMeteo(data, config);
+      this.cache.set(cacheKey, { timestamp: now, signals });
+      return signals;
     } catch (err) {
       clearTimeout(timeout);
+      if (cached) {
+        return cached.signals;
+      }
       throw err;
     }
   }

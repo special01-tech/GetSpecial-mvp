@@ -12,4 +12,5 @@ export const nav = {
   settings: 'Settings',
   analytics: 'Analytics',
   history: 'Historique',
+  systemMonitor: 'Diagnostic & IA',
 };

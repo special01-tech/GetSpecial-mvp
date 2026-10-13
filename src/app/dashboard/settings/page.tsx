@@ -146,7 +146,7 @@ export default function SettingsPage() {
         const json = await res.json();
 
         if (res.ok && json.success && json.data?.url) {
-          // Redirection vers le fournisseur officiel (Google, Meta, TikTok)
+          // Redirection vers le fournisseur officiel (Google, Meta)
           window.location.href = json.data.url;
         } else {
           throw new Error(json.error || json.message || 'Impossible de lancer la connexion OAuth.');
@@ -285,7 +285,7 @@ export default function SettingsPage() {
           <h2 className={styles.sectionTitle}>Comptes & Réseaux Sociaux (OAuth Direct)</h2>
         </div>
         <p style={{ fontSize: '0.86rem', color: 'var(--color-text-muted)', margin: '0 0 1rem 0' }}>
-          Connectez directement vos comptes officiels Meta (Facebook & Instagram), Google Business ou TikTok pour automatiser la diffusion de vos campagnes.
+          Connectez directement vos comptes officiels Meta (Facebook & Instagram) ou Google Business pour automatiser la diffusion de vos campagnes.
         </p>
 
         {channelError && (

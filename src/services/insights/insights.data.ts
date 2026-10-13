@@ -8,7 +8,7 @@ export interface GlobalMetrics {
 }
 
 export interface PlatformStatItem {
-  id: 'instagram' | 'facebook' | 'google_business' | 'tiktok' | string;
+  id: 'instagram' | 'facebook' | 'google_business' | string;
   name: string;
   views: number;
   percentage: number;
@@ -23,7 +23,7 @@ export interface TopContentItem {
   interactions: string;
   imageUrl: string;
   engagement: string;
-  platform: 'instagram' | 'facebook' | 'google_business' | 'tiktok' | string;
+  platform: 'instagram' | 'facebook' | 'google_business' | string;
   date: string;
   postUrl?: string;
 }

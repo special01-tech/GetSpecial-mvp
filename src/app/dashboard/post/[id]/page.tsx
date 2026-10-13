@@ -39,7 +39,7 @@ export default function PostDetailPage() {
               id: matched.id,
               title: matched.content.slice(0, 60) + (matched.content.length > 60 ? '...' : ''),
               imageUrl: matched.thumbnailUrl || MOCK_DETAILED_POST.imageUrl,
-              platform: matched.platform || 'tiktok',
+              platform: matched.platform || 'instagram',
               date: formatDate(matched.publishedAt, {
                 month: 'short',
                 day: 'numeric',

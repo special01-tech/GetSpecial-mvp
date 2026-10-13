@@ -19,7 +19,7 @@ export class ContentGeneratorService {
   async generatePostForOpportunity(
     opportunityId: string,
     restaurantId: string,
-    platform: 'instagram' | 'facebook' | 'tiktok' | 'google_business' = 'instagram'
+    platform: 'instagram' | 'facebook' | 'google_business' = 'instagram'
   ) {
     const opp = await (prisma as any).opportunity.findUnique({
       where: { id: opportunityId },

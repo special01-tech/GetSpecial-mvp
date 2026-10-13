@@ -90,6 +90,61 @@
   }
 }
 
+@media (max-width: 768px) {
+  .screenWrapper {
+    padding: 0 4px;
+  }
+
+  .container {
+    gap: 0.75rem;
+  }
+
+  .headerTop {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .titleGroup {
+    width: 100%;
+  }
+
+  .pageTitle {
+    font-size: 1.15rem;
+  }
+
+  .typeSelector {
+    gap: 4px;
+  }
+
+  .typeBtn {
+    padding: 7px 4px;
+    font-size: 0.72rem;
+  }
+
+  .stylesGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  .styleCard {
+    padding: 7px 8px;
+    font-size: 0.75rem;
+  }
+
+  .finalActionsBar {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .publishNowBtn,
+  .scheduleBtn {
+    width: 100%;
+    justify-content: center;
+    padding: 11px 14px;
+  }
+}
+
 /* ========================================================= */
 /* CARTE GAUCHE : Formulaire de configuration               */
 /* ========================================================= */
@@ -314,6 +369,79 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
   display: flex;
   flex-direction: column;
+}
+
+/* État d'attente avant clic sur Générer */
+.emptyStudioCard {
+  background-color: #FFFFFF;
+  border: 1.5px dashed #E5E7EB;
+  border-radius: 14px;
+  padding: 3rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 480px;
+  gap: 14px;
+}
+
+.emptyStudioIconCircle {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  background-color: #FFF4ED;
+  color: #FF5A00;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(255, 90, 0, 0.15);
+}
+
+.emptyStudioTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.emptyStudioText {
+  font-size: 0.84rem;
+  color: #6B7280;
+  max-width: 340px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.emptyStudioTips {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  background-color: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  padding: 10px 14px;
+  text-align: left;
+  max-width: 320px;
+  width: 100%;
+}
+
+.emptyStudioTipItem {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #4B5563;
+}
+
+.emptyStudioTipDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #FF5A00;
+  flex-shrink: 0;
 }
 
 .mockupHeader {

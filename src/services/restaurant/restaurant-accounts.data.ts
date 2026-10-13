@@ -1,4 +1,4 @@
-export type ConnectedAccountId = 'facebook' | 'instagram' | 'google_business' | 'tiktok';
+export type ConnectedAccountId = 'facebook' | 'instagram' | 'google_business';
 
 export interface ConnectedAccountData {
   id: ConnectedAccountId;
@@ -35,13 +35,5 @@ export const INITIAL_CONNECTED_ACCOUNTS: ConnectedAccountData[] = [
     isConnected: false,
     category: 'directory',
     description: 'Apparaissez dans le Pack Local Maps lors des recherches de proximité.',
-  },
-  {
-    id: 'tiktok',
-    name: 'TikTok',
-    username: 'Non connecté',
-    isConnected: false,
-    category: 'social',
-    description: 'Publication de vidéos courtes et formats immersifs auprès des clients locaux.',
   },
 ];

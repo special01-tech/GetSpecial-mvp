@@ -46,15 +46,13 @@ export class ZernioService {
       case 'google_business':
       case 'gmb':
         return 'google_business';
-      case 'tiktok':
-        return 'tiktok';
       default:
         return 'instagram';
     }
   }
 
   /**
-   * Publie un post sur les réseaux sociaux (Meta, Google Business, TikTok, etc.) via Zernio
+   * Publie un post sur les réseaux sociaux (Meta, Google Business) via Zernio
    * Gère l'idempotence, les retries exponentiels et le mode mock sans clé API.
    */
   async publishPost(postId: string): Promise<{ success: boolean; publicationId: string; externalId?: string; error?: string }> {

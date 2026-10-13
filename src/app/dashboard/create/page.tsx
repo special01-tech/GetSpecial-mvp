@@ -23,15 +23,15 @@ import {
   PartyPopper,
   Zap,
   Maximize2,
+  Sparkles,
 } from 'lucide-react';
 import { INITIAL_RESTAURANT_OFFERS, RestaurantOffer } from '@/services/restaurant/restaurant-offers.data';
 import { INITIAL_RESTAURANT_EVENTS, RestaurantEvent } from '@/services/restaurant/restaurant-events.data';
-import { MOCK_POSTER_IMAGES } from '@/data/mockPosters';
 import { useLanguage } from '@/i18n';
 import styles from './create.module.css';
 
 type SourceType = 'offer' | 'event' | 'custom';
-type Platform = 'instagram' | 'facebook' | 'google_business' | 'tiktok';
+type Platform = 'instagram' | 'facebook' | 'google_business';
 type VisualStyle = 'gourmet' | 'festive' | 'chic' | 'deal';
 
 function StudioCreateContent() {
@@ -39,8 +39,8 @@ function StudioCreateContent() {
   const searchParams = useSearchParams();
   const { t } = useLanguage();
 
-  const [restaurantName, setRestaurantName] = useState('Le Petit Bistrot');
-  const [restaurantId, setRestaurantId] = useState('rest_demo_austin_1');
+  const [restaurantName, setRestaurantName] = useState("L'Atelier Culinaire");
+  const [restaurantId, setRestaurantId] = useState('rest_paris_atelier_1');
 
   // Données disponibles
   const [availableOffers, setAvailableOffers] = useState<RestaurantOffer[]>(INITIAL_RESTAURANT_OFFERS);
@@ -81,7 +81,6 @@ function StudioCreateContent() {
     instagram: '',
     facebook: '',
     google_business: '',
-    tiktok: '',
   });
 
   // Modal de programmation
@@ -103,8 +102,6 @@ function StudioCreateContent() {
         return `Envie de vous régaler ? 🍽️\n\n${rawCaption}\n\nRetrouvez-nous chez ${restName} pour en profiter ! Taguez un ami avec qui venir partager ce moment. 👇`;
       case 'google_business':
         return `[Offre Spéciale] ${title}${deal ? ` - ${deal}` : ''}\n${rawCaption}\n\nDisponible aujourd'hui chez ${restName}. Venez nous rendre visite pendant nos heures de service !`;
-      case 'tiktok':
-        return `Alerte bon plan chez ${restName} ! 🔥 ${title}${deal ? ` (${deal})` : ''}\n${rawCaption.slice(0, 90)}...\nTu viens tester ? 🤤 #foodtiktok #restaurant #bonplan #pourtoi #fyp`;
     }
   };
 
@@ -156,24 +153,6 @@ function StudioCreateContent() {
     }
   }, [searchParams]);
 
-  // Génération automatique d'un premier mockup au chargement pour que l'écran soit tout de suite vivant
-  useEffect(() => {
-    if (!generatedPost && availableOffers.length > 0) {
-      const firstOffer = availableOffers[0];
-      setGeneratedPost({
-        title: firstOffer.name,
-        caption: t('content.studio.captions.initial', {
-          offer: firstOffer.name,
-          description: firstOffer.description,
-          deal: firstOffer.discount || t('content.studio.captions.initialDefaultDeal'),
-        }),
-        imageUrl: MOCK_POSTER_IMAGES[0],
-        alternativeImages: MOCK_POSTER_IMAGES,
-        discountValue: firstOffer.discount,
-      });
-    }
-  }, [availableOffers, generatedPost, t]);
-
   // Synchronisation des variantes par plateforme et écoute Escape
   useEffect(() => {
     if (generatedPost) {
@@ -181,7 +160,6 @@ function StudioCreateContent() {
         instagram: buildPlatformCaption('instagram', generatedPost.title, generatedPost.caption, restaurantName, generatedPost.discountValue),
         facebook: buildPlatformCaption('facebook', generatedPost.title, generatedPost.caption, restaurantName, generatedPost.discountValue),
         google_business: buildPlatformCaption('google_business', generatedPost.title, generatedPost.caption, restaurantName, generatedPost.discountValue),
-        tiktok: buildPlatformCaption('tiktok', generatedPost.title, generatedPost.caption, restaurantName, generatedPost.discountValue),
       });
     }
   }, [generatedPost?.title, generatedPost?.caption, restaurantName]);
@@ -267,11 +245,9 @@ function StudioCreateContent() {
 
   // Alterner l'image de l'affiche
   const handleSwitchPoster = () => {
-    const imagesToCycle =
-      generatedPost?.alternativeImages && generatedPost.alternativeImages.length > 0
-        ? generatedPost.alternativeImages
-        : MOCK_POSTER_IMAGES;
+    if (!generatedPost?.alternativeImages || generatedPost.alternativeImages.length === 0) return;
 
+    const imagesToCycle = generatedPost.alternativeImages;
     const nextIdx = (activeImgIndex + 1) % imagesToCycle.length;
     setActiveImgIndex(nextIdx);
 
@@ -280,7 +256,6 @@ function StudioCreateContent() {
         ? {
             ...prev,
             imageUrl: imagesToCycle[nextIdx],
-            alternativeImages: imagesToCycle,
           }
         : null
     );
@@ -483,7 +458,7 @@ function StudioCreateContent() {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>{t('content.studio.channelLabel')}</label>
                 <div className={styles.platformRow}>
-                  {(['instagram', 'facebook', 'google_business', 'tiktok'] as Platform[]).map((p) => (
+                  {(['instagram', 'facebook', 'google_business'] as Platform[]).map((p) => (
                     <button
                       key={p}
                       type="button"
@@ -549,154 +524,178 @@ function StudioCreateContent() {
 
           {/* COLONNE DROITE : Aperçu du Rendu (Affiche + Légende) */}
           <div className={styles.previewSection}>
-            <div className={styles.mockupCard}>
-              {/* Header Réseau Social — Sans badge inutile */}
-              <div className={styles.mockupHeader}>
-                <div className={styles.mockupUser}>
-                  <div className={styles.mockupAvatar}>
-                    {restaurantName.slice(0, 2).toUpperCase()}
+            {!generatedPost ? (
+              <div className={styles.emptyStudioCard}>
+                <div className={styles.emptyStudioIconCircle}>
+                  <Sparkles size={26} />
+                </div>
+                <h3 className={styles.emptyStudioTitle}>Studio Prêt pour votre Création</h3>
+                <p className={styles.emptyStudioText}>
+                  Sélectionnez une offre, un événement ou saisissez votre plat du jour à gauche, puis cliquez sur <strong>« Générer l&apos;Affiche &amp; la Légende »</strong>.
+                </p>
+
+                <div className={styles.emptyStudioTips}>
+                  <div className={styles.emptyStudioTipItem}>
+                    <span className={styles.emptyStudioTipDot} />
+                    <span>Visuel haute définition adapté au thème</span>
                   </div>
-                  <div className={styles.mockupMeta}>
-                    <span className={styles.mockupName}>{restaurantName}</span>
-                    <span className={styles.mockupTime}>{t('content.studio.previewMeta', { platform: platform.toUpperCase() })}</span>
+                  <div className={styles.emptyStudioTipItem}>
+                    <span className={styles.emptyStudioTipDot} />
+                    <span>Légendes optimisées Instagram &amp; Facebook</span>
+                  </div>
+                  <div className={styles.emptyStudioTipItem}>
+                    <span className={styles.emptyStudioTipDot} />
+                    <span>Contrôle qualité &amp; respect de votre identité</span>
                   </div>
                 </div>
               </div>
-
-              {/* Corps du Rendu */}
-              <div className={styles.previewBody}>
-                {/* L'AFFICHE (Visuel HD — Clic pour ouvrir en grand format) */}
-                <div
-                  className={styles.posterFrame}
-                  onClick={() => setIsImageModalOpen(true)}
-                  title="Cliquer pour afficher l'affiche seule en grand format"
-                  role="button"
-                  tabIndex={0}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={generatedPost?.imageUrl || MOCK_POSTER_IMAGES[0]}
-                    alt={generatedPost?.title || t('content.studio.posterAlt')}
-                    className={styles.posterImage}
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = MOCK_POSTER_IMAGES[0];
-                    }}
-                  />
-                  <div className={styles.posterOverlay}>
-                    <div className={styles.posterTopRow}>
-                      {generatedPost?.discountValue ? (
-                        <span className={styles.posterPromoBadge}>
-                          {generatedPost.discountValue}
-                        </span>
-                      ) : (
-                        <span />
-                      )}
-                      <button
-                        type="button"
-                        className={styles.zoomBtn}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsImageModalOpen(true);
-                        }}
-                        title="Agrandir l'affiche en plein écran"
-                      >
-                        <Maximize2 size={13} />
-                        <span>Agrandir</span>
-                      </button>
+            ) : (
+              <div className={styles.mockupCard}>
+                {/* Header Réseau Social */}
+                <div className={styles.mockupHeader}>
+                  <div className={styles.mockupUser}>
+                    <div className={styles.mockupAvatar}>
+                      {restaurantName.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className={styles.mockupMeta}>
+                      <span className={styles.mockupName}>{restaurantName}</span>
+                      <span className={styles.mockupTime}>{t('content.studio.previewMeta', { platform: platform.toUpperCase() })}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Actions sous l'affiche */}
-                <div className={styles.posterActionRow}>
-                  <button
-                    type="button"
-                    onClick={handleSwitchPoster}
-                    className={styles.switchPosterBtn}
-                    title={t('content.studio.switchPosterTitle')}
-                  >
-                    <RefreshCw size={12} />
-                    <span>{t('content.studio.switchPoster')}</span>
-                  </button>
-
-                  <span className={styles.formatHint}>
-                    {t('content.studio.formatNote')}
-                  </span>
-                </div>
-
-                {/* LA LÉGENDE (Aperçu compact — Clic pour agrandir et voir par réseau) */}
-                <div className={styles.captionArea}>
-                  <div className={styles.captionHeader}>
-                    <span className={styles.captionTitle}>{t('content.studio.captionTitle')}</span>
-                    <div className={styles.captionHeaderActions}>
-                      <button
-                        type="button"
-                        onClick={handleRegenerateCaption}
-                        className={styles.switchPosterBtn}
-                        title={t('content.studio.regenerateTextTitle')}
-                      >
-                        <RefreshCw size={11} />
-                        <span>{t('content.studio.regenerateText')}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveCaptionPlatform(platform);
-                          setIsCaptionModalOpen(true);
-                        }}
-                        className={styles.expandCaptionBtn}
-                        title="Ouvrir la légende en grand et voir les variantes par réseau"
-                      >
-                        <Maximize2 size={11} />
-                        <span>Agrandir / Réseaux</span>
-                      </button>
-                    </div>
-                  </div>
-
+                {/* Corps du Rendu */}
+                <div className={styles.previewBody}>
+                  {/* L'AFFICHE (Visuel HD — Clic pour ouvrir en grand format) */}
                   <div
-                    className={styles.compactCaptionBox}
-                    onClick={() => {
-                      setActiveCaptionPlatform(platform);
-                      setIsCaptionModalOpen(true);
-                    }}
-                    title="Cliquer pour ouvrir en grand et personnaliser par réseau"
+                    className={styles.posterFrame}
+                    onClick={() => setIsImageModalOpen(true)}
+                    title="Cliquer pour afficher l'affiche seule en grand format"
                     role="button"
                     tabIndex={0}
                   >
-                    <p className={styles.compactCaptionText}>
-                      {generatedPost?.caption || t('content.studio.captionPlaceholder')}
-                    </p>
-                    <div className={styles.captionClickHint}>
-                      <Maximize2 size={11} />
-                      <span>Cliquer pour voir et modifier les versions par réseau</span>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={generatedPost.imageUrl}
+                      alt={generatedPost.title || t('content.studio.posterAlt')}
+                      className={styles.posterImage}
+                    />
+                    <div className={styles.posterOverlay}>
+                      <div className={styles.posterTopRow}>
+                        {generatedPost.discountValue ? (
+                          <span className={styles.posterPromoBadge}>
+                            {generatedPost.discountValue}
+                          </span>
+                        ) : (
+                          <span />
+                        )}
+                        <button
+                          type="button"
+                          className={styles.zoomBtn}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsImageModalOpen(true);
+                          }}
+                          title="Agrandir l'affiche en plein écran"
+                        >
+                          <Maximize2 size={13} />
+                          <span>Agrandir</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions sous l'affiche */}
+                  <div className={styles.posterActionRow}>
+                    <button
+                      type="button"
+                      onClick={handleSwitchPoster}
+                      className={styles.switchPosterBtn}
+                      title={t('content.studio.switchPosterTitle')}
+                    >
+                      <RefreshCw size={12} />
+                      <span>{t('content.studio.switchPoster')}</span>
+                    </button>
+
+                    <span className={styles.formatHint}>
+                      {t('content.studio.formatNote')}
+                    </span>
+                  </div>
+
+                  {/* LA LÉGENDE (Aperçu compact — Clic pour agrandir et voir par réseau) */}
+                  <div className={styles.captionArea}>
+                    <div className={styles.captionHeader}>
+                      <span className={styles.captionTitle}>{t('content.studio.captionTitle')}</span>
+                      <div className={styles.captionHeaderActions}>
+                        <button
+                          type="button"
+                          onClick={handleRegenerateCaption}
+                          className={styles.switchPosterBtn}
+                          title={t('content.studio.regenerateTextTitle')}
+                        >
+                          <RefreshCw size={11} />
+                          <span>{t('content.studio.regenerateText')}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveCaptionPlatform(platform);
+                            setIsCaptionModalOpen(true);
+                          }}
+                          className={styles.expandCaptionBtn}
+                          title="Ouvrir la légende en grand et voir les variantes par réseau"
+                        >
+                          <Maximize2 size={11} />
+                          <span>Agrandir / Réseaux</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div
+                      className={styles.compactCaptionBox}
+                      onClick={() => {
+                        setActiveCaptionPlatform(platform);
+                        setIsCaptionModalOpen(true);
+                      }}
+                      title="Cliquer pour ouvrir en grand et personnaliser par réseau"
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <p className={styles.compactCaptionText}>
+                        {generatedPost.caption || t('content.studio.captionPlaceholder')}
+                      </p>
+                      <div className={styles.captionClickHint}>
+                        <Maximize2 size={11} />
+                        <span>Cliquer pour voir et modifier les versions par réseau</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Pied de carte Rendu : Actions finales (Publier ou Programmer) au même niveau */}
-              <div className={styles.finalActionsBar}>
-                <button
-                  type="button"
-                  onClick={handlePublishNow}
-                  disabled={isGenerating || !generatedPost}
-                  className={styles.publishNowBtn}
-                >
-                  <Send size={15} />
-                  <span>{t('content.studio.publishNow')}</span>
-                </button>
+                {/* Pied de carte Rendu : Actions finales (Publier ou Programmer) au même niveau */}
+                <div className={styles.finalActionsBar}>
+                  <button
+                    type="button"
+                    onClick={handlePublishNow}
+                    disabled={isGenerating || !generatedPost}
+                    className={styles.publishNowBtn}
+                  >
+                    <Send size={15} />
+                    <span>{t('content.studio.publishNow')}</span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => setIsScheduleOpen(true)}
-                  disabled={isGenerating || !generatedPost}
-                  className={styles.scheduleBtn}
-                >
-                  <Clock size={15} />
-                  <span>{t('content.studio.schedule')}</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsScheduleOpen(true)}
+                    disabled={isGenerating || !generatedPost}
+                    className={styles.scheduleBtn}
+                  >
+                    <Clock size={15} />
+                    <span>{t('content.studio.schedule')}</span>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -720,13 +719,10 @@ function StudioCreateContent() {
 
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={generatedPost?.imageUrl || MOCK_POSTER_IMAGES[0]}
+              src={generatedPost?.imageUrl || ''}
               alt={generatedPost?.title || 'Affiche en grand format'}
               className={styles.lightboxImage}
               onClick={(e) => e.stopPropagation()}
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = MOCK_POSTER_IMAGES[0];
-              }}
             />
           </div>
         )}
@@ -774,7 +770,7 @@ function StudioCreateContent() {
               {/* Puces en bas pour voir la version de chaque réseau */}
               <div className={styles.captionModalFooter}>
                 <div className={styles.platformPillsRow}>
-                  {(['instagram', 'facebook', 'google_business', 'tiktok'] as Platform[]).map((p) => {
+                  {(['instagram', 'facebook', 'google_business'] as Platform[]).map((p) => {
                     const isActive = activeCaptionPlatform === p;
                     const pLabel = p === 'google_business' ? 'Google Business' : p.charAt(0).toUpperCase() + p.slice(1);
                     return (

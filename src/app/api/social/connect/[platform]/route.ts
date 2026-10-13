@@ -15,8 +15,8 @@ export async function POST(
       return error('restaurantId requis', 400);
     }
 
-    if (!['facebook', 'instagram', 'tiktok', 'google_business'].includes(platform)) {
-      return error('Plateforme non supportée (facebook, instagram, tiktok, google_business)', 400);
+    if (!['facebook', 'instagram', 'google_business'].includes(platform)) {
+      return error('Plateforme non supportée (facebook, instagram, google_business)', 400);
     }
 
     const origin = req.nextUrl.origin;

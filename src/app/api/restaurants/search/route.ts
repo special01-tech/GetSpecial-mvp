@@ -278,29 +278,8 @@ export async function GET(req: NextRequest) {
       console.warn('[SEARCH_API_LIVE_WARNING] OpenStreetMap temporairement indisponible (mode fallback activé):', apiErr?.message || apiErr);
     }
 
-    // Si aucun établissement réel n'est trouvé (Google Places ou OpenStreetMap indisponible)
-    // mais qu'un nom a été cherché, générer un résultat cohérent pour ne jamais bloquer l'onboarding
-    if (name) {
-      const detectedCity = city || 'Paris';
-      return success([
-        {
-          id: `custom_place_${Date.now()}`,
-          name: name,
-          address: `${name}, ${detectedCity}`,
-          city: detectedCity,
-          postalCode: '75001',
-          country: country || 'FR',
-          latitude: 48.8566,
-          longitude: 2.3522,
-          rating: 4.8,
-          reviewsCount: 154,
-          cuisineType: 'Restaurant traditionnel',
-          photoUrl: pickPhoto('bistro', name),
-          isOpenNow: true,
-        },
-      ]);
-    }
-
+    // Si aucun établissement réel n'est trouvé, renvoyer une liste vide.
+    // L'utilisateur peut ainsi voir que le restaurant n'existe pas ou saisir ses informations réelles.
     return success([]);
   } catch (err: any) {
     console.error('[SEARCH_API_FATAL_ERROR]', err);

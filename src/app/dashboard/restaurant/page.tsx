@@ -83,7 +83,7 @@ export default function MyRestaurantPage() {
 
       // Synchronisation en direct avec l'API
       const restaurantId =
-        localStorage.getItem('getspecial_restaurant_id') || 'rest_demo_austin_1';
+        localStorage.getItem('getspecial_restaurant_id') || 'rest_paris_atelier_1';
       fetch(`/api/restaurants/${restaurantId}/profile`)
         .then((res) => res.json())
         .then((json) => {
@@ -137,7 +137,7 @@ export default function MyRestaurantPage() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('getspecial_restaurant_full_profile', JSON.stringify(updated));
       const restaurantId =
-        localStorage.getItem('getspecial_restaurant_id') || 'rest_demo_austin_1';
+        localStorage.getItem('getspecial_restaurant_id') || 'rest_paris_atelier_1';
       try {
         await fetch(`/api/restaurants/${restaurantId}/profile`, {
           method: 'PATCH',

@@ -84,7 +84,7 @@ export default function RestaurantOffersPage() {
       // Synchronisation backend
       try {
         const restaurantId =
-          localStorage.getItem('getspecial_restaurant_id') || 'rest_demo_austin_1';
+          localStorage.getItem('getspecial_restaurant_id') || 'rest_paris_atelier_1';
         await fetch('/api/offers', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

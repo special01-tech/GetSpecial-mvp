@@ -13,6 +13,7 @@ import {
   BarChart3,
   PenTool,
   History,
+  Activity,
   LucideIcon,
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
@@ -37,6 +38,7 @@ const NAV_ITEMS: NavItem[] = [
 /** Lien secondaire (bas de sidebar) */
 const BOTTOM_ITEMS: NavItem[] = [
   { labelKey: 'nav.analytics', href: '/dashboard/insights', icon: BarChart3 },
+  { labelKey: 'nav.systemMonitor', href: '/dashboard/system-monitor', icon: Activity },
 ];
 
 /**

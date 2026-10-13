@@ -8,9 +8,15 @@
  * - BottomNav fixe en bas (mobile)
  * ============================================================================= */
 
+/* =============================================================================
+ * Dashboard Layout — Styles
+ * ============================================================================= */
+
 .layout {
   display: flex;
   min-height: 100dvh;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .main {
@@ -18,12 +24,15 @@
   margin-left: var(--sidebar-width);
   padding: var(--space-6);
   background-color: var(--color-bg-app);
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
-/* Sur mobile : pas de margin sidebar, padding top/bottom pour header/bottomnav */
+/* Sur mobile (< 768px) : Header fixe haut (60px), BottomNav fixe bas (64px) */
 @media (max-width: 768px) {
   .main {
     margin-left: 0;
-    padding: calc(var(--header-height) + var(--space-4)) var(--space-4) calc(var(--bottom-nav-height) + var(--space-4));
+    padding: calc(var(--header-height, 60px) + 12px) 12px calc(var(--bottom-nav-height, 64px) + 20px) 12px;
   }
 }

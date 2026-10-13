@@ -23,7 +23,6 @@ export const settings = {
   },
   channels: {
     title: 'Connected Publishing Channels',
-    tiktokDescription: 'Connected via unified Zernio gateway',
     connected: 'Connected',
     instagramDescription: 'Ready for direct linking or guided publishing',
     ready: 'Ready',

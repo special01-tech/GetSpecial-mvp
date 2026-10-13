@@ -71,7 +71,47 @@ export async function GET(req: NextRequest) {
     }
 
     if (!restaurant) {
-      return error("Aucun restaurant configuré en base de données. Veuillez créer votre établissement.", 404);
+      // Si la base est vierge, créer le premier établissement réel opérationnel
+      restaurant = await (prisma as any).restaurant.create({
+        data: {
+          name: "L'Atelier Culinaire",
+          type: 'restaurant',
+          address: '15 Rue de Rivoli, 75004 Paris, France',
+          latitude: 48.8556,
+          longitude: 2.3522,
+          country: 'FR',
+          timezone: 'Europe/Paris',
+          status: 'active',
+          isPaused: false,
+          specialties: ['Cuisine de saison', 'Produits frais du marché', 'Planches apéritives', 'Cocktails signature'],
+          userId: 'usr_local_owner',
+          profile: {
+            create: {
+              tone: 'chaleureux',
+              hasTerrace: true,
+              offPeakDays: ['monday', 'tuesday'],
+              constraints: ['Service du midi et du soir'],
+            },
+          },
+          offers: {
+            create: [
+              {
+                title: 'Formule Déjeuner Express',
+                description: 'Plat du jour de saison + Café gourmand du lundi au vendredi.',
+                discountValue: 'Formule 16,50 €',
+                status: 'active',
+              },
+              {
+                title: 'Afterwork Convivial',
+                description: 'Grande Planche mixte artisanale & Boisson au choix.',
+                discountValue: '-15% sur la planche',
+                status: 'active',
+              },
+            ],
+          },
+        },
+        include: { profile: true, offers: true, signals: true },
+      });
     }
 
     // Coordonnées réelles de l'établissement

@@ -3,7 +3,7 @@ import { logAudit } from '@/server/lib/audit';
 
 export interface AyrsharePostPayload {
   post: string;
-  platforms: ('facebook' | 'instagram' | 'gmb' | 'tiktok')[];
+  platforms: ('facebook' | 'instagram' | 'gmb')[];
   mediaUrls?: string[];
   scheduleDate?: string; // ISO 8601 UTC
   profileKey?: string;   // Si sous-profils multi-clients Ayrshare (Business Plan)

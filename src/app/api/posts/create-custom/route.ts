@@ -11,7 +11,7 @@ const CreateCustomPostSchema = z.object({
   title: z.string().min(2),
   description: z.string().optional().default(''),
   discountValue: z.string().optional(),
-  platform: z.enum(['instagram', 'facebook', 'google_business', 'tiktok']).default('instagram'),
+  platform: z.enum(['instagram', 'facebook', 'google_business']).default('instagram'),
   style: z.enum(['gourmet', 'festive', 'chic', 'deal']).default('gourmet'),
   imageUrl: z.string().optional(),
   customText: z.string().optional(),
@@ -57,12 +57,45 @@ const THEMED_POSTERS: Record<string, string[]> = {
 function pickBestPoster(title: string, desc: string, style: string): { primary: string; alternatives: string[] } {
   const combined = `${title} ${desc} ${style}`.toLowerCase();
 
+  // 1. Scénarios du catalogue DA GetSpecial
+  if (combined.includes('cocktail') || combined.includes('bar') || combined.includes('happy hour') || combined.includes('bière') || combined.includes('afterwork')) {
+    return {
+      primary: '/ai-pipeline-assets/inspirations/happy_hour/hh-01.jpg',
+      alternatives: [
+        '/ai-pipeline-assets/inspirations/happy_hour/hh-02.jpg',
+        '/ai-pipeline-assets/inspirations/happy_hour/hh-03.jpg',
+        '/ai-pipeline-assets/inspirations/happy_hour/hh-04.jpg',
+        THEMED_POSTERS.cocktail[0],
+      ],
+    };
+  }
+
+  if (combined.includes('match') || combined.includes('foot') || combined.includes('sport') || combined.includes('supporters') || combined.includes('écran')) {
+    return {
+      primary: '/ai-pipeline-assets/inspirations/game_night/gn-01.jpg',
+      alternatives: [
+        '/ai-pipeline-assets/inspirations/game_night/gn-02.jpg',
+        '/ai-pipeline-assets/inspirations/game_night/gn-03.jpg',
+        THEMED_POSTERS.event_sport[0],
+      ],
+    };
+  }
+
+  if (combined.includes('plat') || combined.includes('déjeuner') || combined.includes('formule') || combined.includes('menu') || combined.includes('chef') || combined.includes('express')) {
+    return {
+      primary: '/ai-pipeline-assets/inspirations/daily_special/ds-01.jpg',
+      alternatives: [
+        '/ai-pipeline-assets/inspirations/daily_special/ds-02.jpg',
+        '/ai-pipeline-assets/inspirations/daily_special/ds-03.jpg',
+        THEMED_POSTERS.general[0],
+      ],
+    };
+  }
+
   let category = 'general';
   if (combined.includes('burger') || combined.includes('smash')) category = 'burger';
   else if (combined.includes('pizza') || combined.includes('calzone')) category = 'pizza';
-  else if (combined.includes('cocktail') || combined.includes('bar') || combined.includes('happy hour') || combined.includes('bière')) category = 'cocktail';
   else if (combined.includes('wing') || combined.includes('poulet') || combined.includes('tapas')) category = 'wings';
-  else if (combined.includes('match') || combined.includes('foot') || combined.includes('psg') || combined.includes('sport')) category = 'event_sport';
   else if (combined.includes('concert') || combined.includes('musique') || combined.includes('live') || combined.includes('dj')) category = 'event_music';
   else if (combined.includes('terrasse') || combined.includes('soleil') || combined.includes('patio')) category = 'terrace';
 

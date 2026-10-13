@@ -23,7 +23,7 @@ export const engagement = {
     globalPerf: 'Performance globale',
     viewsLabelReal: 'Verified Total Views',
     viewsLabelMock: 'Total Cumulative Views',
-    viewsSubReal: 'Live TikTok Feed (@{account})',
+    viewsSubReal: 'Flux en direct (@{account})',
     viewsSubMock: 'On Instagram, FB & Google',
     likesLabelReal: 'Verified Likes',
     likesLabelMock: 'Total Interactions',

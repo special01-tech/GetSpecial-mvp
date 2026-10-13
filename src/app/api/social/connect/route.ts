@@ -9,8 +9,8 @@ export async function GET(req: NextRequest) {
     const restaurantId = searchParams.get('restaurantId');
     const returnUrl = searchParams.get('returnUrl') || '/dashboard/settings';
 
-    if (!platform || !['facebook', 'instagram', 'tiktok', 'google_business'].includes(platform)) {
-      return error('Plateforme invalide ou non supportée (facebook, instagram, tiktok, google_business)', 400);
+    if (!platform || !['facebook', 'instagram', 'google_business'].includes(platform)) {
+      return error('Plateforme invalide ou non supportée (facebook, instagram, google_business)', 400);
     }
 
     if (!restaurantId) {
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { platform, restaurantId, returnUrl } = body;
 
-    if (!platform || !['facebook', 'instagram', 'tiktok', 'google_business'].includes(platform)) {
+    if (!platform || !['facebook', 'instagram', 'google_business'].includes(platform)) {
       return error('Plateforme invalide ou non supportée', 400);
     }
 

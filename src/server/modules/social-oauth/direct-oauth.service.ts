@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import { prisma } from '@/server/db/prisma.client';
 import { logAudit } from '@/server/lib/audit';
 
-export type SupportedSocialPlatform = 'facebook' | 'instagram' | 'tiktok' | 'google_business';
+export type SupportedSocialPlatform = 'facebook' | 'instagram' | 'google_business';
 
 export interface OAuthStatePayload {
   restaurantId: string;
@@ -102,27 +102,7 @@ export class DirectOAuthService {
       return { url: metaUrl, isDirectConfigured: true };
     }
 
-    // 2. TIKTOK
-    if (platform === 'tiktok') {
-      const tiktokClientKey = process.env.TIKTOK_CLIENT_KEY;
-      const tiktokClientSecret = process.env.TIKTOK_CLIENT_SECRET;
-      if (!tiktokClientKey || !tiktokClientSecret || tiktokClientKey.includes('...')) {
-        throw new Error(
-          'La connexion à TikTok a échoué : les identifiants TIKTOK_CLIENT_KEY et TIKTOK_CLIENT_SECRET ne sont pas configurés sur le serveur.'
-        );
-      }
-
-      const scopes = 'user.info.basic,video.publish,video.upload';
-      const tiktokUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${encodeURIComponent(
-        tiktokClientKey
-      )}&scope=${encodeURIComponent(scopes)}&response_type=code&redirect_uri=${encodeURIComponent(
-        redirectUri
-      )}&state=${encodeURIComponent(state)}`;
-
-      return { url: tiktokUrl, isDirectConfigured: true };
-    }
-
-    // 3. GOOGLE BUSINESS
+    // 2. GOOGLE BUSINESS
     if (platform === 'google_business') {
       const googleClientId = process.env.GOOGLE_CLIENT_ID;
       const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;

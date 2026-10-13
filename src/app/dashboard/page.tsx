@@ -28,10 +28,6 @@ import TodayOfferCard from '@/components/ui/TodayOfferCard/TodayOfferCard';
 import EmptyState from '@/components/ui/EmptyState/EmptyState';
 
 import {
-  MOCK_WEATHER_TODAY,
-  MOCK_EVENTS_TODAY,
-  MOCK_OPPORTUNITIES_TODAY,
-  MOCK_OFFER_TODAY,
   TodayOpportunity,
   TodayOffer,
   WeatherData,
@@ -40,31 +36,31 @@ import {
 import styles from './dashboard.module.css';
 
 /**
- * Dashboard GetSpecial - Mise en page moderne type SaaS marketing :
- * 1. Header (Restaurant & Météo compacte en direct à sa place)
- * 2. Rangée des 4 StatCards (Total posts, Scheduled, Published, This week)
+ * Dashboard GetSpecial - Données Réelles en direct :
+ * 1. Header (Restaurant réel & Météo réelle Open-Meteo)
+ * 2. Rangée des 4 StatCards (Total posts, Scheduled, Published, This week depuis la BDD)
  * 3. Grille asymétrique à 2 colonnes :
- *    - Gauche : Dernières publications (avec bel état vide comme sur la capture)
- *    - Droite : Carte Contexte Marketing (avec Carrousel des meilleurs signaux/événements sur 1 seule carte)
- * 4. Propositions marketing IA de l'outil
+ *    - Gauche : Dernières publications réelles
+ *    - Droite : Carte Contexte Marketing (Météo en direct & Événements réels)
+ * 4. Propositions marketing IA générées en direct
  */
 export default function DashboardPage() {
   const router = useRouter();
   const { t } = useLanguage();
 
-  const [restaurantName, setRestaurantName] = useState('Le Zinc & La Braise');
+  const [restaurantName, setRestaurantName] = useState('');
   const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
-  const [weather, setWeather] = useState<WeatherData | null>(MOCK_WEATHER_TODAY);
-  const [events, setEvents] = useState<LocalEventData[]>(MOCK_EVENTS_TODAY);
-  const [opportunities, setOpportunities] = useState<TodayOpportunity[]>(MOCK_OPPORTUNITIES_TODAY);
-  const [offer, setOffer] = useState<TodayOffer | null>(MOCK_OFFER_TODAY);
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [events, setEvents] = useState<LocalEventData[]>([]);
+  const [opportunities, setOpportunities] = useState<TodayOpportunity[]>([]);
+  const [offer, setOffer] = useState<TodayOffer | null>(null);
   const [selectedOpp, setSelectedOpp] = useState<TodayOpportunity | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isLiveApi, setIsLiveApi] = useState(false);
   const [isLoadingLive, setIsLoadingLive] = useState(true);
   const [isRefreshingOpps, setIsRefreshingOpps] = useState(false);
 
-  // 4 statistiques (Fidèles à la capture)
+  // 4 statistiques réelles
   const [stats, setStats] = useState({
     totalPosts: 0,
     scheduled: 0,
@@ -72,7 +68,7 @@ export default function DashboardPage() {
     thisWeek: 0,
   });
 
-  // Publications récentes
+  // Publications récentes réelles
   const [recentPosts, setRecentPosts] = useState<any[]>([]);
 
   const fetchLiveSignals = async (showSkeleton = true, forceRefresh = false) => {
@@ -101,46 +97,30 @@ export default function DashboardPage() {
           if (json.data.weather) {
             setWeather(json.data.weather);
           }
-          if (Array.isArray(json.data.events) && json.data.events.length > 0) {
+          if (Array.isArray(json.data.events)) {
             setEvents(json.data.events);
           } else if (json.data.event) {
             setEvents([json.data.event]);
+          } else {
+            setEvents([]);
           }
           if (Array.isArray(json.data.opportunities)) {
             setOpportunities(json.data.opportunities);
+          } else {
+            setOpportunities([]);
           }
           if (json.data.offer) {
             setOffer(json.data.offer);
+          } else {
+            setOffer(null);
           }
           if (json.data.restaurant?.name) {
             setRestaurantName(json.data.restaurant.name);
           }
         }
-      } else {
-        // Fallback immédiat pour ne jamais bloquer l'affichage
-        setIsLiveApi(true);
-        setEvents(MOCK_EVENTS_TODAY);
-        setWeather({
-          condition: t('dashboard.fallback.weatherCondition'),
-          temperature: 24,
-          tempFahrenheit: 75,
-          tempUnit: '°C',
-          iconType: 'sun',
-          terraceAdvice: t('dashboard.fallback.terraceAdviceNoon'),
-        });
       }
     } catch (err) {
       console.warn('[DASHBOARD_LIVE_SIGNALS_ERROR]', err);
-      setIsLiveApi(true);
-      setEvents(MOCK_EVENTS_TODAY);
-      setWeather({
-        condition: t('dashboard.fallback.weatherCondition'),
-        temperature: 24,
-        tempFahrenheit: 75,
-        tempUnit: '°C',
-        iconType: 'sun',
-        terraceAdvice: t('dashboard.fallback.terraceAdvice'),
-      });
     } finally {
       setIsLoadingLive(false);
       setIsRefreshingOpps(false);
@@ -177,14 +157,11 @@ export default function DashboardPage() {
       .then((json) => {
         if (json.success && json.data) {
           const overview = json.data.overview || {};
-          const postsCount = Array.isArray(json.data.posts) ? json.data.posts.length : 0;
-          const published = overview.publishedPosts ?? postsCount;
-
           setStats({
-            totalPosts: published,
-            scheduled: 0,
-            published: published,
-            thisWeek: Math.max(0, Math.round(published * 0.2)),
+            totalPosts: overview.totalPosts ?? 0,
+            scheduled: overview.scheduledPosts ?? 0,
+            published: overview.publishedPosts ?? 0,
+            thisWeek: overview.thisWeek ?? 0,
           });
 
           if (Array.isArray(json.data.posts) && json.data.posts.length > 0) {
@@ -263,14 +240,14 @@ export default function DashboardPage() {
                 />
               ) : (
                 <div className={styles.avatarFallback}>
-                  <span>{restaurantName.slice(0, 2).toUpperCase()}</span>
+                  <span>{(restaurantName || 'GS').slice(0, 2).toUpperCase()}</span>
                 </div>
               )}
             </div>
 
             <div className={styles.restaurantMeta}>
               <span className={styles.welcomePill}>{t('dashboard.header.activePartner')}</span>
-              <h1 className={styles.restaurantName}>{restaurantName}</h1>
+              <h1 className={styles.restaurantName}>{restaurantName || 'Votre Établissement'}</h1>
             </div>
           </div>
 

@@ -28,6 +28,16 @@ const CreateRestaurantApiSchema = z.object({
   brandColors: z.array(z.string()).optional(),
   menuUrl: z.string().optional(),
   currentOffer: z.string().optional(),
+  dishes: z
+    .array(
+      z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        priceText: z.string().optional(),
+        photoUrl: z.string().optional(),
+      })
+    )
+    .optional(),
 });
 
 function deduceUsTimezone(lon: number): string {
@@ -88,7 +98,27 @@ export async function POST(req: NextRequest) {
       brandColors = [],
       menuUrl,
       currentOffer,
+      dishes = [],
     } = validated.data;
+
+    // Définition de plats initiaux si aucun plat n'est fourni explicitement
+    const defaultDishesToCreate = dishes.length > 0 ? dishes : [
+      {
+        name: type.toLowerCase().includes('pizz') ? 'Pizza Reine & Champignons frais' : type.toLowerCase().includes('burg') ? 'Classic Bacon Cheeseburger' : 'Plat Signature du Chef',
+        description: 'Préparé sur place avec des ingrédients frais de saison',
+        priceText: '16.50 €',
+      },
+      {
+        name: type.toLowerCase().includes('pizz') ? 'Pizza Margherita D.O.P' : type.toLowerCase().includes('burg') ? 'Crispy Chicken & Sauce Maison' : 'Entrée du Terroir',
+        description: 'Recette signature appréciée par les habitués',
+        priceText: '13.00 €',
+      },
+      {
+        name: type.toLowerCase().includes('cafe') ? 'Pâtisserie & Café de Spécialité' : 'Dessert Gourmand Maison',
+        description: 'Fait maison par notre brigade',
+        priceText: '7.50 €',
+      },
+    ];
 
     let targetUserId = validated.data.userId;
 
@@ -161,8 +191,11 @@ export async function POST(req: NextRequest) {
             },
           },
         } : {}),
+        dishes: {
+          create: defaultDishesToCreate,
+        },
       },
-      include: { profile: true, offers: true },
+      include: { profile: true, offers: true, dishes: true },
     });
 
     await logAudit({

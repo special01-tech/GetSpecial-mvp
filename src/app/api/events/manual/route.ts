@@ -12,6 +12,28 @@ const ManualEventSchema = z.object({
   intensity: z.number().min(0).max(1).default(1.0),
 });
 
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const restaurantId = searchParams.get('restaurantId');
+
+    const whereClause: any = { type: 'event' };
+    if (restaurantId) {
+      whereClause.restaurantId = restaurantId;
+    }
+
+    const events = await (prisma as any).signal.findMany({
+      where: whereClause,
+      orderBy: { detectedAt: 'desc' },
+      take: 50,
+    });
+
+    return success(events);
+  } catch (err: any) {
+    return error(err.message, 500);
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

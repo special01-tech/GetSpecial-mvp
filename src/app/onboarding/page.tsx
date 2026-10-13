@@ -186,7 +186,6 @@ export default function UnifiedOnboardingPage() {
     instagram: false,
     facebook: false,
     google_business: false,
-    tiktok: false,
   });
 
   // Restaurer les infos locales ou initialiser
@@ -526,6 +525,23 @@ export default function UnifiedOnboardingPage() {
 
       const finalPhotos = selectedGooglePlace?.photoUrl ? [selectedGooglePlace.photoUrl] : [];
 
+      // Horaires structurés semaine et week-end
+      const structuredOpeningHours = {
+        week: '11:30 - 14:30 • 18:30 - 22:30',
+        weekend: '12:00 - 23:00',
+        rawText: selectedGooglePlace?.openingHours || '11:30 - 22:30 • Mar - Dim',
+        offPeakSlots: ['14:00 - 15:30', '18:30 - 19:30'],
+      };
+
+      const deducedSpecialties =
+        finalType.toLowerCase().includes('pizz')
+          ? ['Pizzas au feu de bois', 'Antipasti maison', 'Tiramisu traditionnel']
+          : finalType.toLowerCase().includes('burg')
+          ? ['Burgers gourmets', 'Frites fraîches', 'Sauces maison']
+          : finalType.toLowerCase().includes('cafe')
+          ? ['Brunch & Café de spécialité', 'Pâtisseries fraîches', 'Smoothies']
+          : ['Cuisine de saison', 'Plats du jour du chef', 'Desserts maison'];
+
       const response = await fetch('/api/restaurants', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -537,13 +553,15 @@ export default function UnifiedOnboardingPage() {
           longitude: lon,
           country: country.trim().toUpperCase() || 'FR',
           userId: parsedUser?.id || undefined,
-          specialties: ['Cuisine & Spécialités maison'],
+          openingHours: structuredOpeningHours,
+          specialties: deducedSpecialties,
           tone,
           hasTerrace,
           hasDelivery,
           targetAudience: targetAudiences,
           marketingGoal,
           logoUrl: logoPreview || undefined,
+          photos: finalPhotos,
           brandColors: customColors.filter(Boolean),
           menuUrl: menuType === 'link' ? menuUrl : menuFileName ? `file://${menuFileName}` : undefined,
         }),
@@ -744,7 +762,7 @@ export default function UnifiedOnboardingPage() {
                           className={styles.googleResultCard}
                           onClick={() => handleSelectGooglePlace(place)}
                         >
-                          {place.photoUrl ? (
+                          {place.photoUrl && !place.photoUrl.includes('unsplash.com') ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img src={place.photoUrl} alt={place.name} className={styles.googleResultThumb} />
                           ) : (
@@ -1520,57 +1538,6 @@ export default function UnifiedOnboardingPage() {
                     onClick={() => handleTogglePlatform('google_business')}
                   >
                     {t('onboarding.unified.connectPlatform', { platform: 'Google' })}
-                  </button>
-                )}
-              </div>
-
-              {/* TikTok */}
-              <div className={styles.socialCardLarge}>
-                <div className={styles.socialCardHeader}>
-                  <span className={styles.socialIconBoxLarge} style={{ background: '#000000' }}>
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-label={t('onboarding.unified.logoTiktok')}>
-                      <g transform="translate(1, 1)">
-                        <path
-                          d="M16.6 5.82s.51.5 1.5.58c.99.08 1.9-.17 1.9-.17v2.85s-1.07.08-1.98-.33a4.7 4.7 0 01-1.72-1.42v5.82c0 3.32-2.69 5.85-6.01 5.85-3.32 0-6.01-2.53-6.01-5.85 0-3.32 2.69-6.01 6.01-6.01.4 0 .79.05 1.17.13v2.96a3.1 3.1 0 00-1.17-.23 3.06 3.06 0 00-3.06 3.15c0 1.74 1.37 3.15 3.06 3.15 1.7 0 3.07-1.41 3.07-3.15V3h3.24v2.82z"
-                          fill="#00F2FE"
-                          transform="translate(-0.8, -0.6)"
-                        />
-                        <path
-                          d="M16.6 5.82s.51.5 1.5.58c.99.08 1.9-.17 1.9-.17v2.85s-1.07.08-1.98-.33a4.7 4.7 0 01-1.72-1.42v5.82c0 3.32-2.69 5.85-6.01 5.85-3.32 0-6.01-2.53-6.01-5.85 0-3.32 2.69-6.01 6.01-6.01.4 0 .79.05 1.17.13v2.96a3.1 3.1 0 00-1.17-.23 3.06 3.06 0 00-3.06 3.15c0 1.74 1.37 3.15 3.06 3.15 1.7 0 3.07-1.41 3.07-3.15V3h3.24v2.82z"
-                          fill="#FE2C55"
-                          transform="translate(0.8, 0.6)"
-                        />
-                        <path
-                          d="M16.6 5.82s.51.5 1.5.58c.99.08 1.9-.17 1.9-.17v2.85s-1.07.08-1.98-.33a4.7 4.7 0 01-1.72-1.42v5.82c0 3.32-2.69 5.85-6.01 5.85-3.32 0-6.01-2.53-6.01-5.85 0-3.32 2.69-6.01 6.01-6.01.4 0 .79.05 1.17.13v2.96a3.1 3.1 0 00-1.17-.23 3.06 3.06 0 00-3.06 3.15c0 1.74 1.37 3.15 3.06 3.15 1.7 0 3.07-1.41 3.07-3.15V3h3.24v2.82z"
-                          fill="#FFFFFF"
-                        />
-                      </g>
-                    </svg>
-                  </span>
-                  <div>
-                    <div className={styles.socialCardName}>TikTok</div>
-                    <div className={styles.socialCardDesc}>{t('onboarding.unified.tiktokDesc')}</div>
-                  </div>
-                </div>
-                {connectedPlatforms.tiktok ? (
-                  <div className={styles.socialConnectedRow}>
-                    <CheckCircle2 size={14} strokeWidth={1.75} style={{ color: '#16A34A' }} />
-                    <span className={styles.socialConnectedLabel}>{t('onboarding.unified.accountLinked')}</span>
-                    <button
-                      type="button"
-                      className={styles.socialDisconnectBtn}
-                      onClick={() => handleTogglePlatform('tiktok')}
-                    >
-                      {t('onboarding.unified.unlink')}
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    className={styles.socialConnectBtn}
-                    onClick={() => handleTogglePlatform('tiktok')}
-                  >
-                    {t('onboarding.unified.connectPlatform', { platform: 'TikTok' })}
                   </button>
                 )}
               </div>

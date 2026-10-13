@@ -34,7 +34,7 @@ export interface AiCampaignInput {
     condition?: string;
     isPatioWeather?: boolean;
   };
-  platform: 'instagram' | 'facebook' | 'tiktok' | 'google_business';
+  platform: 'instagram' | 'facebook' | 'google_business';
   date?: string | Date;
   time?: string;
 }
@@ -97,7 +97,6 @@ CRITICAL RULES:
 1. Ground Truth Only: STRICTLY NEVER invent facts, fake prices, or fake addresses. Only refer to the offer and details provided.
 2. Platform style:
    - Instagram: Visual narrative, enticing hook, line breaks, 3-5 relevant hashtags.
-   - TikTok: Ultra-short punchy hook (under 150 chars), high energy, 3 viral tags.
    - Facebook: Community-oriented, inviting, clear call to action, RSVP encouragement.
    - Google Business: Direct, informative, business hours and offer highlight.
 3. Return STRICT JSON with keys: headline, caption, hashtags (array of strings), callToAction, recommendedPublishTime, mediaPrompt.`;
@@ -141,13 +140,7 @@ CRITICAL RULES:
     let cta = 'Stop by today or reserve your table!';
     let mediaPrompt = 'Delicious high-definition food photography on rustic wood table';
 
-    if (platform === 'tiktok') {
-      headline = `Run, don't walk: ${offerTitle} at ${restaurant.name}!`;
-      caption = `Looking for the best deal in town? ${offerTitle} is live! Grab ${offerPrice} from ${timeFormatted}. Who are you bringing?`;
-      hashtags = ['#FoodTok', '#RestaurantHacks', '#HappyHour', '#AustinEats'];
-      cta = 'Tap for directions!';
-      mediaPrompt = 'Fast-paced appetizing video shot of sizzling food and cold craft drinks';
-    } else if (platform === 'instagram') {
+    if (platform === 'instagram') {
       headline = `Today's Feature: ${offerTitle}`;
       caption = `Elevate your day at ${restaurant.name}.\n\nFeature: ${offerTitle} (${offer?.description || 'Made fresh to order.'})\nHours: ${timeFormatted}\nAddress: ${restaurant.address}\n\nTag your crew and join us on the patio!`;
       hashtags = ['#AustinFood', '#PatioSeason', '#CraftFood', '#HappyHourVibes'];

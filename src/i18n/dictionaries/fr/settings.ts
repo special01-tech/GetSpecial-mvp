@@ -23,7 +23,6 @@ export const settings = {
   },
   channels: {
     title: 'Canaux de Diffusion Connectés',
-    tiktokDescription: 'Connecté via passerelle unifiée Zernio',
     connected: 'Connecté',
     instagramDescription: 'Prêt pour liaison directe ou publication guidée',
     ready: 'Prêt',

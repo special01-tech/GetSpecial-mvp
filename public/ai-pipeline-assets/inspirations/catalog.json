@@ -1,0 +1,3360 @@
+{
+  "updatedAt": "2026-09-30T03:12:55.671Z",
+  "totalItems": 126,
+  "categories": {
+    "happy_hour": 38,
+    "daily_special": 53,
+    "game_night": 35
+  },
+  "items": [
+    {
+      "id": "hh-01",
+      "originalName": "02e05e9755897e459b21b4c220b08f8e.jpg",
+      "filename": "happy_hour/hh-01.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio",
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "neon",
+      "styleDescriptor": "Vibrant neon typography glowing against dark exposed brick wall, amber craft cocktail reflection, soft warm bokeh background",
+      "tags": [
+        "neon",
+        "cocktails",
+        "happy_hour",
+        "brick_wall",
+        "nightlife",
+        "warm_glow"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.82
+    },
+    {
+      "id": "hh-02",
+      "originalName": "04ff3621a97f0c4885f9065bda9e4b22.jpg",
+      "filename": "happy_hour/hh-02.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio"
+      ],
+      "venueTypes": [
+        "pub",
+        "cafe",
+        "family_restaurant"
+      ],
+      "layoutFamily": "photo_full",
+      "styleDescriptor": "Golden hour outdoor patio aperitif, condensation glistening on chilled drinks, sun-drenched wooden deck, relaxed evening mood",
+      "tags": [
+        "patio",
+        "sunset",
+        "golden_hour",
+        "cocktails",
+        "condensation",
+        "terrace"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.89
+    },
+    {
+      "id": "hh-03",
+      "originalName": "10ce39a5bc0692a9d1f5a6ba927ca3be.jpg",
+      "filename": "happy_hour/hh-03.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "game_night",
+        "patio"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Rustic green slate chalkboard with authentic white chalk lettering, hand-drawn pint illustration, cozy pub interior lighting",
+      "tags": [
+        "chalkboard",
+        "craft_beer",
+        "pub",
+        "rustic",
+        "hand_lettering",
+        "happy_hour"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.96
+    },
+    {
+      "id": "hh-04",
+      "originalName": "116733d1bb53652e3a458196b9c1b73d.jpg",
+      "filename": "happy_hour/hh-04.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio",
+        "rain_evening"
+      ],
+      "venueTypes": [
+        "pub",
+        "sports_bar",
+        "cafe"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Bold high-contrast poster, deep navy and warm amber colorway, sleek modern sans-serif typography, elegant highball glass",
+      "tags": [
+        "poster_bold",
+        "amber",
+        "cocktails",
+        "modern",
+        "high_contrast",
+        "graphic"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.88
+    },
+    {
+      "id": "hh-05",
+      "originalName": "11be7f6a71455debe084a0932e741c0f.jpg",
+      "filename": "happy_hour/hh-05.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio"
+      ],
+      "venueTypes": [
+        "cafe",
+        "family_restaurant",
+        "pub"
+      ],
+      "layoutFamily": "minimal",
+      "styleDescriptor": "Minimalist bistro aesthetic, clean off-white background, delicate typography, natural daylight, artisan glassware",
+      "tags": [
+        "minimalist",
+        "clean",
+        "spritz",
+        "elegant",
+        "bistro",
+        "wine_bar"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.95
+    },
+    {
+      "id": "hh-06",
+      "originalName": "17a0d29d2ac6210c4f98535c914881a2.jpg",
+      "filename": "happy_hour/hh-06.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio",
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "neon",
+      "styleDescriptor": "Vibrant neon typography glowing against dark exposed brick wall, amber craft cocktail reflection, soft warm bokeh background",
+      "tags": [
+        "neon",
+        "cocktails",
+        "happy_hour",
+        "brick_wall",
+        "nightlife",
+        "warm_glow"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.87
+    },
+    {
+      "id": "hh-07",
+      "originalName": "27e1b13647e56f04dfd314ff2d44a6d4.jpg",
+      "filename": "happy_hour/hh-07.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio"
+      ],
+      "venueTypes": [
+        "pub",
+        "cafe",
+        "family_restaurant"
+      ],
+      "layoutFamily": "photo_full",
+      "styleDescriptor": "Golden hour outdoor patio aperitif, condensation glistening on chilled drinks, sun-drenched wooden deck, relaxed evening mood",
+      "tags": [
+        "patio",
+        "sunset",
+        "golden_hour",
+        "cocktails",
+        "condensation",
+        "terrace"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.94
+    },
+    {
+      "id": "hh-08",
+      "originalName": "3671fdf3be9bda5a3207936af002e4f1.jpg",
+      "filename": "happy_hour/hh-08.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "game_night",
+        "patio"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Rustic green slate chalkboard with authentic white chalk lettering, hand-drawn pint illustration, cozy pub interior lighting",
+      "tags": [
+        "chalkboard",
+        "craft_beer",
+        "pub",
+        "rustic",
+        "hand_lettering",
+        "happy_hour"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.86
+    },
+    {
+      "id": "hh-09",
+      "originalName": "368e2e7ec40e6cb851d9c8ba173ff5ef.jpg",
+      "filename": "happy_hour/hh-09.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio",
+        "rain_evening"
+      ],
+      "venueTypes": [
+        "pub",
+        "sports_bar",
+        "cafe"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Bold high-contrast poster, deep navy and warm amber colorway, sleek modern sans-serif typography, elegant highball glass",
+      "tags": [
+        "poster_bold",
+        "amber",
+        "cocktails",
+        "modern",
+        "high_contrast",
+        "graphic"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.93
+    },
+    {
+      "id": "hh-10",
+      "originalName": "3889bd5257d625da34de357d7744965f.jpg",
+      "filename": "happy_hour/hh-10.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio"
+      ],
+      "venueTypes": [
+        "cafe",
+        "family_restaurant",
+        "pub"
+      ],
+      "layoutFamily": "minimal",
+      "styleDescriptor": "Minimalist bistro aesthetic, clean off-white background, delicate typography, natural daylight, artisan glassware",
+      "tags": [
+        "minimalist",
+        "clean",
+        "spritz",
+        "elegant",
+        "bistro",
+        "wine_bar"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.85
+    },
+    {
+      "id": "hh-11",
+      "originalName": "3e9d2e29ce6f56434141aa878c44841f.jpg",
+      "filename": "happy_hour/hh-11.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio",
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "neon",
+      "styleDescriptor": "Vibrant neon typography glowing against dark exposed brick wall, amber craft cocktail reflection, soft warm bokeh background",
+      "tags": [
+        "neon",
+        "cocktails",
+        "happy_hour",
+        "brick_wall",
+        "nightlife",
+        "warm_glow"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.92
+    },
+    {
+      "id": "hh-12",
+      "originalName": "472d8b35e14b21f65629e6e5b2ea8e5d.jpg",
+      "filename": "happy_hour/hh-12.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio"
+      ],
+      "venueTypes": [
+        "pub",
+        "cafe",
+        "family_restaurant"
+      ],
+      "layoutFamily": "photo_full",
+      "styleDescriptor": "Golden hour outdoor patio aperitif, condensation glistening on chilled drinks, sun-drenched wooden deck, relaxed evening mood",
+      "tags": [
+        "patio",
+        "sunset",
+        "golden_hour",
+        "cocktails",
+        "condensation",
+        "terrace"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.84
+    },
+    {
+      "id": "hh-13",
+      "originalName": "4a892136e18b1df0aee988a60097c2fa.jpg",
+      "filename": "happy_hour/hh-13.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "game_night",
+        "patio"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Rustic green slate chalkboard with authentic white chalk lettering, hand-drawn pint illustration, cozy pub interior lighting",
+      "tags": [
+        "chalkboard",
+        "craft_beer",
+        "pub",
+        "rustic",
+        "hand_lettering",
+        "happy_hour"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.91
+    },
+    {
+      "id": "hh-14",
+      "originalName": "4f81b4ca3fe7945a8dc2749d942e01a9.jpg",
+      "filename": "happy_hour/hh-14.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio",
+        "rain_evening"
+      ],
+      "venueTypes": [
+        "pub",
+        "sports_bar",
+        "cafe"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Bold high-contrast poster, deep navy and warm amber colorway, sleek modern sans-serif typography, elegant highball glass",
+      "tags": [
+        "poster_bold",
+        "amber",
+        "cocktails",
+        "modern",
+        "high_contrast",
+        "graphic"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.83
+    },
+    {
+      "id": "hh-15",
+      "originalName": "5223850342472753da22b3679af7ffc8.jpg",
+      "filename": "happy_hour/hh-15.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio"
+      ],
+      "venueTypes": [
+        "cafe",
+        "family_restaurant",
+        "pub"
+      ],
+      "layoutFamily": "minimal",
+      "styleDescriptor": "Minimalist bistro aesthetic, clean off-white background, delicate typography, natural daylight, artisan glassware",
+      "tags": [
+        "minimalist",
+        "clean",
+        "spritz",
+        "elegant",
+        "bistro",
+        "wine_bar"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.9
+    },
+    {
+      "id": "hh-16",
+      "originalName": "5d09564ddaeb04a180fd06b5fa6310f2.jpg",
+      "filename": "happy_hour/hh-16.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio",
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "neon",
+      "styleDescriptor": "Vibrant neon typography glowing against dark exposed brick wall, amber craft cocktail reflection, soft warm bokeh background",
+      "tags": [
+        "neon",
+        "cocktails",
+        "happy_hour",
+        "brick_wall",
+        "nightlife",
+        "warm_glow"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.82
+    },
+    {
+      "id": "hh-17",
+      "originalName": "672e06ba233c6c40a48799c53cf40ae0.jpg",
+      "filename": "happy_hour/hh-17.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio"
+      ],
+      "venueTypes": [
+        "pub",
+        "cafe",
+        "family_restaurant"
+      ],
+      "layoutFamily": "photo_full",
+      "styleDescriptor": "Golden hour outdoor patio aperitif, condensation glistening on chilled drinks, sun-drenched wooden deck, relaxed evening mood",
+      "tags": [
+        "patio",
+        "sunset",
+        "golden_hour",
+        "cocktails",
+        "condensation",
+        "terrace"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.89
+    },
+    {
+      "id": "hh-18",
+      "originalName": "6b4a127efbdbc83b26315547ff4b6aea.jpg",
+      "filename": "happy_hour/hh-18.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "game_night",
+        "patio"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Rustic green slate chalkboard with authentic white chalk lettering, hand-drawn pint illustration, cozy pub interior lighting",
+      "tags": [
+        "chalkboard",
+        "craft_beer",
+        "pub",
+        "rustic",
+        "hand_lettering",
+        "happy_hour"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.96
+    },
+    {
+      "id": "hh-19",
+      "originalName": "6f4fbe57878db14d5ecde04e47a907c0.jpg",
+      "filename": "happy_hour/hh-19.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio",
+        "rain_evening"
+      ],
+      "venueTypes": [
+        "pub",
+        "sports_bar",
+        "cafe"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Bold high-contrast poster, deep navy and warm amber colorway, sleek modern sans-serif typography, elegant highball glass",
+      "tags": [
+        "poster_bold",
+        "amber",
+        "cocktails",
+        "modern",
+        "high_contrast",
+        "graphic"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.88
+    },
+    {
+      "id": "hh-20",
+      "originalName": "749e21b736b27c7b6a3574d528fe3ce4.jpg",
+      "filename": "happy_hour/hh-20.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio"
+      ],
+      "venueTypes": [
+        "cafe",
+        "family_restaurant",
+        "pub"
+      ],
+      "layoutFamily": "minimal",
+      "styleDescriptor": "Minimalist bistro aesthetic, clean off-white background, delicate typography, natural daylight, artisan glassware",
+      "tags": [
+        "minimalist",
+        "clean",
+        "spritz",
+        "elegant",
+        "bistro",
+        "wine_bar"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.95
+    },
+    {
+      "id": "hh-21",
+      "originalName": "7de5d60a32a760826406e85937472283.jpg",
+      "filename": "happy_hour/hh-21.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio",
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "neon",
+      "styleDescriptor": "Vibrant neon typography glowing against dark exposed brick wall, amber craft cocktail reflection, soft warm bokeh background",
+      "tags": [
+        "neon",
+        "cocktails",
+        "happy_hour",
+        "brick_wall",
+        "nightlife",
+        "warm_glow"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.87
+    },
+    {
+      "id": "hh-22",
+      "originalName": "83d7749e1ae26a126b93877f0fa40f4e.jpg",
+      "filename": "happy_hour/hh-22.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio"
+      ],
+      "venueTypes": [
+        "pub",
+        "cafe",
+        "family_restaurant"
+      ],
+      "layoutFamily": "photo_full",
+      "styleDescriptor": "Golden hour outdoor patio aperitif, condensation glistening on chilled drinks, sun-drenched wooden deck, relaxed evening mood",
+      "tags": [
+        "patio",
+        "sunset",
+        "golden_hour",
+        "cocktails",
+        "condensation",
+        "terrace"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.94
+    },
+    {
+      "id": "hh-23",
+      "originalName": "860564eb317541c3751157c914c03e6c.jpg",
+      "filename": "happy_hour/hh-23.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "game_night",
+        "patio"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Rustic green slate chalkboard with authentic white chalk lettering, hand-drawn pint illustration, cozy pub interior lighting",
+      "tags": [
+        "chalkboard",
+        "craft_beer",
+        "pub",
+        "rustic",
+        "hand_lettering",
+        "happy_hour"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.86
+    },
+    {
+      "id": "hh-24",
+      "originalName": "8d0e5f2a59c4ba974f3d882ef331a009.jpg",
+      "filename": "happy_hour/hh-24.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio",
+        "rain_evening"
+      ],
+      "venueTypes": [
+        "pub",
+        "sports_bar",
+        "cafe"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Bold high-contrast poster, deep navy and warm amber colorway, sleek modern sans-serif typography, elegant highball glass",
+      "tags": [
+        "poster_bold",
+        "amber",
+        "cocktails",
+        "modern",
+        "high_contrast",
+        "graphic"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.93
+    },
+    {
+      "id": "hh-25",
+      "originalName": "954d29a6ee79769eaa216dbf3de0c4d7.jpg",
+      "filename": "happy_hour/hh-25.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio"
+      ],
+      "venueTypes": [
+        "cafe",
+        "family_restaurant",
+        "pub"
+      ],
+      "layoutFamily": "minimal",
+      "styleDescriptor": "Minimalist bistro aesthetic, clean off-white background, delicate typography, natural daylight, artisan glassware",
+      "tags": [
+        "minimalist",
+        "clean",
+        "spritz",
+        "elegant",
+        "bistro",
+        "wine_bar"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.85
+    },
+    {
+      "id": "hh-26",
+      "originalName": "a5795c2f67bbb0091b389d419127d3c6.jpg",
+      "filename": "happy_hour/hh-26.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio",
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "neon",
+      "styleDescriptor": "Vibrant neon typography glowing against dark exposed brick wall, amber craft cocktail reflection, soft warm bokeh background",
+      "tags": [
+        "neon",
+        "cocktails",
+        "happy_hour",
+        "brick_wall",
+        "nightlife",
+        "warm_glow"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.92
+    },
+    {
+      "id": "hh-27",
+      "originalName": "a59a566632bea703bf21931f526a7e05.jpg",
+      "filename": "happy_hour/hh-27.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio"
+      ],
+      "venueTypes": [
+        "pub",
+        "cafe",
+        "family_restaurant"
+      ],
+      "layoutFamily": "photo_full",
+      "styleDescriptor": "Golden hour outdoor patio aperitif, condensation glistening on chilled drinks, sun-drenched wooden deck, relaxed evening mood",
+      "tags": [
+        "patio",
+        "sunset",
+        "golden_hour",
+        "cocktails",
+        "condensation",
+        "terrace"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.84
+    },
+    {
+      "id": "hh-28",
+      "originalName": "aad3df681df633a4da4584ece53a1a1a.jpg",
+      "filename": "happy_hour/hh-28.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "game_night",
+        "patio"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Rustic green slate chalkboard with authentic white chalk lettering, hand-drawn pint illustration, cozy pub interior lighting",
+      "tags": [
+        "chalkboard",
+        "craft_beer",
+        "pub",
+        "rustic",
+        "hand_lettering",
+        "happy_hour"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.91
+    },
+    {
+      "id": "hh-29",
+      "originalName": "abe6cec87c96c4d7bf9f0b20102c1361.jpg",
+      "filename": "happy_hour/hh-29.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio",
+        "rain_evening"
+      ],
+      "venueTypes": [
+        "pub",
+        "sports_bar",
+        "cafe"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Bold high-contrast poster, deep navy and warm amber colorway, sleek modern sans-serif typography, elegant highball glass",
+      "tags": [
+        "poster_bold",
+        "amber",
+        "cocktails",
+        "modern",
+        "high_contrast",
+        "graphic"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.83
+    },
+    {
+      "id": "hh-30",
+      "originalName": "af7a36c856009c01ce2b400be8047c37.jpg",
+      "filename": "happy_hour/hh-30.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio"
+      ],
+      "venueTypes": [
+        "cafe",
+        "family_restaurant",
+        "pub"
+      ],
+      "layoutFamily": "minimal",
+      "styleDescriptor": "Minimalist bistro aesthetic, clean off-white background, delicate typography, natural daylight, artisan glassware",
+      "tags": [
+        "minimalist",
+        "clean",
+        "spritz",
+        "elegant",
+        "bistro",
+        "wine_bar"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.9
+    },
+    {
+      "id": "hh-31",
+      "originalName": "b723a08a9f9ea1ebad26c2ba54bad0d3.jpg",
+      "filename": "happy_hour/hh-31.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio",
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "neon",
+      "styleDescriptor": "Vibrant neon typography glowing against dark exposed brick wall, amber craft cocktail reflection, soft warm bokeh background",
+      "tags": [
+        "neon",
+        "cocktails",
+        "happy_hour",
+        "brick_wall",
+        "nightlife",
+        "warm_glow"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.82
+    },
+    {
+      "id": "hh-32",
+      "originalName": "c1ddd8e4c959d9aae799db0ce2a07fc8.jpg",
+      "filename": "happy_hour/hh-32.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio"
+      ],
+      "venueTypes": [
+        "pub",
+        "cafe",
+        "family_restaurant"
+      ],
+      "layoutFamily": "photo_full",
+      "styleDescriptor": "Golden hour outdoor patio aperitif, condensation glistening on chilled drinks, sun-drenched wooden deck, relaxed evening mood",
+      "tags": [
+        "patio",
+        "sunset",
+        "golden_hour",
+        "cocktails",
+        "condensation",
+        "terrace"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.89
+    },
+    {
+      "id": "hh-33",
+      "originalName": "c6a662d8ebf905b96072efc674e5b1d8.jpg",
+      "filename": "happy_hour/hh-33.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "game_night",
+        "patio"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Rustic green slate chalkboard with authentic white chalk lettering, hand-drawn pint illustration, cozy pub interior lighting",
+      "tags": [
+        "chalkboard",
+        "craft_beer",
+        "pub",
+        "rustic",
+        "hand_lettering",
+        "happy_hour"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.96
+    },
+    {
+      "id": "hh-34",
+      "originalName": "c955d1873dfcaa205cefef70a5af0fbf.jpg",
+      "filename": "happy_hour/hh-34.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio",
+        "rain_evening"
+      ],
+      "venueTypes": [
+        "pub",
+        "sports_bar",
+        "cafe"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Bold high-contrast poster, deep navy and warm amber colorway, sleek modern sans-serif typography, elegant highball glass",
+      "tags": [
+        "poster_bold",
+        "amber",
+        "cocktails",
+        "modern",
+        "high_contrast",
+        "graphic"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.88
+    },
+    {
+      "id": "hh-35",
+      "originalName": "cb804484e372dafcfdd5e0209120a002.jpg",
+      "filename": "happy_hour/hh-35.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio"
+      ],
+      "venueTypes": [
+        "cafe",
+        "family_restaurant",
+        "pub"
+      ],
+      "layoutFamily": "minimal",
+      "styleDescriptor": "Minimalist bistro aesthetic, clean off-white background, delicate typography, natural daylight, artisan glassware",
+      "tags": [
+        "minimalist",
+        "clean",
+        "spritz",
+        "elegant",
+        "bistro",
+        "wine_bar"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.95
+    },
+    {
+      "id": "hh-36",
+      "originalName": "d8c172e68366391440a93fb607dcb58f.jpg",
+      "filename": "happy_hour/hh-36.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio",
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "neon",
+      "styleDescriptor": "Vibrant neon typography glowing against dark exposed brick wall, amber craft cocktail reflection, soft warm bokeh background",
+      "tags": [
+        "neon",
+        "cocktails",
+        "happy_hour",
+        "brick_wall",
+        "nightlife",
+        "warm_glow"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.87
+    },
+    {
+      "id": "hh-37",
+      "originalName": "dacbd8851ac9e580686d8cef13a1f659.jpg",
+      "filename": "happy_hour/hh-37.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "patio"
+      ],
+      "venueTypes": [
+        "pub",
+        "cafe",
+        "family_restaurant"
+      ],
+      "layoutFamily": "photo_full",
+      "styleDescriptor": "Golden hour outdoor patio aperitif, condensation glistening on chilled drinks, sun-drenched wooden deck, relaxed evening mood",
+      "tags": [
+        "patio",
+        "sunset",
+        "golden_hour",
+        "cocktails",
+        "condensation",
+        "terrace"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.94
+    },
+    {
+      "id": "hh-38",
+      "originalName": "f2a7768e20573cc355378763c25b230d.jpg",
+      "filename": "happy_hour/hh-38.jpg",
+      "category": "happy_hour",
+      "scenarios": [
+        "game_night",
+        "patio"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Rustic green slate chalkboard with authentic white chalk lettering, hand-drawn pint illustration, cozy pub interior lighting",
+      "tags": [
+        "chalkboard",
+        "craft_beer",
+        "pub",
+        "rustic",
+        "hand_lettering",
+        "happy_hour"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.86
+    },
+    {
+      "id": "ds-01",
+      "originalName": "029bfa6655922e98f4e7c7b90eeccac2.jpg",
+      "filename": "daily_special/ds-01.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "fast_food",
+        "bbq_grill",
+        "sports_bar"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Hero close-up of a stacked artisan burger with melting cheese, dark charcoal texture background, punchy condensed bold headline, promotional badge",
+      "tags": [
+        "burger",
+        "hero_shot",
+        "bold_typography",
+        "melted_cheese",
+        "special_offer",
+        "dark_background"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.82
+    },
+    {
+      "id": "ds-02",
+      "originalName": "0d5c6df432d73376391f63f4e9a0f9ba.jpg",
+      "filename": "daily_special/ds-02.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "cold"
+      ],
+      "venueTypes": [
+        "bbq_grill",
+        "pub"
+      ],
+      "layoutFamily": "kraft_paper",
+      "styleDescriptor": "Rustic butcher kraft paper backdrop, juicy smoked brisket on wooden cutting board, wisps of oak smoke, vintage stamp typography",
+      "tags": [
+        "bbq",
+        "smokehouse",
+        "kraft_paper",
+        "brisket",
+        "rustic",
+        "wood_smoke",
+        "comfort_food"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.89
+    },
+    {
+      "id": "ds-03",
+      "originalName": "0f12018cd4cbf30ad400bca6391f52e3.jpg",
+      "filename": "daily_special/ds-03.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "rain_now"
+      ],
+      "venueTypes": [
+        "family_restaurant",
+        "bbq_grill"
+      ],
+      "layoutFamily": "photo_full",
+      "styleDescriptor": "Steaming hot comfort dish, rich homemade sauce, rustic cast-iron skillet, warm overhead dining light, generous family-style portion",
+      "tags": [
+        "comfort_food",
+        "steaming",
+        "cast_iron",
+        "family_style",
+        "warm_lighting",
+        "hearty"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.96
+    },
+    {
+      "id": "ds-04",
+      "originalName": "0f6db3e8159eb3b578dfbb4a33b93d36.jpg",
+      "filename": "daily_special/ds-04.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "kebab",
+        "fast_food"
+      ],
+      "layoutFamily": "sticker_pop",
+      "styleDescriptor": "Energetic street-food poster with colorful graphic stickers, crisp cut kebab wrap with fresh herbs, urban pop typography, vibrant accents",
+      "tags": [
+        "street_food",
+        "kebab",
+        "wrap",
+        "stickers",
+        "pop_graphic",
+        "fresh",
+        "urban"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.88
+    },
+    {
+      "id": "ds-05",
+      "originalName": "0ff5630f9645d7dc67ca6ae7edff975e.jpg",
+      "filename": "daily_special/ds-05.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "cafe",
+        "bakery",
+        "family_restaurant"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Classic French cafe blackboard, daily chef special scripted in chalk, golden flaky pastry on ceramic dish, soft morning café lighting",
+      "tags": [
+        "bakery",
+        "cafe",
+        "pastry",
+        "chalkboard",
+        "chef_special",
+        "morning_light"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.95
+    },
+    {
+      "id": "ds-06",
+      "originalName": "1eb8b5b7b3a0dbbafe20a5d9659a71ed.jpg",
+      "filename": "daily_special/ds-06.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "patio"
+      ],
+      "venueTypes": [
+        "family_restaurant",
+        "cafe"
+      ],
+      "layoutFamily": "magazine",
+      "styleDescriptor": "Editorial culinary magazine composition, overhead flat-lay styling, fresh farm-to-table ingredients, refined serif typography, airy natural light",
+      "tags": [
+        "editorial",
+        "culinary",
+        "fresh_ingredients",
+        "flatlay",
+        "magazine_style"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.87
+    },
+    {
+      "id": "ds-07",
+      "originalName": "1efa44332c41c49804a5130f68792c8d.jpg",
+      "filename": "daily_special/ds-07.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "fast_food",
+        "bbq_grill",
+        "sports_bar"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Hero close-up of a stacked artisan burger with melting cheese, dark charcoal texture background, punchy condensed bold headline, promotional badge",
+      "tags": [
+        "burger",
+        "hero_shot",
+        "bold_typography",
+        "melted_cheese",
+        "special_offer",
+        "dark_background"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.94
+    },
+    {
+      "id": "ds-08",
+      "originalName": "222c92a0c0a1db75fdad6753beff40fb.jpg",
+      "filename": "daily_special/ds-08.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "cold"
+      ],
+      "venueTypes": [
+        "bbq_grill",
+        "pub"
+      ],
+      "layoutFamily": "kraft_paper",
+      "styleDescriptor": "Rustic butcher kraft paper backdrop, juicy smoked brisket on wooden cutting board, wisps of oak smoke, vintage stamp typography",
+      "tags": [
+        "bbq",
+        "smokehouse",
+        "kraft_paper",
+        "brisket",
+        "rustic",
+        "wood_smoke",
+        "comfort_food"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.86
+    },
+    {
+      "id": "ds-09",
+      "originalName": "233cce2badc0b5ad50e64bec4e7c05f1.jpg",
+      "filename": "daily_special/ds-09.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "rain_now"
+      ],
+      "venueTypes": [
+        "family_restaurant",
+        "bbq_grill"
+      ],
+      "layoutFamily": "photo_full",
+      "styleDescriptor": "Steaming hot comfort dish, rich homemade sauce, rustic cast-iron skillet, warm overhead dining light, generous family-style portion",
+      "tags": [
+        "comfort_food",
+        "steaming",
+        "cast_iron",
+        "family_style",
+        "warm_lighting",
+        "hearty"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.93
+    },
+    {
+      "id": "ds-10",
+      "originalName": "2425789afaf41cc38408f1dc71532eda.jpg",
+      "filename": "daily_special/ds-10.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "kebab",
+        "fast_food"
+      ],
+      "layoutFamily": "sticker_pop",
+      "styleDescriptor": "Energetic street-food poster with colorful graphic stickers, crisp cut kebab wrap with fresh herbs, urban pop typography, vibrant accents",
+      "tags": [
+        "street_food",
+        "kebab",
+        "wrap",
+        "stickers",
+        "pop_graphic",
+        "fresh",
+        "urban"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.85
+    },
+    {
+      "id": "ds-11",
+      "originalName": "25e54c40d0975fcc4d5379d8ae29a14a.jpg",
+      "filename": "daily_special/ds-11.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "cafe",
+        "bakery",
+        "family_restaurant"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Classic French cafe blackboard, daily chef special scripted in chalk, golden flaky pastry on ceramic dish, soft morning café lighting",
+      "tags": [
+        "bakery",
+        "cafe",
+        "pastry",
+        "chalkboard",
+        "chef_special",
+        "morning_light"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.92
+    },
+    {
+      "id": "ds-12",
+      "originalName": "3184891e399ef2bc62fa1da8acf17a5c.jpg",
+      "filename": "daily_special/ds-12.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "patio"
+      ],
+      "venueTypes": [
+        "family_restaurant",
+        "cafe"
+      ],
+      "layoutFamily": "magazine",
+      "styleDescriptor": "Editorial culinary magazine composition, overhead flat-lay styling, fresh farm-to-table ingredients, refined serif typography, airy natural light",
+      "tags": [
+        "editorial",
+        "culinary",
+        "fresh_ingredients",
+        "flatlay",
+        "magazine_style"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.84
+    },
+    {
+      "id": "ds-13",
+      "originalName": "333cb0f5ec868eb4a39aa12c2ef9ec78.jpg",
+      "filename": "daily_special/ds-13.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "fast_food",
+        "bbq_grill",
+        "sports_bar"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Hero close-up of a stacked artisan burger with melting cheese, dark charcoal texture background, punchy condensed bold headline, promotional badge",
+      "tags": [
+        "burger",
+        "hero_shot",
+        "bold_typography",
+        "melted_cheese",
+        "special_offer",
+        "dark_background"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.91
+    },
+    {
+      "id": "ds-14",
+      "originalName": "349252b62205dcf59e93ff72d1d76425.jpg",
+      "filename": "daily_special/ds-14.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "cold"
+      ],
+      "venueTypes": [
+        "bbq_grill",
+        "pub"
+      ],
+      "layoutFamily": "kraft_paper",
+      "styleDescriptor": "Rustic butcher kraft paper backdrop, juicy smoked brisket on wooden cutting board, wisps of oak smoke, vintage stamp typography",
+      "tags": [
+        "bbq",
+        "smokehouse",
+        "kraft_paper",
+        "brisket",
+        "rustic",
+        "wood_smoke",
+        "comfort_food"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.83
+    },
+    {
+      "id": "ds-15",
+      "originalName": "35fa2c26e502c8285b2d4b7a1ab75c61.jpg",
+      "filename": "daily_special/ds-15.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "rain_now"
+      ],
+      "venueTypes": [
+        "family_restaurant",
+        "bbq_grill"
+      ],
+      "layoutFamily": "photo_full",
+      "styleDescriptor": "Steaming hot comfort dish, rich homemade sauce, rustic cast-iron skillet, warm overhead dining light, generous family-style portion",
+      "tags": [
+        "comfort_food",
+        "steaming",
+        "cast_iron",
+        "family_style",
+        "warm_lighting",
+        "hearty"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.9
+    },
+    {
+      "id": "ds-16",
+      "originalName": "3620a323e6656a38fcaee0b0a7268d8d.jpg",
+      "filename": "daily_special/ds-16.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "kebab",
+        "fast_food"
+      ],
+      "layoutFamily": "sticker_pop",
+      "styleDescriptor": "Energetic street-food poster with colorful graphic stickers, crisp cut kebab wrap with fresh herbs, urban pop typography, vibrant accents",
+      "tags": [
+        "street_food",
+        "kebab",
+        "wrap",
+        "stickers",
+        "pop_graphic",
+        "fresh",
+        "urban"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.82
+    },
+    {
+      "id": "ds-17",
+      "originalName": "41c45b8c7a1eeedb316388e94f823d20.jpg",
+      "filename": "daily_special/ds-17.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "cafe",
+        "bakery",
+        "family_restaurant"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Classic French cafe blackboard, daily chef special scripted in chalk, golden flaky pastry on ceramic dish, soft morning café lighting",
+      "tags": [
+        "bakery",
+        "cafe",
+        "pastry",
+        "chalkboard",
+        "chef_special",
+        "morning_light"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.89
+    },
+    {
+      "id": "ds-18",
+      "originalName": "4e281a96287d22bb1ff2e48607edce37.jpg",
+      "filename": "daily_special/ds-18.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "patio"
+      ],
+      "venueTypes": [
+        "family_restaurant",
+        "cafe"
+      ],
+      "layoutFamily": "magazine",
+      "styleDescriptor": "Editorial culinary magazine composition, overhead flat-lay styling, fresh farm-to-table ingredients, refined serif typography, airy natural light",
+      "tags": [
+        "editorial",
+        "culinary",
+        "fresh_ingredients",
+        "flatlay",
+        "magazine_style"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.96
+    },
+    {
+      "id": "ds-19",
+      "originalName": "52ff76d4eb4bc78ad759595cf6a92dd9.jpg",
+      "filename": "daily_special/ds-19.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "fast_food",
+        "bbq_grill",
+        "sports_bar"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Hero close-up of a stacked artisan burger with melting cheese, dark charcoal texture background, punchy condensed bold headline, promotional badge",
+      "tags": [
+        "burger",
+        "hero_shot",
+        "bold_typography",
+        "melted_cheese",
+        "special_offer",
+        "dark_background"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.88
+    },
+    {
+      "id": "ds-20",
+      "originalName": "5bca802365204e023a1f7f87c8f041c5.jpg",
+      "filename": "daily_special/ds-20.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "cold"
+      ],
+      "venueTypes": [
+        "bbq_grill",
+        "pub"
+      ],
+      "layoutFamily": "kraft_paper",
+      "styleDescriptor": "Rustic butcher kraft paper backdrop, juicy smoked brisket on wooden cutting board, wisps of oak smoke, vintage stamp typography",
+      "tags": [
+        "bbq",
+        "smokehouse",
+        "kraft_paper",
+        "brisket",
+        "rustic",
+        "wood_smoke",
+        "comfort_food"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.95
+    },
+    {
+      "id": "ds-21",
+      "originalName": "680ce61a7ec5ce75ae3652834a826aeb.jpg",
+      "filename": "daily_special/ds-21.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "rain_now"
+      ],
+      "venueTypes": [
+        "family_restaurant",
+        "bbq_grill"
+      ],
+      "layoutFamily": "photo_full",
+      "styleDescriptor": "Steaming hot comfort dish, rich homemade sauce, rustic cast-iron skillet, warm overhead dining light, generous family-style portion",
+      "tags": [
+        "comfort_food",
+        "steaming",
+        "cast_iron",
+        "family_style",
+        "warm_lighting",
+        "hearty"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.87
+    },
+    {
+      "id": "ds-22",
+      "originalName": "6caaa3c544b240db21ae77129b98d38a.jpg",
+      "filename": "daily_special/ds-22.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "kebab",
+        "fast_food"
+      ],
+      "layoutFamily": "sticker_pop",
+      "styleDescriptor": "Energetic street-food poster with colorful graphic stickers, crisp cut kebab wrap with fresh herbs, urban pop typography, vibrant accents",
+      "tags": [
+        "street_food",
+        "kebab",
+        "wrap",
+        "stickers",
+        "pop_graphic",
+        "fresh",
+        "urban"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.94
+    },
+    {
+      "id": "ds-23",
+      "originalName": "6cce2bd509ff3ce387f2443a5959ee59.jpg",
+      "filename": "daily_special/ds-23.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "cafe",
+        "bakery",
+        "family_restaurant"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Classic French cafe blackboard, daily chef special scripted in chalk, golden flaky pastry on ceramic dish, soft morning café lighting",
+      "tags": [
+        "bakery",
+        "cafe",
+        "pastry",
+        "chalkboard",
+        "chef_special",
+        "morning_light"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.86
+    },
+    {
+      "id": "ds-24",
+      "originalName": "6e4770ee1bbe6dec06922b98bedd25ab.jpg",
+      "filename": "daily_special/ds-24.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "patio"
+      ],
+      "venueTypes": [
+        "family_restaurant",
+        "cafe"
+      ],
+      "layoutFamily": "magazine",
+      "styleDescriptor": "Editorial culinary magazine composition, overhead flat-lay styling, fresh farm-to-table ingredients, refined serif typography, airy natural light",
+      "tags": [
+        "editorial",
+        "culinary",
+        "fresh_ingredients",
+        "flatlay",
+        "magazine_style"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.93
+    },
+    {
+      "id": "ds-25",
+      "originalName": "6ef04a2e03698b16f5c20aaafcf39198.jpg",
+      "filename": "daily_special/ds-25.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "fast_food",
+        "bbq_grill",
+        "sports_bar"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Hero close-up of a stacked artisan burger with melting cheese, dark charcoal texture background, punchy condensed bold headline, promotional badge",
+      "tags": [
+        "burger",
+        "hero_shot",
+        "bold_typography",
+        "melted_cheese",
+        "special_offer",
+        "dark_background"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.85
+    },
+    {
+      "id": "ds-26",
+      "originalName": "71e00f3007919c2786cdaed182acb2af.jpg",
+      "filename": "daily_special/ds-26.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "cold"
+      ],
+      "venueTypes": [
+        "bbq_grill",
+        "pub"
+      ],
+      "layoutFamily": "kraft_paper",
+      "styleDescriptor": "Rustic butcher kraft paper backdrop, juicy smoked brisket on wooden cutting board, wisps of oak smoke, vintage stamp typography",
+      "tags": [
+        "bbq",
+        "smokehouse",
+        "kraft_paper",
+        "brisket",
+        "rustic",
+        "wood_smoke",
+        "comfort_food"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.92
+    },
+    {
+      "id": "ds-27",
+      "originalName": "79a2ba6b65fd780e93156e7a40eca49a.jpg",
+      "filename": "daily_special/ds-27.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "rain_now"
+      ],
+      "venueTypes": [
+        "family_restaurant",
+        "bbq_grill"
+      ],
+      "layoutFamily": "photo_full",
+      "styleDescriptor": "Steaming hot comfort dish, rich homemade sauce, rustic cast-iron skillet, warm overhead dining light, generous family-style portion",
+      "tags": [
+        "comfort_food",
+        "steaming",
+        "cast_iron",
+        "family_style",
+        "warm_lighting",
+        "hearty"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.84
+    },
+    {
+      "id": "ds-28",
+      "originalName": "81e3fe73b1a66b1692c097a31224a968.jpg",
+      "filename": "daily_special/ds-28.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "kebab",
+        "fast_food"
+      ],
+      "layoutFamily": "sticker_pop",
+      "styleDescriptor": "Energetic street-food poster with colorful graphic stickers, crisp cut kebab wrap with fresh herbs, urban pop typography, vibrant accents",
+      "tags": [
+        "street_food",
+        "kebab",
+        "wrap",
+        "stickers",
+        "pop_graphic",
+        "fresh",
+        "urban"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.91
+    },
+    {
+      "id": "ds-29",
+      "originalName": "889908c0ff9914a6b3b7aadc0c0912cb.jpg",
+      "filename": "daily_special/ds-29.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "cafe",
+        "bakery",
+        "family_restaurant"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Classic French cafe blackboard, daily chef special scripted in chalk, golden flaky pastry on ceramic dish, soft morning café lighting",
+      "tags": [
+        "bakery",
+        "cafe",
+        "pastry",
+        "chalkboard",
+        "chef_special",
+        "morning_light"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.83
+    },
+    {
+      "id": "ds-30",
+      "originalName": "8a796037147ec18c1de87044da4eedf5.jpg",
+      "filename": "daily_special/ds-30.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "patio"
+      ],
+      "venueTypes": [
+        "family_restaurant",
+        "cafe"
+      ],
+      "layoutFamily": "magazine",
+      "styleDescriptor": "Editorial culinary magazine composition, overhead flat-lay styling, fresh farm-to-table ingredients, refined serif typography, airy natural light",
+      "tags": [
+        "editorial",
+        "culinary",
+        "fresh_ingredients",
+        "flatlay",
+        "magazine_style"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.9
+    },
+    {
+      "id": "ds-31",
+      "originalName": "8d0e00be96fa8543ef96573b385ce33e.jpg",
+      "filename": "daily_special/ds-31.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "fast_food",
+        "bbq_grill",
+        "sports_bar"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Hero close-up of a stacked artisan burger with melting cheese, dark charcoal texture background, punchy condensed bold headline, promotional badge",
+      "tags": [
+        "burger",
+        "hero_shot",
+        "bold_typography",
+        "melted_cheese",
+        "special_offer",
+        "dark_background"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.82
+    },
+    {
+      "id": "ds-32",
+      "originalName": "9091334bc5e09394cfe4f1695b7e17eb.jpg",
+      "filename": "daily_special/ds-32.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "cold"
+      ],
+      "venueTypes": [
+        "bbq_grill",
+        "pub"
+      ],
+      "layoutFamily": "kraft_paper",
+      "styleDescriptor": "Rustic butcher kraft paper backdrop, juicy smoked brisket on wooden cutting board, wisps of oak smoke, vintage stamp typography",
+      "tags": [
+        "bbq",
+        "smokehouse",
+        "kraft_paper",
+        "brisket",
+        "rustic",
+        "wood_smoke",
+        "comfort_food"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.89
+    },
+    {
+      "id": "ds-33",
+      "originalName": "980572b615b17a86e05a588067593439.jpg",
+      "filename": "daily_special/ds-33.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "rain_now"
+      ],
+      "venueTypes": [
+        "family_restaurant",
+        "bbq_grill"
+      ],
+      "layoutFamily": "photo_full",
+      "styleDescriptor": "Steaming hot comfort dish, rich homemade sauce, rustic cast-iron skillet, warm overhead dining light, generous family-style portion",
+      "tags": [
+        "comfort_food",
+        "steaming",
+        "cast_iron",
+        "family_style",
+        "warm_lighting",
+        "hearty"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.96
+    },
+    {
+      "id": "ds-34",
+      "originalName": "9bf0abc88ee0ef696473440fedb84f95.jpg",
+      "filename": "daily_special/ds-34.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "kebab",
+        "fast_food"
+      ],
+      "layoutFamily": "sticker_pop",
+      "styleDescriptor": "Energetic street-food poster with colorful graphic stickers, crisp cut kebab wrap with fresh herbs, urban pop typography, vibrant accents",
+      "tags": [
+        "street_food",
+        "kebab",
+        "wrap",
+        "stickers",
+        "pop_graphic",
+        "fresh",
+        "urban"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.88
+    },
+    {
+      "id": "ds-35",
+      "originalName": "a132b7c4795e4b4ef8f6897efd5c441e.jpg",
+      "filename": "daily_special/ds-35.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "cafe",
+        "bakery",
+        "family_restaurant"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Classic French cafe blackboard, daily chef special scripted in chalk, golden flaky pastry on ceramic dish, soft morning café lighting",
+      "tags": [
+        "bakery",
+        "cafe",
+        "pastry",
+        "chalkboard",
+        "chef_special",
+        "morning_light"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.95
+    },
+    {
+      "id": "ds-36",
+      "originalName": "a5f183a6c37ffe7be8327c9e91d91b2f.jpg",
+      "filename": "daily_special/ds-36.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "patio"
+      ],
+      "venueTypes": [
+        "family_restaurant",
+        "cafe"
+      ],
+      "layoutFamily": "magazine",
+      "styleDescriptor": "Editorial culinary magazine composition, overhead flat-lay styling, fresh farm-to-table ingredients, refined serif typography, airy natural light",
+      "tags": [
+        "editorial",
+        "culinary",
+        "fresh_ingredients",
+        "flatlay",
+        "magazine_style"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.87
+    },
+    {
+      "id": "ds-37",
+      "originalName": "a65ca99af5d6e24af16d22c39211811d.jpg",
+      "filename": "daily_special/ds-37.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "fast_food",
+        "bbq_grill",
+        "sports_bar"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Hero close-up of a stacked artisan burger with melting cheese, dark charcoal texture background, punchy condensed bold headline, promotional badge",
+      "tags": [
+        "burger",
+        "hero_shot",
+        "bold_typography",
+        "melted_cheese",
+        "special_offer",
+        "dark_background"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.94
+    },
+    {
+      "id": "ds-38",
+      "originalName": "ab42443f3d34de4ff660273614fa789d.jpg",
+      "filename": "daily_special/ds-38.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "cold"
+      ],
+      "venueTypes": [
+        "bbq_grill",
+        "pub"
+      ],
+      "layoutFamily": "kraft_paper",
+      "styleDescriptor": "Rustic butcher kraft paper backdrop, juicy smoked brisket on wooden cutting board, wisps of oak smoke, vintage stamp typography",
+      "tags": [
+        "bbq",
+        "smokehouse",
+        "kraft_paper",
+        "brisket",
+        "rustic",
+        "wood_smoke",
+        "comfort_food"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.86
+    },
+    {
+      "id": "ds-39",
+      "originalName": "b1c448a909a5746e43636baf118e044d.jpg",
+      "filename": "daily_special/ds-39.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "rain_now"
+      ],
+      "venueTypes": [
+        "family_restaurant",
+        "bbq_grill"
+      ],
+      "layoutFamily": "photo_full",
+      "styleDescriptor": "Steaming hot comfort dish, rich homemade sauce, rustic cast-iron skillet, warm overhead dining light, generous family-style portion",
+      "tags": [
+        "comfort_food",
+        "steaming",
+        "cast_iron",
+        "family_style",
+        "warm_lighting",
+        "hearty"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.93
+    },
+    {
+      "id": "ds-40",
+      "originalName": "bbde6bdaffb8c504a44fd3fb54fec3e0.jpg",
+      "filename": "daily_special/ds-40.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "kebab",
+        "fast_food"
+      ],
+      "layoutFamily": "sticker_pop",
+      "styleDescriptor": "Energetic street-food poster with colorful graphic stickers, crisp cut kebab wrap with fresh herbs, urban pop typography, vibrant accents",
+      "tags": [
+        "street_food",
+        "kebab",
+        "wrap",
+        "stickers",
+        "pop_graphic",
+        "fresh",
+        "urban"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.85
+    },
+    {
+      "id": "ds-41",
+      "originalName": "c673b738ffa505af030e55b02a21b4b8.jpg",
+      "filename": "daily_special/ds-41.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "cafe",
+        "bakery",
+        "family_restaurant"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Classic French cafe blackboard, daily chef special scripted in chalk, golden flaky pastry on ceramic dish, soft morning café lighting",
+      "tags": [
+        "bakery",
+        "cafe",
+        "pastry",
+        "chalkboard",
+        "chef_special",
+        "morning_light"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.92
+    },
+    {
+      "id": "ds-42",
+      "originalName": "c7e791edf008617379f75ab6179f4871.jpg",
+      "filename": "daily_special/ds-42.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "patio"
+      ],
+      "venueTypes": [
+        "family_restaurant",
+        "cafe"
+      ],
+      "layoutFamily": "magazine",
+      "styleDescriptor": "Editorial culinary magazine composition, overhead flat-lay styling, fresh farm-to-table ingredients, refined serif typography, airy natural light",
+      "tags": [
+        "editorial",
+        "culinary",
+        "fresh_ingredients",
+        "flatlay",
+        "magazine_style"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.84
+    },
+    {
+      "id": "ds-43",
+      "originalName": "d956c6430b696d6cf370fb54c487d4ab.jpg",
+      "filename": "daily_special/ds-43.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "fast_food",
+        "bbq_grill",
+        "sports_bar"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Hero close-up of a stacked artisan burger with melting cheese, dark charcoal texture background, punchy condensed bold headline, promotional badge",
+      "tags": [
+        "burger",
+        "hero_shot",
+        "bold_typography",
+        "melted_cheese",
+        "special_offer",
+        "dark_background"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.91
+    },
+    {
+      "id": "ds-44",
+      "originalName": "d9c30b2658f3d7ae6999a3b80e0f57b0.jpg",
+      "filename": "daily_special/ds-44.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "cold"
+      ],
+      "venueTypes": [
+        "bbq_grill",
+        "pub"
+      ],
+      "layoutFamily": "kraft_paper",
+      "styleDescriptor": "Rustic butcher kraft paper backdrop, juicy smoked brisket on wooden cutting board, wisps of oak smoke, vintage stamp typography",
+      "tags": [
+        "bbq",
+        "smokehouse",
+        "kraft_paper",
+        "brisket",
+        "rustic",
+        "wood_smoke",
+        "comfort_food"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.83
+    },
+    {
+      "id": "ds-45",
+      "originalName": "db9812e5c146905137235146a48dadef.jpg",
+      "filename": "daily_special/ds-45.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "rain_now"
+      ],
+      "venueTypes": [
+        "family_restaurant",
+        "bbq_grill"
+      ],
+      "layoutFamily": "photo_full",
+      "styleDescriptor": "Steaming hot comfort dish, rich homemade sauce, rustic cast-iron skillet, warm overhead dining light, generous family-style portion",
+      "tags": [
+        "comfort_food",
+        "steaming",
+        "cast_iron",
+        "family_style",
+        "warm_lighting",
+        "hearty"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.9
+    },
+    {
+      "id": "ds-46",
+      "originalName": "e2e957b97aadcf9a9c605267107063b9.jpg",
+      "filename": "daily_special/ds-46.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "kebab",
+        "fast_food"
+      ],
+      "layoutFamily": "sticker_pop",
+      "styleDescriptor": "Energetic street-food poster with colorful graphic stickers, crisp cut kebab wrap with fresh herbs, urban pop typography, vibrant accents",
+      "tags": [
+        "street_food",
+        "kebab",
+        "wrap",
+        "stickers",
+        "pop_graphic",
+        "fresh",
+        "urban"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.82
+    },
+    {
+      "id": "ds-47",
+      "originalName": "e42d21f12719146b906805b76bde632d.jpg",
+      "filename": "daily_special/ds-47.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "cafe",
+        "bakery",
+        "family_restaurant"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Classic French cafe blackboard, daily chef special scripted in chalk, golden flaky pastry on ceramic dish, soft morning café lighting",
+      "tags": [
+        "bakery",
+        "cafe",
+        "pastry",
+        "chalkboard",
+        "chef_special",
+        "morning_light"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.89
+    },
+    {
+      "id": "ds-48",
+      "originalName": "e78d03df28fa7ef08b5ed41471c81fb2.jpg",
+      "filename": "daily_special/ds-48.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "patio"
+      ],
+      "venueTypes": [
+        "family_restaurant",
+        "cafe"
+      ],
+      "layoutFamily": "magazine",
+      "styleDescriptor": "Editorial culinary magazine composition, overhead flat-lay styling, fresh farm-to-table ingredients, refined serif typography, airy natural light",
+      "tags": [
+        "editorial",
+        "culinary",
+        "fresh_ingredients",
+        "flatlay",
+        "magazine_style"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.96
+    },
+    {
+      "id": "ds-49",
+      "originalName": "ebd29db3c54ca4db5a25ea7ca4ebf325.jpg",
+      "filename": "daily_special/ds-49.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "fast_food",
+        "bbq_grill",
+        "sports_bar"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Hero close-up of a stacked artisan burger with melting cheese, dark charcoal texture background, punchy condensed bold headline, promotional badge",
+      "tags": [
+        "burger",
+        "hero_shot",
+        "bold_typography",
+        "melted_cheese",
+        "special_offer",
+        "dark_background"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.88
+    },
+    {
+      "id": "ds-50",
+      "originalName": "f26a59bf472e2b24152ae62d114f6549.jpg",
+      "filename": "daily_special/ds-50.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "cold"
+      ],
+      "venueTypes": [
+        "bbq_grill",
+        "pub"
+      ],
+      "layoutFamily": "kraft_paper",
+      "styleDescriptor": "Rustic butcher kraft paper backdrop, juicy smoked brisket on wooden cutting board, wisps of oak smoke, vintage stamp typography",
+      "tags": [
+        "bbq",
+        "smokehouse",
+        "kraft_paper",
+        "brisket",
+        "rustic",
+        "wood_smoke",
+        "comfort_food"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.95
+    },
+    {
+      "id": "ds-51",
+      "originalName": "f51b2c8b0e1ab9a4686cf32c3a18da31.jpg",
+      "filename": "daily_special/ds-51.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special",
+        "rain_now"
+      ],
+      "venueTypes": [
+        "family_restaurant",
+        "bbq_grill"
+      ],
+      "layoutFamily": "photo_full",
+      "styleDescriptor": "Steaming hot comfort dish, rich homemade sauce, rustic cast-iron skillet, warm overhead dining light, generous family-style portion",
+      "tags": [
+        "comfort_food",
+        "steaming",
+        "cast_iron",
+        "family_style",
+        "warm_lighting",
+        "hearty"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.87
+    },
+    {
+      "id": "ds-52",
+      "originalName": "f63085e4267a5278ee9cb8675635fc5d.jpg",
+      "filename": "daily_special/ds-52.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "kebab",
+        "fast_food"
+      ],
+      "layoutFamily": "sticker_pop",
+      "styleDescriptor": "Energetic street-food poster with colorful graphic stickers, crisp cut kebab wrap with fresh herbs, urban pop typography, vibrant accents",
+      "tags": [
+        "street_food",
+        "kebab",
+        "wrap",
+        "stickers",
+        "pop_graphic",
+        "fresh",
+        "urban"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.94
+    },
+    {
+      "id": "ds-53",
+      "originalName": "fd41386e8df00fd864068f2be681fd0d.jpg",
+      "filename": "daily_special/ds-53.jpg",
+      "category": "daily_special",
+      "scenarios": [
+        "daily_special"
+      ],
+      "venueTypes": [
+        "cafe",
+        "bakery",
+        "family_restaurant"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Classic French cafe blackboard, daily chef special scripted in chalk, golden flaky pastry on ceramic dish, soft morning café lighting",
+      "tags": [
+        "bakery",
+        "cafe",
+        "pastry",
+        "chalkboard",
+        "chef_special",
+        "morning_light"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.86
+    },
+    {
+      "id": "gn-01",
+      "originalName": "0a4fb1ff7b00e20301f2a43ccafe24a9.jpg",
+      "filename": "game_night/gn-01.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Electric game day watch party poster, stadium floodlights cutting through atmospheric haze, bold athletic sans-serif font, chilled beer pitcher and crispy wings",
+      "tags": [
+        "game_day",
+        "stadium_lights",
+        "sports_bar",
+        "wings",
+        "beer_pitcher",
+        "high_energy"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.82
+    },
+    {
+      "id": "gn-02",
+      "originalName": "0f577a329442937adf000413d7452756.jpg",
+      "filename": "game_night/gn-02.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar"
+      ],
+      "layoutFamily": "neon",
+      "styleDescriptor": "Glowing sports bar neon signs, dark industrial venue background, cheering crowd silhouette in background bokeh, prominent game time badge",
+      "tags": [
+        "neon",
+        "sports_bar",
+        "night_match",
+        "game_night",
+        "industrial",
+        "stadium"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.89
+    },
+    {
+      "id": "gn-03",
+      "originalName": "1878609c760085a859fec4164fb9fd0f.jpg",
+      "filename": "game_night/gn-03.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "pub",
+        "sports_bar"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Traditional sports pub chalkboard, hand-lettered match schedule, rustic wooden trim, craft beer tap handles visible in background",
+      "tags": [
+        "pub_chalkboard",
+        "match_day",
+        "beer_taps",
+        "traditional_pub",
+        "chalk_lettering"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.96
+    },
+    {
+      "id": "gn-04",
+      "originalName": "1efa44332c41c49804a5130f68792c8d.jpg",
+      "filename": "game_night/gn-04.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "fast_food"
+      ],
+      "layoutFamily": "sticker_pop",
+      "styleDescriptor": "Dynamic sports promo flyer with bold matchday badge, split-color background, fast-action graphic elements, food combo special",
+      "tags": [
+        "matchday",
+        "sports_promo",
+        "combo_deal",
+        "bold_badge",
+        "fast_food_sports"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.88
+    },
+    {
+      "id": "gn-05",
+      "originalName": "27064b0b9bed4f25cdcb407f3bdf17f6.jpg",
+      "filename": "game_night/gn-05.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Electric game day watch party poster, stadium floodlights cutting through atmospheric haze, bold athletic sans-serif font, chilled beer pitcher and crispy wings",
+      "tags": [
+        "game_day",
+        "stadium_lights",
+        "sports_bar",
+        "wings",
+        "beer_pitcher",
+        "high_energy"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.95
+    },
+    {
+      "id": "gn-06",
+      "originalName": "2b95780b133121aff3e8d08c757914a3.jpg",
+      "filename": "game_night/gn-06.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar"
+      ],
+      "layoutFamily": "neon",
+      "styleDescriptor": "Glowing sports bar neon signs, dark industrial venue background, cheering crowd silhouette in background bokeh, prominent game time badge",
+      "tags": [
+        "neon",
+        "sports_bar",
+        "night_match",
+        "game_night",
+        "industrial",
+        "stadium"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.87
+    },
+    {
+      "id": "gn-07",
+      "originalName": "2ba0ab4d6deb3ec19dbf537e46ba9199.jpg",
+      "filename": "game_night/gn-07.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "pub",
+        "sports_bar"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Traditional sports pub chalkboard, hand-lettered match schedule, rustic wooden trim, craft beer tap handles visible in background",
+      "tags": [
+        "pub_chalkboard",
+        "match_day",
+        "beer_taps",
+        "traditional_pub",
+        "chalk_lettering"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.94
+    },
+    {
+      "id": "gn-08",
+      "originalName": "35762c4a0a4c7d45a920c831e93958b4.jpg",
+      "filename": "game_night/gn-08.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "fast_food"
+      ],
+      "layoutFamily": "sticker_pop",
+      "styleDescriptor": "Dynamic sports promo flyer with bold matchday badge, split-color background, fast-action graphic elements, food combo special",
+      "tags": [
+        "matchday",
+        "sports_promo",
+        "combo_deal",
+        "bold_badge",
+        "fast_food_sports"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.86
+    },
+    {
+      "id": "gn-09",
+      "originalName": "3bd8929ae1e15d406acc3aaa4e24fc75.jpg",
+      "filename": "game_night/gn-09.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Electric game day watch party poster, stadium floodlights cutting through atmospheric haze, bold athletic sans-serif font, chilled beer pitcher and crispy wings",
+      "tags": [
+        "game_day",
+        "stadium_lights",
+        "sports_bar",
+        "wings",
+        "beer_pitcher",
+        "high_energy"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.93
+    },
+    {
+      "id": "gn-10",
+      "originalName": "4391adee13791070aebfa96261abdc26.jpg",
+      "filename": "game_night/gn-10.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar"
+      ],
+      "layoutFamily": "neon",
+      "styleDescriptor": "Glowing sports bar neon signs, dark industrial venue background, cheering crowd silhouette in background bokeh, prominent game time badge",
+      "tags": [
+        "neon",
+        "sports_bar",
+        "night_match",
+        "game_night",
+        "industrial",
+        "stadium"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.85
+    },
+    {
+      "id": "gn-11",
+      "originalName": "45d946ca27b74f80da57494a59d7084e.jpg",
+      "filename": "game_night/gn-11.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "pub",
+        "sports_bar"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Traditional sports pub chalkboard, hand-lettered match schedule, rustic wooden trim, craft beer tap handles visible in background",
+      "tags": [
+        "pub_chalkboard",
+        "match_day",
+        "beer_taps",
+        "traditional_pub",
+        "chalk_lettering"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.92
+    },
+    {
+      "id": "gn-12",
+      "originalName": "4a61d901ba780838d48473d2c95ef531.jpg",
+      "filename": "game_night/gn-12.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "fast_food"
+      ],
+      "layoutFamily": "sticker_pop",
+      "styleDescriptor": "Dynamic sports promo flyer with bold matchday badge, split-color background, fast-action graphic elements, food combo special",
+      "tags": [
+        "matchday",
+        "sports_promo",
+        "combo_deal",
+        "bold_badge",
+        "fast_food_sports"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.84
+    },
+    {
+      "id": "gn-13",
+      "originalName": "4efa5167bf9fff07e0d8a165312faf95.jpg",
+      "filename": "game_night/gn-13.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Electric game day watch party poster, stadium floodlights cutting through atmospheric haze, bold athletic sans-serif font, chilled beer pitcher and crispy wings",
+      "tags": [
+        "game_day",
+        "stadium_lights",
+        "sports_bar",
+        "wings",
+        "beer_pitcher",
+        "high_energy"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.91
+    },
+    {
+      "id": "gn-14",
+      "originalName": "50f825ade194420c44854c6422f09cf7.jpg",
+      "filename": "game_night/gn-14.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar"
+      ],
+      "layoutFamily": "neon",
+      "styleDescriptor": "Glowing sports bar neon signs, dark industrial venue background, cheering crowd silhouette in background bokeh, prominent game time badge",
+      "tags": [
+        "neon",
+        "sports_bar",
+        "night_match",
+        "game_night",
+        "industrial",
+        "stadium"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.83
+    },
+    {
+      "id": "gn-15",
+      "originalName": "5dac40954ff6a1494e9b76456ff82ddb.jpg",
+      "filename": "game_night/gn-15.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "pub",
+        "sports_bar"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Traditional sports pub chalkboard, hand-lettered match schedule, rustic wooden trim, craft beer tap handles visible in background",
+      "tags": [
+        "pub_chalkboard",
+        "match_day",
+        "beer_taps",
+        "traditional_pub",
+        "chalk_lettering"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.9
+    },
+    {
+      "id": "gn-16",
+      "originalName": "5ea8514d5ea1088db9803f8e93721ac6.jpg",
+      "filename": "game_night/gn-16.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "fast_food"
+      ],
+      "layoutFamily": "sticker_pop",
+      "styleDescriptor": "Dynamic sports promo flyer with bold matchday badge, split-color background, fast-action graphic elements, food combo special",
+      "tags": [
+        "matchday",
+        "sports_promo",
+        "combo_deal",
+        "bold_badge",
+        "fast_food_sports"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.82
+    },
+    {
+      "id": "gn-17",
+      "originalName": "6321bf57c90df05bdf19e1d9bed5c8cb.jpg",
+      "filename": "game_night/gn-17.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Electric game day watch party poster, stadium floodlights cutting through atmospheric haze, bold athletic sans-serif font, chilled beer pitcher and crispy wings",
+      "tags": [
+        "game_day",
+        "stadium_lights",
+        "sports_bar",
+        "wings",
+        "beer_pitcher",
+        "high_energy"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.89
+    },
+    {
+      "id": "gn-18",
+      "originalName": "789177aabbec9b7d1d6ca3022addd974.jpg",
+      "filename": "game_night/gn-18.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar"
+      ],
+      "layoutFamily": "neon",
+      "styleDescriptor": "Glowing sports bar neon signs, dark industrial venue background, cheering crowd silhouette in background bokeh, prominent game time badge",
+      "tags": [
+        "neon",
+        "sports_bar",
+        "night_match",
+        "game_night",
+        "industrial",
+        "stadium"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.96
+    },
+    {
+      "id": "gn-19",
+      "originalName": "84357786e3b9a5af624924ef1525c87a.jpg",
+      "filename": "game_night/gn-19.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "pub",
+        "sports_bar"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Traditional sports pub chalkboard, hand-lettered match schedule, rustic wooden trim, craft beer tap handles visible in background",
+      "tags": [
+        "pub_chalkboard",
+        "match_day",
+        "beer_taps",
+        "traditional_pub",
+        "chalk_lettering"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.88
+    },
+    {
+      "id": "gn-20",
+      "originalName": "9f053acadd44d2414f23e0f109d7a800.jpg",
+      "filename": "game_night/gn-20.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "fast_food"
+      ],
+      "layoutFamily": "sticker_pop",
+      "styleDescriptor": "Dynamic sports promo flyer with bold matchday badge, split-color background, fast-action graphic elements, food combo special",
+      "tags": [
+        "matchday",
+        "sports_promo",
+        "combo_deal",
+        "bold_badge",
+        "fast_food_sports"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.95
+    },
+    {
+      "id": "gn-21",
+      "originalName": "a4cf194902a151cbbbc1b4231f869987.jpg",
+      "filename": "game_night/gn-21.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Electric game day watch party poster, stadium floodlights cutting through atmospheric haze, bold athletic sans-serif font, chilled beer pitcher and crispy wings",
+      "tags": [
+        "game_day",
+        "stadium_lights",
+        "sports_bar",
+        "wings",
+        "beer_pitcher",
+        "high_energy"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.87
+    },
+    {
+      "id": "gn-22",
+      "originalName": "a59a566632bea703bf21931f526a7e05.jpg",
+      "filename": "game_night/gn-22.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar"
+      ],
+      "layoutFamily": "neon",
+      "styleDescriptor": "Glowing sports bar neon signs, dark industrial venue background, cheering crowd silhouette in background bokeh, prominent game time badge",
+      "tags": [
+        "neon",
+        "sports_bar",
+        "night_match",
+        "game_night",
+        "industrial",
+        "stadium"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.94
+    },
+    {
+      "id": "gn-23",
+      "originalName": "ab462acf84db299f9f3f305cdfe1ea31.jpg",
+      "filename": "game_night/gn-23.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "pub",
+        "sports_bar"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Traditional sports pub chalkboard, hand-lettered match schedule, rustic wooden trim, craft beer tap handles visible in background",
+      "tags": [
+        "pub_chalkboard",
+        "match_day",
+        "beer_taps",
+        "traditional_pub",
+        "chalk_lettering"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.86
+    },
+    {
+      "id": "gn-24",
+      "originalName": "b06717c6bdefe092f8619435fbf64dec.jpg",
+      "filename": "game_night/gn-24.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "fast_food"
+      ],
+      "layoutFamily": "sticker_pop",
+      "styleDescriptor": "Dynamic sports promo flyer with bold matchday badge, split-color background, fast-action graphic elements, food combo special",
+      "tags": [
+        "matchday",
+        "sports_promo",
+        "combo_deal",
+        "bold_badge",
+        "fast_food_sports"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.93
+    },
+    {
+      "id": "gn-25",
+      "originalName": "b9ba5d45aaf45a4f4aaf0da1d670d958.jpg",
+      "filename": "game_night/gn-25.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Electric game day watch party poster, stadium floodlights cutting through atmospheric haze, bold athletic sans-serif font, chilled beer pitcher and crispy wings",
+      "tags": [
+        "game_day",
+        "stadium_lights",
+        "sports_bar",
+        "wings",
+        "beer_pitcher",
+        "high_energy"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.85
+    },
+    {
+      "id": "gn-26",
+      "originalName": "bf8a1c3b6516ac81de5d1c3236df21e7.jpg",
+      "filename": "game_night/gn-26.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar"
+      ],
+      "layoutFamily": "neon",
+      "styleDescriptor": "Glowing sports bar neon signs, dark industrial venue background, cheering crowd silhouette in background bokeh, prominent game time badge",
+      "tags": [
+        "neon",
+        "sports_bar",
+        "night_match",
+        "game_night",
+        "industrial",
+        "stadium"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.92
+    },
+    {
+      "id": "gn-27",
+      "originalName": "c1a279cd3fb7cf1cedd1b139cde11cce.jpg",
+      "filename": "game_night/gn-27.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "pub",
+        "sports_bar"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Traditional sports pub chalkboard, hand-lettered match schedule, rustic wooden trim, craft beer tap handles visible in background",
+      "tags": [
+        "pub_chalkboard",
+        "match_day",
+        "beer_taps",
+        "traditional_pub",
+        "chalk_lettering"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.84
+    },
+    {
+      "id": "gn-28",
+      "originalName": "c66fffe03eadd0728464d56770130080.jpg",
+      "filename": "game_night/gn-28.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "fast_food"
+      ],
+      "layoutFamily": "sticker_pop",
+      "styleDescriptor": "Dynamic sports promo flyer with bold matchday badge, split-color background, fast-action graphic elements, food combo special",
+      "tags": [
+        "matchday",
+        "sports_promo",
+        "combo_deal",
+        "bold_badge",
+        "fast_food_sports"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.91
+    },
+    {
+      "id": "gn-29",
+      "originalName": "c9cb9f78fc9467f60923be29e9f29edd.jpg",
+      "filename": "game_night/gn-29.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Electric game day watch party poster, stadium floodlights cutting through atmospheric haze, bold athletic sans-serif font, chilled beer pitcher and crispy wings",
+      "tags": [
+        "game_day",
+        "stadium_lights",
+        "sports_bar",
+        "wings",
+        "beer_pitcher",
+        "high_energy"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.83
+    },
+    {
+      "id": "gn-30",
+      "originalName": "cfda022141be4c1087224f1b4266f186.jpg",
+      "filename": "game_night/gn-30.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar"
+      ],
+      "layoutFamily": "neon",
+      "styleDescriptor": "Glowing sports bar neon signs, dark industrial venue background, cheering crowd silhouette in background bokeh, prominent game time badge",
+      "tags": [
+        "neon",
+        "sports_bar",
+        "night_match",
+        "game_night",
+        "industrial",
+        "stadium"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.9
+    },
+    {
+      "id": "gn-31",
+      "originalName": "d70da0a65a7a44eb7c38176301737cc3.jpg",
+      "filename": "game_night/gn-31.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "pub",
+        "sports_bar"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Traditional sports pub chalkboard, hand-lettered match schedule, rustic wooden trim, craft beer tap handles visible in background",
+      "tags": [
+        "pub_chalkboard",
+        "match_day",
+        "beer_taps",
+        "traditional_pub",
+        "chalk_lettering"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.82
+    },
+    {
+      "id": "gn-32",
+      "originalName": "da08d9945a6995559df8afec1124c6ec.jpg",
+      "filename": "game_night/gn-32.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "fast_food"
+      ],
+      "layoutFamily": "sticker_pop",
+      "styleDescriptor": "Dynamic sports promo flyer with bold matchday badge, split-color background, fast-action graphic elements, food combo special",
+      "tags": [
+        "matchday",
+        "sports_promo",
+        "combo_deal",
+        "bold_badge",
+        "fast_food_sports"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.89
+    },
+    {
+      "id": "gn-33",
+      "originalName": "e7093aa6426eb5c55093f6734815ceb1.jpg",
+      "filename": "game_night/gn-33.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar",
+        "pub"
+      ],
+      "layoutFamily": "poster_bold",
+      "styleDescriptor": "Electric game day watch party poster, stadium floodlights cutting through atmospheric haze, bold athletic sans-serif font, chilled beer pitcher and crispy wings",
+      "tags": [
+        "game_day",
+        "stadium_lights",
+        "sports_bar",
+        "wings",
+        "beer_pitcher",
+        "high_energy"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.96
+    },
+    {
+      "id": "gn-34",
+      "originalName": "f20fe529243d48528b8862d3dde247da.jpg",
+      "filename": "game_night/gn-34.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "sports_bar"
+      ],
+      "layoutFamily": "neon",
+      "styleDescriptor": "Glowing sports bar neon signs, dark industrial venue background, cheering crowd silhouette in background bokeh, prominent game time badge",
+      "tags": [
+        "neon",
+        "sports_bar",
+        "night_match",
+        "game_night",
+        "industrial",
+        "stadium"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.88
+    },
+    {
+      "id": "gn-35",
+      "originalName": "f5dd7391e83101d0d6fefc2afcd02716.jpg",
+      "filename": "game_night/gn-35.jpg",
+      "category": "game_night",
+      "scenarios": [
+        "game_night"
+      ],
+      "venueTypes": [
+        "pub",
+        "sports_bar"
+      ],
+      "layoutFamily": "chalkboard",
+      "styleDescriptor": "Traditional sports pub chalkboard, hand-lettered match schedule, rustic wooden trim, craft beer tap handles visible in background",
+      "tags": [
+        "pub_chalkboard",
+        "match_day",
+        "beer_taps",
+        "traditional_pub",
+        "chalk_lettering"
+      ],
+      "rights": "licensed",
+      "polarity": "positive",
+      "similarity": 0.95
+    }
+  ]
+}

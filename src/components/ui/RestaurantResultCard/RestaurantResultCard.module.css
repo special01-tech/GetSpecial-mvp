@@ -31,6 +31,24 @@
   overflow: hidden;
   background-color: var(--color-primary-subtle);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.placeholderAvatar {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff6600;
+  font-weight: 800;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+  border: 1px solid rgba(255, 102, 0, 0.2);
+  border-radius: var(--radius-lg);
 }
 
 .image {

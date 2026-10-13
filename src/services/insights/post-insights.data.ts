@@ -15,7 +15,7 @@ export interface DetailedPostStats {
   imageUrl: string;
   date: string; // Ex: "Hier à 17:30 (Mardi 29 Sept.)"
   time?: string;
-  platform: 'instagram' | 'facebook' | 'google_business' | 'tiktok' | string;
+  platform: 'instagram' | 'facebook' | 'google_business' | string;
   postUrl: string;
   views: number; // 2 421
   likes: number; // 180

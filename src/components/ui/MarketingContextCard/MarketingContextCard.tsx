@@ -85,12 +85,42 @@ export default function MarketingContextCard({
     };
   };
 
-  if (loading || !currentEvent) {
+  if (loading) {
     return (
       <div className={styles.card} style={{ minHeight: 280, justifyContent: 'center', alignItems: 'center' }}>
         <div style={{ width: '90%', height: 120, background: '#F3F4F6', borderRadius: 12, marginBottom: 12 }} />
         <div style={{ width: '70%', height: 16, background: '#F3F4F6', borderRadius: 4, marginBottom: 8 }} />
         <div style={{ width: '50%', height: 12, background: '#F3F4F6', borderRadius: 4 }} />
+      </div>
+    );
+  }
+
+  if (!currentEvent) {
+    return (
+      <div className={styles.card} style={{ minHeight: 240, padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 16 }}>
+        <Sparkles size={28} color="#FF5C00" style={{ marginBottom: 12 }} />
+        <h4 style={{ margin: '0 0 6px 0', fontSize: 15, fontWeight: 600, color: '#111827' }}>Aucun événement de quartier aujourd&apos;hui</h4>
+        <p style={{ margin: '0 0 16px 0', fontSize: 13, color: '#6B7280', maxWidth: 280 }}>
+          Vous organisez une soirée ou un concert ? Ajoutez votre propre événement pour booster vos opportunités.
+        </p>
+        <a
+          href="/dashboard/restaurant/events"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 14px',
+            borderRadius: 8,
+            backgroundColor: '#FFF7ED',
+            color: '#FF5C00',
+            fontSize: 13,
+            fontWeight: 600,
+            textDecoration: 'none',
+            border: '1px solid #FED7AA',
+          }}
+        >
+          + Ajouter un événement
+        </a>
       </div>
     );
   }

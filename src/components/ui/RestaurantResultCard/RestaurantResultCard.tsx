@@ -29,12 +29,18 @@ export default function RestaurantResultCard({
       }}
     >
       <div className={styles.imageWrapper}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={restaurant.photoUrl || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=300&q=80'}
-          alt={restaurant.name}
-          className={styles.image}
-        />
+        {restaurant.photoUrl && !restaurant.photoUrl.includes('unsplash.com') ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={restaurant.photoUrl}
+            alt={restaurant.name}
+            className={styles.image}
+          />
+        ) : (
+          <div className={styles.placeholderAvatar} aria-hidden="true">
+            <span>{restaurant.name?.slice(0, 2).toUpperCase() || 'GS'}</span>
+          </div>
+        )}
       </div>
 
       <div className={styles.content}>
