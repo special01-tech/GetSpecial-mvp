@@ -1,3 +1,4 @@
+import { supabase } from '@/lib/supabase/client';
 import { AuthUser, AuthResult } from './auth.types';
 
 export interface IAuthClientService {
@@ -12,24 +13,43 @@ class AuthClientService implements IAuthClientService {
   private readonly storageKey = 'getspecial_auth_user';
 
   async loginWithGoogle(): Promise<AuthResult> {
-    const mockGoogleUser: AuthUser = {
-      id: 'usr_demo_1',
-      email: 'chef.pelican@brasspelican.com',
-      name: 'Chef Julien',
-      restaurantId: 'rest_demo_austin_1',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-    };
-
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(this.storageKey, JSON.stringify(mockGoogleUser));
-      localStorage.setItem('getspecial_restaurant_id', mockGoogleUser.restaurantId || 'rest_demo_austin_1');
-      document.cookie = `getspecial_session=${mockGoogleUser.id}; path=/; max-age=2592000; SameSite=Lax`;
+    if (typeof window === 'undefined') {
+      return { success: false, error: 'Environnement navigateur requis.' };
     }
 
-    return {
-      success: true,
-      user: mockGoogleUser,
-    };
+    try {
+      // Nettoyer d'anciens caches de démo
+      localStorage.removeItem('getspecial_selected_restaurant');
+      localStorage.removeItem('getspecial_restaurant_id');
+      localStorage.removeItem('getspecial_onboarding_completed');
+
+      const redirectTo = `${window.location.origin}/auth/callback`;
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) {
+        console.error('[Supabase Google Auth Error]:', error);
+        return { success: false, error: error.message };
+      }
+
+      if (data?.url) {
+        window.location.href = data.url;
+        return { success: true };
+      }
+
+      return { success: false, error: 'Impossible de rediriger vers Google.' };
+    } catch (err: any) {
+      console.error('[Supabase Google Auth Exception]:', err);
+      return { success: false, error: err.message || 'Erreur de connexion Google.' };
+    }
   }
 
   async loginWithEmail(email: string, password?: string): Promise<AuthResult> {
@@ -180,6 +200,11 @@ class AuthClientService implements IAuthClientService {
   }
 
   async logout(): Promise<void> {
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // ignore
+    }
     if (typeof window !== 'undefined') {
       localStorage.removeItem(this.storageKey);
       localStorage.removeItem('getspecial_selected_restaurant');
@@ -198,6 +223,7 @@ class AuthClientService implements IAuthClientService {
       localStorage.removeItem('getspecial_onboarding_step');
       localStorage.removeItem('getspecial_restaurant_status');
       document.cookie = 'getspecial_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'getspecial_restaurant_id=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     }
   }
 }

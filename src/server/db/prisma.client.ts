@@ -16,11 +16,9 @@ const globalForPrisma = globalThis as unknown as {
   isDbOffline?: boolean;
 };
 
-const isKnownBrokenSupabase =
-  process.env.DATABASE_URL?.includes('uiijdktqnulkipwspxjh') ||
-  process.env.USE_LOCAL_DB === 'true';
+const isForceOffline = process.env.USE_LOCAL_DB === 'true';
 
-if (isKnownBrokenSupabase) {
+if (isForceOffline) {
   globalForPrisma.isDbOffline = true;
   globalForPrisma.dbOfflineNoticeLogged = true;
 }
@@ -42,18 +40,15 @@ function isDbConnectionError(err: any): boolean {
   return (
     name === 'PrismaClientInitializationError' ||
     name === 'PrismaClientRustPanicError' ||
-    name === 'PrismaClientUnknownRequestError' ||
-    name === 'PrismaClientKnownRequestError' ||
-    code.startsWith('P1') ||
-    code === 'P2010' ||
+    code === 'P1000' ||
+    code === 'P1001' ||
+    code === 'P1002' ||
+    code === 'P1003' ||
+    code === 'P1017' ||
     msg.includes("can't reach database server") ||
     msg.includes('connection refused') ||
     msg.includes('enotfound') ||
-    msg.includes('tenant') ||
-    msg.includes('timeout') ||
-    msg.includes('fatal') ||
-    msg.includes('environment variable not found') ||
-    msg.includes('database_url')
+    msg.includes('etimedout')
   );
 }
 
@@ -90,10 +85,8 @@ function createResilientPrismaProxy(targetPrisma: any): PrismaClient {
               if (isDbConnectionError(err)) {
                 if (!globalForPrisma.dbOfflineNoticeLogged) {
                   console.warn(
-                    `[DB_CONNECTION_FAILOVER] PostgreSQL distant injoignable (${err.code || err.message}). Bascule automatique vers le stockage local persistant (.data/getspecial_store.json).`
+                    `[DB_CONNECTION_FAILOVER] PostgreSQL distant injoignable (${err.code || err.message}). Secours temporaire.`
                   );
-                  globalForPrisma.dbOfflineNoticeLogged = true;
-                  globalForPrisma.isDbOffline = true;
                 }
 
                 const fallbackAction = fallbackModel[actionProp];

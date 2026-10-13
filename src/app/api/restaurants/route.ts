@@ -128,18 +128,27 @@ export async function POST(req: NextRequest) {
 
     // Assurer qu'un utilisateur valide est lié
     if (!targetUserId || targetUserId === 'demo') {
-      const existingUser = await prisma.user.findFirst();
-      if (existingUser) {
-        targetUserId = existingUser.id;
-      } else {
-        const newUser = await (prisma.user as any).create({
-          data: {
-            email: 'owner@brasspelican.com',
-            name: 'Restaurant Owner',
-            passwordHash: '$2a$12$demo1234567890abcdefghijklm',
-          },
-        });
-        targetUserId = newUser.id;
+      const cookieUserId = req.cookies.get('getspecial_session')?.value;
+      if (cookieUserId) {
+        const userInDb = await prisma.user.findUnique({ where: { id: cookieUserId } });
+        if (userInDb) {
+          targetUserId = userInDb.id;
+        }
+      }
+
+      if (!targetUserId || targetUserId === 'demo') {
+        const existingUser = await prisma.user.findFirst({ orderBy: { createdAt: 'desc' } });
+        if (existingUser) {
+          targetUserId = existingUser.id;
+        } else {
+          const newUser = await prisma.user.create({
+            data: {
+              email: 'owner@brasspelican.com',
+              name: 'Restaurant Owner',
+            },
+          });
+          targetUserId = newUser.id;
+        }
       }
     }
 
@@ -165,7 +174,6 @@ export async function POST(req: NextRequest) {
         latitude: lat,
         longitude: lon,
         timezone: calculatedTimezone,
-        country: (detectedCountry || 'US').toUpperCase(),
         openingHours: openingHours || null,
         specialties,
         userId: targetUserId,
@@ -173,11 +181,12 @@ export async function POST(req: NextRequest) {
           create: {
             tone,
             hasTerrace,
-            capacityCovers,
-            averageTicket,
             offPeakDays,
             constraints,
             customRules: {
+              capacityCovers,
+              averageTicket,
+              country: (detectedCountry || 'US').toUpperCase(),
               hasDelivery,
               targetAudience,
               marketingGoal,
@@ -185,6 +194,7 @@ export async function POST(req: NextRequest) {
               photos,
               brandColors,
               menuUrl,
+              dishes: defaultDishesToCreate,
             },
           },
         },
@@ -197,11 +207,8 @@ export async function POST(req: NextRequest) {
             },
           },
         } : {}),
-        dishes: {
-          create: defaultDishesToCreate,
-        },
       },
-      include: { profile: true, offers: true, dishes: true },
+      include: { profile: true, offers: true },
     });
 
     await logAudit({
@@ -220,7 +227,13 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return success(restaurant, 201);
+    const res = success(restaurant, 201);
+    res.cookies.set('getspecial_restaurant_id', restaurant.id, {
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60,
+      sameSite: 'lax',
+    });
+    return res;
   } catch (err: any) {
     return error(err.message, 500);
   }

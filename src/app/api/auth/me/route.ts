@@ -5,15 +5,18 @@ import { success, error, unauthorized } from '@/server/lib/api-response';
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
+    const queryUserId = searchParams.get('userId');
     const email = searchParams.get('email');
+    const cookieUserId = req.cookies.get('getspecial_session')?.value;
 
-    if (!userId && !email) {
+    const targetUserId = queryUserId || cookieUserId;
+
+    if (!targetUserId && !email) {
       return unauthorized('Utilisateur non authentifié');
     }
 
     const user = await prisma.user.findUnique({
-      where: userId ? { id: userId } : { email: email! },
+      where: targetUserId ? { id: targetUserId } : { email: email! },
     });
 
     if (!user) {

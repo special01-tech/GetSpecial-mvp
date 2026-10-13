@@ -209,6 +209,18 @@ export default function UnifiedOnboardingPage() {
         if (parsedAuth.name && parsedAuth.name !== 'Gérant GetSpecial') {
           setName(parsedAuth.name);
         }
+      } else {
+        fetch('/api/auth/me')
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => {
+            if (d?.data?.user) {
+              localStorage.setItem('getspecial_auth_user', JSON.stringify(d.data.user));
+              if (d.data.user.name && d.data.user.name !== 'Gérant GetSpecial') {
+                setName(d.data.user.name);
+              }
+            }
+          })
+          .catch(() => {});
       }
     } catch {
       // Ignorer

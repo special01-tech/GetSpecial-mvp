@@ -39,9 +39,12 @@ export default function AuthPage() {
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
 
   React.useEffect(() => {
-    // Vérifier si l'utilisateur arrive avec un paramètre pour forcer une nouvelle inscription
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
+      const err = urlParams.get('error');
+      if (err) {
+        setFeedback({ type: 'error', message: `Erreur d'authentification : ${decodeURIComponent(err)}` });
+      }
       if (urlParams.get('mode') === 'register' || urlParams.get('new') === 'true') {
         setMode('email_form');
         authClientService.logout();
@@ -49,23 +52,18 @@ export default function AuthPage() {
     }
   }, []);
 
-  // Authentification Google
+  // Authentification Google (Supabase Auth)
   const handleGoogleAuth = async () => {
     setIsLoading(true);
-    setFeedback(null);
+    setFeedback({ type: 'success', message: 'Connexion Google en cours... Redirection vers le portail Google.' });
     try {
       const res = await authClientService.loginWithGoogle();
-      if (res.success) {
-        setFeedback({ type: 'success', message: t('login.googleSuccess') });
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 600);
-      } else {
+      if (!res.success) {
         setFeedback({ type: 'error', message: res.error || t('login.googleError') });
+        setIsLoading(false);
       }
-    } catch {
-      setFeedback({ type: 'error', message: t('login.googleUnreachable') });
-    } finally {
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err?.message || t('login.googleUnreachable') });
       setIsLoading(false);
     }
   };
