@@ -1,6 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { prisma } from '@/server/db/prisma.client';
+
+async function exchangeSupabaseCode(supabaseUrl: string, anonKey: string, code: string) {
+  try {
+    // 1. Tentative PKCE
+    const pkceRes = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=pkce`, {
+      method: 'POST',
+      headers: {
+        'apikey': anonKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ auth_code: code }),
+    });
+
+    const pkceData = await pkceRes.json();
+    if (pkceRes.ok && pkceData.user) {
+      return { user: pkceData.user, session: pkceData, error: null };
+    }
+
+    // 2. Tentative Authorization Code standard
+    const authCodeRes = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=authorization_code`, {
+      method: 'POST',
+      headers: {
+        'apikey': anonKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ code }),
+    });
+
+    const authCodeData = await authCodeRes.json();
+    if (authCodeRes.ok && authCodeData.user) {
+      return { user: authCodeData.user, session: authCodeData, error: null };
+    }
+
+    return {
+      user: null,
+      session: null,
+      error: pkceData.error_description || pkceData.msg || authCodeData.error_description || 'Échec de récupération de la session Supabase',
+    };
+  } catch (err: any) {
+    return { user: null, session: null, error: err.message };
+  }
+}
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -21,17 +62,19 @@ export async function GET(request: NextRequest) {
   // 1. FLUX PKCE (Code présent dans l'URL)
   if (code) {
     try {
-      const supabase = createClient(supabaseUrl, supabaseAnonKey);
-      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      const { user: authUser, error: exchangeError } = await exchangeSupabaseCode(
+        supabaseUrl,
+        supabaseAnonKey,
+        code
+      );
 
-      if (error || !data.user) {
-        console.error('[Supabase Exchange Code Error]:', error);
+      if (exchangeError || !authUser) {
+        console.error('[Supabase Exchange Code Error]:', exchangeError);
         return NextResponse.redirect(
-          new URL(`/login?error=${encodeURIComponent(error?.message || 'Session exchange failed')}`, request.url)
+          new URL(`/login?error=${encodeURIComponent(exchangeError || 'Session exchange failed')}`, request.url)
         );
       }
 
-      const authUser = data.user;
       const cleanEmail = (authUser.email || '').toLowerCase().trim();
       const rawName =
         authUser.user_metadata?.full_name ||
