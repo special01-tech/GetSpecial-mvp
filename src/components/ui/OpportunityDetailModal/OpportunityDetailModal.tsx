@@ -179,28 +179,36 @@ export default function OpportunityDetailModal({
           </h2>
         </header>
 
-        {/* Corps de la modale — Disposition ordonnée avec labels en haut de chaque section */}
+        {/* Corps de la modale — EXACTEMENT 2 BLOCS ULTRA-SIMPLES À LIRE */}
         <div className={styles.modalBody}>
-          {/* SECTION 1 : CONTEXTE & ANALYSE */}
+          {/* BLOC 1 : OPPORTUNITÉ & POURQUOI */}
           <section className={styles.section}>
-            <span className={styles.sectionLabel}>01 • CONTEXTE & SIGNAL DU JOUR</span>
+            <span className={styles.sectionLabel}>01 • L&apos;OPPORTUNITÉ &amp; POURQUOI</span>
             <div className={styles.contextBox}>
-              <p className={styles.descriptionText}>{opportunity.description}</p>
-              {opportunity.signalOrigin && (
-                <div className={styles.signalRow}>
-                  <Radio size={13} className={styles.signalIcon} />
-                  <span>
-                    <strong>Détecté aujourd’hui :</strong> {opportunity.signalOrigin}
+              <p className={styles.descriptionText} style={{ margin: 0, fontSize: '0.92rem', lineHeight: '1.45', color: '#1F2937' }}>
+                {opportunity.description}
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
+                {opportunity.signalOrigin && (
+                  <span style={{ fontSize: '0.8rem', background: '#F3F4F6', color: '#4B5563', padding: '3px 8px', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                    <Radio size={11} color="#FF5A00" />
+                    <strong>Signal :</strong> {opportunity.signalOrigin}
                   </span>
-                </div>
-              )}
+                )}
+                {reasons[0] && (
+                  <span style={{ fontSize: '0.8rem', background: '#ECFDF5', color: '#047857', padding: '3px 8px', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                    <Check size={11} strokeWidth={2.5} />
+                    {reasons[0]}
+                  </span>
+                )}
+              </div>
             </div>
           </section>
 
-          {/* SECTION 2 : FORMULE PROPOSÉE EN SALLE (L'offre au centre, modifiable par le gérant) */}
+          {/* BLOC 2 : LE PLAT À PROMOUVOIR, HEURE & RÉSEAUX */}
           <section className={styles.section}>
             <div className={styles.sectionHeaderRow}>
-              <span className={styles.sectionLabel}>02 • FORMULE PROPOSÉE AUX CLIENTS</span>
+              <span className={styles.sectionLabel}>02 • LE PLAT À PROMOUVOIR &amp; DIFFUSION</span>
               {!isEditingOffer && (
                 <button
                   type="button"
@@ -209,38 +217,36 @@ export default function OpportunityDetailModal({
                   title="Modifier l’intitulé ou la composition de cette formule"
                 >
                   <Pencil size={12} />
-                  <span>Modifier l’offre</span>
+                  <span>Modifier</span>
                 </button>
               )}
             </div>
 
             {isEditingOffer ? (
-              /* Formulaire d'édition de l'offre */
+              /* Formulaire d'édition rapide */
               <form onSubmit={handleSaveOfferEdit} className={styles.editOfferForm}>
                 <div className={styles.editFormGroup}>
-                  <label className={styles.editFormLabel}>Nom de la formule</label>
+                  <label className={styles.editFormLabel}>Plat / Formule</label>
                   <input
                     type="text"
                     value={editLabel}
                     onChange={(e) => setEditLabel(e.target.value)}
                     className={styles.editFormInput}
-                    placeholder="Ex: Formule Fan Zone : Burger Charolais & Pinte IPA"
+                    placeholder="Ex: Formule Soleil : Plat du jour + Dessert"
                     required
                   />
                 </div>
-
                 <div className={styles.editFormGroup}>
-                  <label className={styles.editFormLabel}>Composition & Ce qui est servi</label>
+                  <label className={styles.editFormLabel}>Composition</label>
                   <textarea
                     value={editDetails}
                     onChange={(e) => setEditDetails(e.target.value)}
                     className={styles.editFormTextarea}
                     rows={2}
-                    placeholder="Ex: 1 Burger charolais maison + 1 pinte de bière artisanale..."
+                    placeholder="Ex: Plat du jour du chef + Dessert maison..."
                     required
                   />
                 </div>
-
                 <div className={styles.editFormRow}>
                   <div className={styles.editFormGroup} style={{ flex: 1.4 }}>
                     <label className={styles.editFormLabel}>Créneau de validité</label>
@@ -249,45 +255,36 @@ export default function OpportunityDetailModal({
                       value={editValidity}
                       onChange={(e) => setEditValidity(e.target.value)}
                       className={styles.editFormInput}
-                      placeholder="Ex: Ce soir de 18h30 à 20h15 uniquement"
+                      placeholder="Ex: Aujourd'hui de 12h à 14h uniquement"
                     />
                   </div>
-
                   <div className={styles.editFormGroup} style={{ flex: 1 }}>
-                    <label className={styles.editFormLabel}>Code oral comptoir</label>
+                    <label className={styles.editFormLabel}>Code comptoir</label>
                     <input
                       type="text"
                       value={editCodeWord}
                       onChange={(e) => setEditCodeWord(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
                       className={styles.editFormInput}
                       maxLength={10}
-                      placeholder="MATCH15"
+                      placeholder="SOLEIL19"
                     />
                   </div>
                 </div>
-
                 <div className={styles.editFormActions}>
-                  <button
-                    type="button"
-                    onClick={handleCancelEdit}
-                    className={styles.editCancelBtn}
-                  >
+                  <button type="button" onClick={handleCancelEdit} className={styles.editCancelBtn}>
                     Annuler
                   </button>
-                  <button
-                    type="submit"
-                    className={styles.editSaveBtn}
-                  >
+                  <button type="submit" className={styles.editSaveBtn}>
                     <Check size={14} />
-                    <span>Enregistrer la formule</span>
+                    <span>Enregistrer</span>
                   </button>
                 </div>
               </form>
             ) : (
-              /* Affichage de l'offre avec indication de sauvegarde */
+              /* Affichage compact et direct du plat avec heure & réseaux */
               <div className={styles.offerCard}>
                 <div className={styles.offerCardHeader}>
-                  <h3 className={styles.offerLabel}>
+                  <h3 className={styles.offerLabel} style={{ fontSize: '1.05rem', margin: 0 }}>
                     {opportunity.offer?.label || opportunity.title}
                   </h3>
                   {hasSavedEdit && (
@@ -297,76 +294,48 @@ export default function OpportunityDetailModal({
                   )}
                 </div>
 
-                <p className={styles.offerDetails}>
+                <p className={styles.offerDetails} style={{ margin: '4px 0 10px 0', fontSize: '0.88rem', color: '#4B5563' }}>
                   {opportunity.offer?.details || opportunity.description}
                 </p>
 
-                <div className={styles.offerFooter}>
+                {/* Métadonnées essentielles : Heure, Réseaux, Durée & Code oral */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', paddingTop: '10px', borderTop: '1px solid #F3F4F6' }}>
+                  {/* Heure de publication recommandée */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', color: '#374151' }}>
+                    <Clock size={13} color="#FF5A00" />
+                    <span>
+                      Publication : <strong>{opportunity.distribution?.recommendedPublishTime || '11:30'}</strong>
+                    </span>
+                  </div>
+
+                  {/* Réseaux de diffusion */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', color: '#374151' }}>
+                    <Share2 size={13} color="#0284C7" />
+                    <span>
+                      Réseaux : <strong>{channels.join(', ')}</strong>
+                    </span>
+                  </div>
+
+                  {/* Créneau de validité */}
                   {(opportunity.offer?.validityText || editValidity) && (
-                    <div className={styles.validityGroup}>
-                      <Clock size={13} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', color: '#374151' }}>
+                      <span style={{ color: '#059669', fontWeight: 600 }}>●</span>
                       <span>{opportunity.offer?.validityText || editValidity}</span>
                     </div>
                   )}
 
-                  {/* Mot-code oral : présenté sobrement comme outil d'encaissement/comptoir */}
+                  {/* Code oral au comptoir */}
                   {displayCodeWord && (
-                    <div className={styles.counterToolSnippet}>
-                      <span className={styles.counterToolLabel}>Code oral au comptoir :</span>
-                      <span className={styles.counterToolCode}>{displayCodeWord}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', color: '#374151' }}>
+                      <span style={{ color: '#9CA3AF' }}>Code :</span>
+                      <strong style={{ background: '#FFF7ED', color: '#EA580C', padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.05em' }}>
+                        {displayCodeWord}
+                      </strong>
                     </div>
                   )}
                 </div>
               </div>
             )}
-          </section>
-
-          {/* SECTION 3 : POURQUOI CETTE ACTION (Points clés de rentabilité/service) */}
-          <section className={styles.section}>
-            <span className={styles.sectionLabel}>03 • POURQUOI ÇA FONCTIONNE</span>
-            <div className={styles.reasonsList}>
-              {reasons.slice(0, 3).map((reason, idx) => (
-                <div key={idx} className={styles.reasonCard}>
-                  <div className={styles.checkIconWrapper}>
-                    <Check size={13} strokeWidth={2.5} />
-                  </div>
-                  <p className={styles.reasonText}>{reason}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* SECTION 4 : CANAUX & TIMING DE DIFFUSION */}
-          <section className={styles.section}>
-            <span className={styles.sectionLabel}>04 • DIFFUSION CONSEILLÉE</span>
-            <div className={styles.distributionBox}>
-              <div className={styles.channelsGroup}>
-                <Share2 size={14} className={styles.distribIcon} />
-                <span className={styles.distribLabel}>Réseaux ciblés :</span>
-                <div className={styles.channelNames}>
-                  {channels.map((chan, idx) => (
-                    <span key={idx} className={styles.channelItem}>
-                      {chan}
-                      {idx < channels.length - 1 ? ' • ' : ''}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {opportunity.distribution?.recommendedPublishTime && (
-                <div className={styles.publishTiming}>
-                  <Clock size={13} />
-                  <span>
-                    Publier à <strong>{opportunity.distribution.recommendedPublishTime}</strong>
-                    {opportunity.distribution.publishTimingReason && (
-                      <span className={styles.timingReasonText}>
-                        {' '}— {opportunity.distribution.publishTimingReason}
-                      </span>
-                    )}
-                  </span>
-                </div>
-              )}
-            </div>
           </section>
         </div>
 

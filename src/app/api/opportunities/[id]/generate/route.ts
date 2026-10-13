@@ -4,8 +4,9 @@ import { contentGeneratorService } from '@/server/modules/content-generator/cont
 import { z } from 'zod';
 
 const GeneratePostSchema = z.object({
-  restaurantId: z.string(),
+  restaurantId: z.string().optional().default(''),
   platform: z.enum(['instagram', 'facebook', 'google_business']).default('instagram'),
+  opportunityData: z.any().optional(),
 });
 
 export async function POST(
@@ -14,7 +15,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const validated = GeneratePostSchema.safeParse(body);
 
     if (!validated.success) {
@@ -24,11 +25,13 @@ export async function POST(
     const post = await contentGeneratorService.generatePostForOpportunity(
       id,
       validated.data.restaurantId,
-      validated.data.platform
+      validated.data.platform,
+      validated.data.opportunityData
     );
 
     return success(post, 201);
   } catch (err: any) {
+    console.error('[GENERATE_POST_ROUTE_ERROR]', err);
     return error(err.message, 500);
   }
 }

@@ -83,27 +83,17 @@ export default function CampaignDetail({ campaign }: CampaignDetailProps) {
         </div>
       </div>
 
-      {/* 4. Explication de l'opportunité */}
-      <div className={styles.explanationBlock}>
-        <div className={styles.explanationHeader}>
-          <Sparkles size={14} className={styles.sparkleIcon} />
-          <span>{t('common.components.campaignDetail.whyOpportunity')}</span>
-        </div>
-        <p className={styles.explanationText}>
-          {campaign.opportunityExplanation}
-        </p>
-      </div>
-
-      {/* 5. Section Heure de publication */}
-      <div className={styles.publishTimeCard}>
+      {/* 4. Programmation & Automatisation du système */}
+      <div className={styles.publishTimeCard} style={{ background: '#F0FDF4', borderColor: '#BBF7D0' }}>
         <div className={styles.publishHeader}>
-          <Clock size={16} className={styles.clockIcon} />
-          <span className={styles.publishLabel}>{t('common.components.campaignDetail.publishTimeLabel')}</span>
+          <Clock size={16} color="#16A34A" />
+          <span className={styles.publishLabel} style={{ color: '#166534', fontWeight: 700 }}>
+            Publication automatique programmée à {campaign.publishTime}
+          </span>
         </div>
-        <div className={styles.timeDisplay}>
-          <span className={styles.timeValue}>{campaign.publishTime}</span>
-          <span className={styles.timeContext}>{t('common.components.campaignDetail.optimizedContext')}</span>
-        </div>
+        <p style={{ margin: '6px 0 0 0', fontSize: '0.86rem', color: '#15803D', lineHeight: 1.4 }}>
+          Dès votre validation, GetSpecial prend le relais et diffuse ce post directement sur vos réseaux à l&apos;heure idéale. Vous pouvez valider et quitter l&apos;application l&apos;esprit tranquille !
+        </p>
       </div>
     </div>
   );

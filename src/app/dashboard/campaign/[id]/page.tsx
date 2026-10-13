@@ -26,10 +26,56 @@ export default function CampaignDetailPage() {
   const campaignId = (params?.id as string) || 'camp_wings_50';
   const { t } = useLanguage();
 
-  const [campaign, setCampaign] = useState<CampaignData>(MOCK_CAMPAIGN_DETAIL);
+  const getInitialCampaign = (): CampaignData => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('getspecial_selected_opportunity');
+        if (stored) {
+          const opp = JSON.parse(stored);
+          const channels = opp.distribution?.channels?.map((c: string) =>
+            c === 'INSTAGRAM' ? 'instagram' : c === 'FACEBOOK' ? 'facebook' : 'google_business'
+          ) || ['instagram'];
+          const facts = Array.isArray(opp.verifiedFacts) && opp.verifiedFacts.length > 0
+            ? opp.verifiedFacts.join(' • ')
+            : opp.signalOrigin || 'Action alignée sur les signaux observés';
+
+          return {
+            id: opp.id || campaignId,
+            title: opp.title || 'Campagne en préparation...',
+            discount: opp.offer?.label || 'Formule Gourmande',
+            description: `✨ ${opp.title} !\n\nProfitez de notre offre spéciale : ${opp.offer?.label || opp.title} (${opp.offer?.details || opp.description || ''}).\n\n👉 Mentionnez le mot de passe "${opp.codeWord || 'SPECIAL'}" directement au comptoir !\n\n#restaurant #gastronomie #bonplan`,
+            timeSlot: opp.offer?.validityText || 'Aujourd’hui',
+            publishTime: opp.distribution?.recommendedPublishTime || '11:30',
+            imageUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80',
+            platforms: channels,
+            opportunityExplanation: facts,
+            status: 'pending_approval',
+            scheduledDate: new Date().toISOString().split('T')[0],
+            scheduledTime: opp.distribution?.recommendedPublishTime || '11:30',
+          };
+        }
+      } catch {}
+    }
+    return {
+      id: campaignId,
+      title: 'Campagne de l’offre du jour',
+      discount: 'Offre du jour',
+      description: 'Génération de l’image et du texte par IA...',
+      timeSlot: 'Aujourd’hui',
+      publishTime: '11:30',
+      imageUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80',
+      platforms: ['instagram'],
+      opportunityExplanation: 'Action alignée sur les signaux du jour',
+      status: 'pending_approval',
+      scheduledDate: new Date().toISOString().split('T')[0],
+      scheduledTime: '11:30',
+    };
+  };
+
+  const [campaign, setCampaign] = useState<CampaignData>(getInitialCampaign);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [scheduledDate, setScheduledDate] = useState('2026-09-29');
-  const [scheduledTime, setScheduledTime] = useState('17:30');
+  const [scheduledTime, setScheduledTime] = useState('11:30');
   const [isLoading, setIsLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'info'; message: string } | null>(null);
 
@@ -40,64 +86,50 @@ export default function CampaignDetailPage() {
         ? localStorage.getItem('getspecial_restaurant_id') || 'rest_demo_austin_1'
         : 'rest_demo_austin_1';
 
-      if (campaignId.startsWith('opp_')) {
+      let opportunityData: any = null;
+      if (typeof window !== 'undefined') {
         try {
-          setIsLoading(true);
-          const res = await fetch(`/api/opportunities/${campaignId}/generate`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              restaurantId,
-              platform: 'instagram',
-            }),
-          });
-          const json = await res.json();
-          if (json.success && json.data) {
-            const p = json.data;
-            setCampaign({
-              id: p.id,
-              title: p.text.split('\n')[0]?.slice(0, 50) || t('content.campaignDetail.fallbackTitle'),
-              discount: t('content.campaignDetail.fallbackDiscount'),
-              description: p.text,
-              timeSlot: t('content.campaignDetail.fallbackSlot'),
-              publishTime: t('content.campaignDetail.fallbackPublish'),
-              imageUrl: p.imageUrl || MOCK_CAMPAIGN_DETAIL.imageUrl,
-              platforms: [p.platform || 'instagram'],
-              opportunityExplanation: Array.isArray(p.verifiedFacts) ? p.verifiedFacts.join(' • ') : t('content.campaignDetail.fallbackExplanation'),
-              status: p.status || 'pending_approval',
-              scheduledDate: new Date().toISOString().split('T')[0],
-              scheduledTime: '17:30',
-            });
+          const stored = localStorage.getItem('getspecial_selected_opportunity');
+          if (stored) {
+            opportunityData = JSON.parse(stored);
           }
-        } catch (err) {
-          console.warn('[CAMPAIGN_GEN_FETCH_ERROR]', err);
-        } finally {
-          setIsLoading(false);
+        } catch {}
+      }
+
+      try {
+        setIsLoading(true);
+        const res = await fetch(`/api/opportunities/${campaignId}/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            restaurantId,
+            platform: 'instagram',
+            opportunityData,
+          }),
+        });
+        const json = await res.json();
+        if (json.success && json.data) {
+          const p = json.data;
+          setCampaign((prev) => ({
+            ...prev,
+            id: p.id,
+            title: p.text.split('\n')[0]?.slice(0, 50) || prev.title,
+            discount: opportunityData?.offer?.label || prev.discount,
+            description: p.text,
+            timeSlot: opportunityData?.offer?.validityText || prev.timeSlot,
+            publishTime: opportunityData?.distribution?.recommendedPublishTime || prev.publishTime,
+            imageUrl: p.imageUrl || prev.imageUrl,
+            platforms: [p.platform || 'instagram'],
+            opportunityExplanation: Array.isArray(p.verifiedFacts) ? p.verifiedFacts.join(' • ') : prev.opportunityExplanation,
+            status: p.status || 'pending_approval',
+            scheduledDate: new Date().toISOString().split('T')[0],
+            scheduledTime: opportunityData?.distribution?.recommendedPublishTime || prev.scheduledTime || '11:30',
+          }));
         }
-      } else {
-        try {
-          const res = await fetch(`/api/posts/${campaignId}`);
-          const json = await res.json();
-          if (json.success && json.data) {
-            const p = json.data;
-            setCampaign({
-              id: p.id,
-              title: p.text.split('\n')[0]?.slice(0, 50) || t('content.campaignDetail.fallbackTitle'),
-              discount: t('content.campaignDetail.fallbackDiscount'),
-              description: p.text,
-              timeSlot: t('content.campaignDetail.fallbackSlot'),
-              publishTime: t('content.campaignDetail.fallbackPublish'),
-              imageUrl: p.imageUrl || MOCK_CAMPAIGN_DETAIL.imageUrl,
-              platforms: [p.platform || 'instagram'],
-              opportunityExplanation: Array.isArray(p.verifiedFacts) ? p.verifiedFacts.join(' • ') : t('content.campaignDetail.fallbackExplanation'),
-              status: p.status || 'pending_approval',
-              scheduledDate: new Date().toISOString().split('T')[0],
-              scheduledTime: '17:30',
-            });
-          }
-        } catch {
-          // fallback
-        }
+      } catch (err) {
+        console.warn('[CAMPAIGN_GEN_FETCH_ERROR]', err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -247,14 +279,24 @@ export default function CampaignDetailPage() {
       ? localStorage.getItem('getspecial_restaurant_id') || 'rest_demo_austin_1'
       : 'rest_demo_austin_1';
 
+    let opportunityData: any = null;
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('getspecial_selected_opportunity');
+        if (stored) {
+          opportunityData = JSON.parse(stored);
+        }
+      } catch {}
+    }
+
     try {
-      const targetOppId = campaignId.startsWith('opp_') ? campaignId : 'opp_regen';
-      const res = await fetch(`/api/opportunities/${targetOppId}/generate`, {
+      const res = await fetch(`/api/opportunities/${campaignId}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           restaurantId,
           platform: 'instagram',
+          opportunityData,
         }),
       });
       const json = await res.json();
@@ -263,6 +305,7 @@ export default function CampaignDetailPage() {
           ...prev,
           id: json.data.id,
           description: json.data.text,
+          imageUrl: json.data.imageUrl || prev.imageUrl,
           opportunityExplanation: Array.isArray(json.data.verifiedFacts) ? json.data.verifiedFacts.join(' • ') : prev.opportunityExplanation,
         }));
         setFeedback({
