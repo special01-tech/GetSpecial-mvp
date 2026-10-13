@@ -543,14 +543,45 @@ export default function SystemMonitorPage() {
                         </div>
 
                         {ev.url && (
-                          <div style={{ marginTop: '4px' }}>
+                          <div
+                            style={{
+                              marginTop: '8px',
+                              paddingTop: '8px',
+                              borderTop: '1px dashed #e5e7eb',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              flexWrap: 'wrap',
+                              gap: '6px',
+                            }}
+                          >
+                            <span style={{ fontSize: '0.78rem', color: '#6b7280' }}>
+                              🔍 Vérification manuelle en direct :
+                            </span>
                             <a
                               href={ev.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              style={{ fontSize: '0.75rem', color: '#ff5a00', textDecoration: 'none', fontWeight: 600 }}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '5px 12px',
+                                borderRadius: '6px',
+                                background: ev.source?.includes('Ticketmaster') ? '#eff6ff' : '#f0fdf4',
+                                border: ev.source?.includes('Ticketmaster') ? '1px solid #bfdbfe' : '1px solid #bbf7d0',
+                                color: ev.source?.includes('Ticketmaster') ? '#1d4ed8' : '#15803d',
+                                fontSize: '0.8rem',
+                                fontWeight: 700,
+                                textDecoration: 'none',
+                              }}
                             >
-                              Voir la billetterie officielle ↗
+                              <span>
+                                {ev.source?.includes('Ticketmaster')
+                                  ? 'Ouvrir sur Ticketmaster ↗'
+                                  : 'Ouvrir la fiche officielle ↗'}
+                              </span>
+                              <ExternalLink size={13} />
                             </a>
                           </div>
                         )}

@@ -86,15 +86,18 @@ export async function GET(req: NextRequest) {
 
     // 2. ÉVÉNEMENTS RÉELS (Ticketmaster & Calendarific)
     const eventSignals: any[] = [];
+    const tmApiKey = (process.env.TICKETMASTER_API_KEY || '').replace(/^["']|["']$/g, '').trim();
+    const calApiKey = (process.env.CALENDARIFIC_API_KEY || '').replace(/^["']|["']$/g, '').trim();
+
     const eventApisStatus = {
       ticketmaster: {
-        configured: Boolean(process.env.TICKETMASTER_API_KEY),
+        configured: Boolean(tmApiKey),
         status: 'online',
         eventsCount: 0,
         note: '',
       },
       calendarific: {
-        configured: Boolean(process.env.CALENDARIFIC_API_KEY),
+        configured: Boolean(calApiKey),
         status: 'online',
         eventsCount: 0,
         note: '',
@@ -102,27 +105,42 @@ export async function GET(req: NextRequest) {
     };
 
     // A. Événements Ticketmaster (Sports, concerts, grands rassemblements)
-    if (process.env.TICKETMASTER_API_KEY) {
+    if (tmApiKey) {
       try {
-        const tmUrl = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${process.env.TICKETMASTER_API_KEY}&latlong=${lat.toFixed(4)},${lon.toFixed(4)}&radius=50&unit=${country === 'US' ? 'miles' : 'km'}&size=6&sort=date,asc`;
-        const tmRes = await fetch(tmUrl, { next: { revalidate: 600 } });
-        if (tmRes.ok) {
-          const tmData = await tmRes.json();
-          const events = tmData?._embedded?.events || [];
-          eventApisStatus.ticketmaster.eventsCount = events.length;
-          events.forEach((ev: any) => {
-            eventSignals.push({
-              source: 'Ticketmaster Live',
-              title: ev.name,
-              category: ev.classifications?.[0]?.segment?.name || 'Spectacle / Sport',
-              date: ev.dates?.start?.localDate || 'Prochainement',
-              time: ev.dates?.start?.localTime || '',
-              venue: ev._embedded?.venues?.[0]?.name || 'À proximité',
-              impact: 'Forte affluence potentielle avant & après événement',
-              url: ev.url || null,
-            });
-          });
+        let tmUrl = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${tmApiKey}&countryCode=${country}&size=6&sort=date,asc`;
+        if (country === 'US') {
+          tmUrl = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${tmApiKey}&latlong=${lat.toFixed(4)},${lon.toFixed(4)}&radius=50&unit=miles&size=6&sort=date,asc`;
         }
+
+        let tmRes = await fetch(tmUrl, { next: { revalidate: 600 } });
+        let tmData = tmRes.ok ? await tmRes.json() : null;
+        let events = tmData?._embedded?.events || [];
+
+        // Si aucun résultat local pour ce pays, on essaie une recherche par ville ou générale
+        if (events.length === 0 && restaurant?.city) {
+          const tmCityUrl = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${tmApiKey}&city=${encodeURIComponent(restaurant.city)}&size=6&sort=date,asc`;
+          const cityRes = await fetch(tmCityUrl, { next: { revalidate: 600 } });
+          if (cityRes.ok) {
+            const cityData = await cityRes.json();
+            events = cityData?._embedded?.events || [];
+          }
+        }
+
+        eventApisStatus.ticketmaster.eventsCount = events.length;
+        events.forEach((ev: any) => {
+          const directUrl = ev.url || `https://www.ticketmaster.com/search?q=${encodeURIComponent(ev.name)}`;
+          eventSignals.push({
+            source: 'Ticketmaster Live',
+            title: ev.name,
+            category: ev.classifications?.[0]?.segment?.name || 'Spectacle / Sport',
+            date: ev.dates?.start?.localDate || 'Prochainement',
+            time: ev.dates?.start?.localTime || '',
+            venue: ev._embedded?.venues?.[0]?.name || 'À proximité',
+            impact: 'Forte affluence potentielle avant & après événement',
+            url: directUrl,
+            verifyType: 'ticketmaster',
+          });
+        });
       } catch (tmErr: any) {
         eventApisStatus.ticketmaster.status = 'error';
         eventApisStatus.ticketmaster.note = tmErr.message;
@@ -130,10 +148,10 @@ export async function GET(req: NextRequest) {
     }
 
     // B. Célébrations officielles Calendarific (Jours fériés, fêtes culturelles)
-    if (process.env.CALENDARIFIC_API_KEY) {
+    if (calApiKey) {
       try {
         const currentYear = new Date().getFullYear();
-        const calUrl = `https://calendarific.com/api/v2/holidays?api_key=${process.env.CALENDARIFIC_API_KEY}&country=${country}&year=${currentYear}`;
+        const calUrl = `https://calendarific.com/api/v2/holidays?api_key=${calApiKey}&country=${country}&year=${currentYear}`;
         const calRes = await fetch(calUrl, { next: { revalidate: 3600 } });
         if (calRes.ok) {
           const calData = await calRes.json();
@@ -149,15 +167,25 @@ export async function GET(req: NextRequest) {
           });
 
           upcoming.forEach((h: any) => {
+            const countryName = h.country?.name || (country === 'FR' ? 'France' : 'USA');
+            const googleSearchVerifyUrl = `https://www.google.com/search?q=${encodeURIComponent(
+              `${h.name} ${countryName} fête événement ${currentYear}`
+            )}`;
+            // Si l'URL canonical Calendarific est trop courte/générique (ex: /holiday/), on prend la recherche Google vérifiée
+            const isValidCanonical = h.canonical_url && h.canonical_url.length > 32 && !h.canonical_url.endsWith('/holiday/');
+            const eventUrl = isValidCanonical ? h.canonical_url : googleSearchVerifyUrl;
+
             eventSignals.push({
               source: 'Calendarific API',
               title: h.name,
               category: h.primary_type || 'Jour férié / Fête officielle',
               date: h.date?.iso,
               time: 'Toute la journée',
-              venue: h.country?.name || country,
+              venue: countryName,
               impact: 'Opportunité d’offres festives, brunchs et formules spéciales',
               description: h.description || '',
+              url: eventUrl,
+              verifyType: 'calendar',
             });
           });
         }
