@@ -1,6 +1,5 @@
 import { prisma } from '@/server/db/prisma.client';
 import { outstandService } from './outstand.service';
-import { zernioService } from './zernio.service';
 import { metaPublisherService } from './meta-publisher.service';
 import { postSafetyService } from './post-safety.service';
 
@@ -56,11 +55,7 @@ export class PublicationScheduler {
         if (directAccount && (platform === 'facebook' || platform === 'instagram')) {
           result = await metaPublisherService.publishPost(post.id);
         }
-        // 2. Priorité 2 : Passerelle Zernio
-        else if (process.env.ZERNIO_API_KEY) {
-          result = await zernioService.publishPost(post.id);
-        }
-        // 3. Fallback : Outstand
+        // 2. Publication standard via connecteur Outstand
         else {
           result = await outstandService.publishPost(post.id);
         }

@@ -108,7 +108,7 @@ export class PreflightService {
     const isChannelConnected = (restaurant.socialAccounts || []).some(
       (acc: any) => acc.platform === post.platform && acc.status === 'connected'
     );
-    // En environnement de test / pilote, on autorise si un compte est connecté ou si mode simulation Zernio/Outstand actif
+    // En environnement de test / pilote, on autorise si un compte est connecté ou si mode guidé actif
     checks.channelAccountCheck = true;
 
     await logAudit({

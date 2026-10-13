@@ -6,7 +6,7 @@
 export const engagement = {
   insights: {
     realBadge:
-      'REAL ANALYTICS — Source: Zernio Unified API ({platform} @{account})',
+      'REAL ANALYTICS — Source: Direct Channel Connection ({platform} @{account})',
     mockBadge:
       'MOCK / DEMO ANALYTICS — Connect Instagram, Facebook or Google Business to pull real live data',
     verifiedFeed: 'Verified Feed',

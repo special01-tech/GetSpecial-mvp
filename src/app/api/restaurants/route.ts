@@ -19,6 +19,8 @@ const CreateRestaurantApiSchema = z.object({
   tone: z.string().optional(),
   hasTerrace: z.boolean().optional(),
   hasDelivery: z.boolean().optional(),
+  capacityCovers: z.number().optional(),
+  averageTicket: z.number().optional(),
   offPeakDays: z.array(z.string()).optional(),
   constraints: z.array(z.string()).optional(),
   targetAudience: z.array(z.string()).optional(),
@@ -89,6 +91,8 @@ export async function POST(req: NextRequest) {
       tone = 'friendly',
       hasTerrace = true,
       hasDelivery = false,
+      capacityCovers = 40,
+      averageTicket = 25,
       offPeakDays = [],
       constraints = [],
       targetAudience = [],
@@ -169,6 +173,8 @@ export async function POST(req: NextRequest) {
           create: {
             tone,
             hasTerrace,
+            capacityCovers,
+            averageTicket,
             offPeakDays,
             constraints,
             customRules: {

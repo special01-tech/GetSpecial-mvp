@@ -157,9 +157,18 @@ export default function UnifiedOnboardingPage() {
   const [menuUrl, setMenuUrl] = useState('');
   const [menuFileName, setMenuFileName] = useState('');
 
-  // Équipements
+  // Équipements & Paramètres Métier (Saisis par le restaurateur)
   const [hasTerrace, setHasTerrace] = useState(true);
   const [hasDelivery, setHasDelivery] = useState(false);
+  const [capacityCovers, setCapacityCovers] = useState('45');
+  const [offPeakDays, setOffPeakDays] = useState<string[]>(['Lundi', 'Mardi']);
+  const [averageTicket, setAverageTicket] = useState('26');
+
+  const toggleOffPeakDay = (day: string) => {
+    setOffPeakDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  };
 
   // Recherche Google Places & Établissement lié
   const [isSearchingGoogle, setIsSearchingGoogle] = useState(false);
@@ -558,6 +567,9 @@ export default function UnifiedOnboardingPage() {
           tone,
           hasTerrace,
           hasDelivery,
+          capacityCovers: parseInt(capacityCovers, 10) || 45,
+          offPeakDays,
+          averageTicket: parseFloat(averageTicket) || 26,
           targetAudience: targetAudiences,
           marketingGoal,
           logoUrl: logoPreview || undefined,
@@ -1095,6 +1107,80 @@ export default function UnifiedOnboardingPage() {
                   </span>
                   <span className={styles.amenityChipBadge}>{hasDelivery ? t('onboarding.unified.enabled') : t('onboarding.unified.disabled')}</span>
                 </button>
+              </div>
+            </div>
+
+            {/* Capacité de la salle (Nombre de couverts - non public sur Google Maps) */}
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>
+                <span>Capacité de la salle (Nombre de couverts)</span>
+                <span className={styles.optionalTag}>Saisie restaurateur (non public sur Maps)</span>
+              </label>
+              <div className={styles.inputWrapper}>
+                <Users size={17} strokeWidth={1.75} className={styles.inputIcon} />
+                <input
+                  type="number"
+                  min="5"
+                  max="500"
+                  placeholder="Ex: 45 couverts"
+                  value={capacityCovers}
+                  onChange={(e) => setCapacityCovers(e.target.value)}
+                  className={styles.input}
+                />
+              </div>
+            </div>
+
+            {/* Jours creux choisis par le restaurateur */}
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>
+                <span>Vos journées creuses habituelles</span>
+                <span className={styles.optionalTag}>Indiquez vos jours calmes pour orienter l'IA</span>
+              </label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'].map((day) => {
+                  const isSelected = offPeakDays.includes(day);
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => toggleOffPeakDay(day)}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        border: isSelected ? '1.5px solid #ff5a00' : '1px solid #d1d5db',
+                        background: isSelected ? '#fff7ed' : '#ffffff',
+                        color: isSelected ? '#c2410c' : '#374151',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      {isSelected ? `✓ ${day}` : day}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Ticket moyen estimé par client */}
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>
+                <span>Ticket moyen estimé par client (€)</span>
+                <span className={styles.optionalTag}>Saisi ou calculé selon les plats</span>
+              </label>
+              <div className={styles.inputWrapper}>
+                <span style={{ position: 'absolute', left: '12px', color: '#ff5a00', fontWeight: 700 }}>€</span>
+                <input
+                  type="number"
+                  min="5"
+                  max="200"
+                  placeholder="Ex: 26 €"
+                  value={averageTicket}
+                  onChange={(e) => setAverageTicket(e.target.value)}
+                  className={styles.input}
+                  style={{ paddingLeft: '32px' }}
+                />
               </div>
             </div>
 

@@ -16,15 +16,18 @@ import {
   Plus,
   Compass,
   Store,
-  ChevronRight,
   MapPin,
   Calendar,
   Sparkles,
+  ExternalLink,
+  Ticket,
+  DollarSign,
+  Users,
 } from 'lucide-react';
 import styles from './system-monitor.module.css';
 
 export default function SystemMonitorPage() {
-  const [activeTab, setActiveTab] = useState<'restaurant' | 'weather' | 'ai' | 'tester'>('restaurant');
+  const [activeTab, setActiveTab] = useState<'restaurant' | 'events' | 'weather' | 'ai' | 'tester'>('restaurant');
   const [monitorData, setMonitorData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -126,6 +129,8 @@ export default function SystemMonitorPage() {
 
   const restaurant = monitorData?.restaurant;
   const weather = monitorData?.weather;
+  const events = monitorData?.events || [];
+  const eventApisStatus = monitorData?.eventApisStatus;
   const ai = monitorData?.aiUnderstanding;
   const integrations = monitorData?.integrations || [];
 
@@ -140,7 +145,7 @@ export default function SystemMonitorPage() {
           </div>
           <h1 className={styles.title}>Centre de Diagnostic &amp; Tracking Live</h1>
           <p className={styles.subtitle}>
-            Vérifiez exactement ce que le système récolte, les horaires, les plats en base et ce que l’IA comprend.
+            Vérifiez exactement ce que le système récolte, les horaires, les plats en base, les événements et ce que l’IA comprend.
           </p>
         </div>
 
@@ -168,11 +173,20 @@ export default function SystemMonitorPage() {
 
         <button
           type="button"
+          className={`${styles.tabBtn} ${activeTab === 'events' ? styles.tabBtnActive : ''}`}
+          onClick={() => setActiveTab('events')}
+        >
+          <Ticket size={16} />
+          <span>2. Événements &amp; Fêtes ({events.length})</span>
+        </button>
+
+        <button
+          type="button"
           className={`${styles.tabBtn} ${activeTab === 'weather' ? styles.tabBtnActive : ''}`}
           onClick={() => setActiveTab('weather')}
         >
           <CloudSun size={16} />
-          <span>2. Météo &amp; Signaux Live</span>
+          <span>3. Météo &amp; Territoire</span>
         </button>
 
         <button
@@ -181,7 +195,7 @@ export default function SystemMonitorPage() {
           onClick={() => setActiveTab('ai')}
         >
           <Bot size={16} />
-          <span>3. Ce que l’IA Comprend</span>
+          <span>4. Ce que l’IA Comprend</span>
         </button>
 
         <button
@@ -190,14 +204,14 @@ export default function SystemMonitorPage() {
           onClick={() => setActiveTab('tester')}
         >
           <Search size={16} />
-          <span>4. Testeur de Recherche &amp; Briques</span>
+          <span>5. Testeur &amp; Briques</span>
         </button>
       </nav>
 
       {isLoading && !monitorData && (
         <div style={{ padding: '3rem 1rem', textAlign: 'center', color: '#6b7280' }}>
           <RefreshCw size={24} style={{ animation: 'spin 1s linear infinite', marginBottom: '8px' }} />
-          <div>Interrogation des services réels (Supabase, Météo, IA)...</div>
+          <div>Interrogation des services réels (Supabase, Ticketmaster, Calendarific, Météo, IA)...</div>
         </div>
       )}
 
@@ -211,7 +225,7 @@ export default function SystemMonitorPage() {
       {monitorData && (
         <>
           {/* ============================================================ */}
-          {/* ONGLET 1 : ÉTABLISSEMENT, HORAIRES & PLATS EN BASE */}
+          {/* ONGLET 1 : ÉTABLISSEMENT, LIEN GOOGLE MAPS, HORAIRES & PLATS */}
           {/* ============================================================ */}
           {activeTab === 'restaurant' && (
             <div className={styles.gridTwoCols}>
@@ -220,11 +234,28 @@ export default function SystemMonitorPage() {
                 <div className={styles.cardHeader}>
                   <div className={styles.cardHeaderTitle}>
                     <Building2 size={18} color="#ff5a00" />
-                    <span>Identité Validée</span>
+                    <span>Identité &amp; Fiche Google Maps</span>
                   </div>
-                  <span className={styles.cardBadge}>
-                    ID: {restaurant?.id ? restaurant.id.slice(0, 14) + '...' : 'Aucun'}
-                  </span>
+                  {restaurant?.googleMapsUrl && (
+                    <a
+                      href={restaurant.googleMapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.cardBadge}
+                      style={{
+                        background: '#e0f2fe',
+                        color: '#0369a1',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        textDecoration: 'none',
+                        fontWeight: 700,
+                      }}
+                    >
+                      <span>Voir sur Google Maps</span>
+                      <ExternalLink size={12} />
+                    </a>
+                  )}
                 </div>
 
                 <div className={styles.dataList}>
@@ -234,7 +265,7 @@ export default function SystemMonitorPage() {
                   </div>
 
                   <div className={styles.dataRow}>
-                    <span className={styles.dataLabel}>Type de cuisine</span>
+                    <span className={styles.dataLabel}>Type de restaurant</span>
                     <span className={styles.dataValue}>{restaurant?.type || 'Bistrot'}</span>
                   </div>
 
@@ -251,8 +282,20 @@ export default function SystemMonitorPage() {
                   </div>
 
                   <div className={styles.dataRow}>
-                    <span className={styles.dataLabel}>Fuseau horaire</span>
-                    <span className={styles.dataValue}>{restaurant?.timezone || 'Europe/Paris'}</span>
+                    <span className={styles.dataLabel}>Capacité en salle</span>
+                    <span className={styles.dataValue}>
+                      {restaurant?.profile?.capacityCovers || 40} couverts (renseigné par le gérant)
+                    </span>
+                  </div>
+
+                  <div className={styles.dataRow}>
+                    <span className={styles.dataLabel}>Ticket moyen estimé</span>
+                    <span className={styles.dataValue} style={{ color: '#ff5a00', fontWeight: 800 }}>
+                      {restaurant?.profile?.averageTicket} €
+                      <div style={{ fontSize: '0.72rem', color: '#6b7280', fontWeight: 500 }}>
+                        {restaurant?.profile?.ticketCalculationMethod}
+                      </div>
+                    </span>
                   </div>
 
                   <div className={styles.dataRow}>
@@ -307,7 +350,18 @@ export default function SystemMonitorPage() {
                   </div>
 
                   <div className={styles.dataRow}>
-                    <span className={styles.dataLabel}>Créneaux creux identifiés</span>
+                    <span className={styles.dataLabel}>Jours creux choisis par le gérant</span>
+                    <div className={styles.tagPills}>
+                      {(ai?.offPeakDays || ['Lundi', 'Mardi']).map((day: string, idx: number) => (
+                        <span key={idx} className={styles.tagPill} style={{ background: '#fef3c7', color: '#92400e' }}>
+                          {day}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className={styles.dataRow}>
+                    <span className={styles.dataLabel}>Créneaux creux ciblés</span>
                     <div className={styles.tagPills}>
                       {(restaurant?.openingHours?.offPeakSlots || ['14:00 - 15:30', '18:30 - 19:30']).map(
                         (slot: string, idx: number) => (
@@ -320,9 +374,9 @@ export default function SystemMonitorPage() {
                   </div>
 
                   <div className={styles.dataRow}>
-                    <span className={styles.dataLabel}>Terrasse &amp; Capacité</span>
+                    <span className={styles.dataLabel}>Terrasse</span>
                     <span className={styles.dataValue}>
-                      {restaurant?.profile?.hasTerrace ? 'Oui (Terrasse active)' : 'Intérieur uniquement'} • {restaurant?.profile?.capacityCovers || 40} couverts
+                      {restaurant?.profile?.hasTerrace ? 'Oui (Terrasse active)' : 'Intérieur uniquement'}
                     </span>
                   </div>
                 </div>
@@ -397,7 +451,119 @@ export default function SystemMonitorPage() {
           )}
 
           {/* ============================================================ */}
-          {/* ONGLET 2 : MÉTÉO & SIGNAUX EN DIRECT */}
+          {/* ONGLET 2 : ÉVÉNEMENTS RÉELS (TICKETMASTER & CALENDARIFIC) */}
+          {/* ============================================================ */}
+          {activeTab === 'events' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {/* Carte État des API événementielles */}
+              <div className={styles.gridTwoCols}>
+                <div className={styles.card}>
+                  <div className={styles.cardHeader}>
+                    <div className={styles.cardHeaderTitle}>
+                      <Ticket size={18} color="#ff5a00" />
+                      <span>Ticketmaster Discovery API</span>
+                    </div>
+                    <span className={`${styles.cardBadge} ${eventApisStatus?.ticketmaster?.configured ? styles.cardBadgeOpen : styles.cardBadgeClosed}`}>
+                      {eventApisStatus?.ticketmaster?.configured ? 'EN LIGNE (CLÉ VALIDÉE)' : 'NON CONFIGURÉE'}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '0.84rem', color: '#6b7280', margin: 0 }}>
+                    Interroge en temps réel les concerts, matches NBA/sportifs et spectacles dans un rayon de 50km autour du restaurant.
+                  </p>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>
+                    Événements captés : {eventApisStatus?.ticketmaster?.eventsCount || 0}
+                  </div>
+                </div>
+
+                <div className={styles.card}>
+                  <div className={styles.cardHeader}>
+                    <div className={styles.cardHeaderTitle}>
+                      <Calendar size={18} color="#ff5a00" />
+                      <span>Calendarific Holidays API</span>
+                    </div>
+                    <span className={`${styles.cardBadge} ${eventApisStatus?.calendarific?.configured ? styles.cardBadgeOpen : styles.cardBadgeClosed}`}>
+                      {eventApisStatus?.calendarific?.configured ? 'EN LIGNE (CLÉ VALIDÉE)' : 'CALENDRIER LOCAL'}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '0.84rem', color: '#6b7280', margin: 0 }}>
+                    Fournit les jours fériés officiels, fêtes populaires (Halloween, Fête de la musique) et opportunités de calendrier pour {restaurant?.country}.
+                  </p>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827' }}>
+                    Célébrations répertoriées : {eventApisStatus?.calendarific?.eventsCount || 0}
+                  </div>
+                </div>
+              </div>
+
+              {/* Liste des Événements Monitorés */}
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <div className={styles.cardHeaderTitle}>
+                    <Sparkles size={18} color="#ff5a00" />
+                    <span>Flux des Événements Monitorés ({events.length})</span>
+                  </div>
+                  <span className={styles.cardBadge}>
+                    Signaux Réels
+                  </span>
+                </div>
+
+                {events.length === 0 ? (
+                  <div className={styles.emptyDishesBox}>
+                    Aucun événement majeur à fort impact détecté dans les prochains jours pour cette zone géographique.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {events.map((ev: any, idx: number) => (
+                      <div
+                        key={idx}
+                        style={{
+                          padding: '12px 14px',
+                          border: '1px solid #f3f4f6',
+                          borderRadius: '8px',
+                          background: '#fafafa',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                          <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#111827' }}>
+                            {ev.title}
+                          </span>
+                          <span className={styles.cardBadge} style={{ background: '#e0e7ff', color: '#4338ca' }}>
+                            {ev.source}
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: '0.82rem', color: '#6b7280' }}>
+                          📅 <strong>{ev.date}</strong> {ev.time ? `• ${ev.time}` : ''} — 📍 {ev.venue} ({ev.category})
+                        </div>
+
+                        <div style={{ fontSize: '0.8rem', color: '#059669', fontWeight: 600, marginTop: '2px' }}>
+                          💡 Impact restaurant : {ev.impact}
+                        </div>
+
+                        {ev.url && (
+                          <div style={{ marginTop: '4px' }}>
+                            <a
+                              href={ev.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ fontSize: '0.75rem', color: '#ff5a00', textDecoration: 'none', fontWeight: 600 }}
+                            >
+                              Voir la billetterie officielle ↗
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* ONGLET 3 : MÉTÉO & SIGNAUX EN DIRECT */}
           {/* ============================================================ */}
           {activeTab === 'weather' && (
             <div className={styles.gridTwoCols}>
@@ -451,7 +617,7 @@ export default function SystemMonitorPage() {
                 <div className={styles.cardHeader}>
                   <div className={styles.cardHeaderTitle}>
                     <Compass size={18} color="#ff5a00" />
-                    <span>Localisation &amp; Précision</span>
+                    <span>Localisation &amp; Coordonnées GPS</span>
                   </div>
                   <span className={styles.cardBadge}>GPS Live</span>
                 </div>
@@ -470,8 +636,15 @@ export default function SystemMonitorPage() {
                     <span className={styles.dataValue}>{restaurant?.country}</span>
                   </div>
                   <div className={styles.dataRow}>
-                    <span className={styles.dataLabel}>Détection de proximité</span>
-                    <span className={styles.dataValue}>Zone urbaine dense</span>
+                    <span className={styles.dataLabel}>Fiche Google Maps</span>
+                    <a
+                      href={restaurant?.googleMapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: '#0284c7', fontSize: '0.85rem', fontWeight: 600 }}
+                    >
+                      Ouvrir l'itinéraire / la fiche ↗
+                    </a>
                   </div>
                 </div>
               </div>
@@ -479,7 +652,7 @@ export default function SystemMonitorPage() {
           )}
 
           {/* ============================================================ */}
-          {/* ONGLET 3 : CE QUE L'IA COMPREND */}
+          {/* ONGLET 4 : CE QUE L'IA COMPREND */}
           {/* ============================================================ */}
           {activeTab === 'ai' && (
             <div className={styles.gridTwoCols}>
@@ -504,8 +677,17 @@ export default function SystemMonitorPage() {
                   </div>
 
                   <div className={styles.dataRow}>
-                    <span className={styles.dataLabel}>Ticket moyen estimé</span>
+                    <span className={styles.dataLabel}>Ticket moyen retenu</span>
                     <span className={styles.dataValue}>{ai?.averageTicket}</span>
+                  </div>
+
+                  <div className={styles.dataRow}>
+                    <span className={styles.dataLabel}>Jours creux déclarés</span>
+                    <div className={styles.tagPills}>
+                      {(ai?.offPeakDays || ['Lundi', 'Mardi']).map((d: string, idx: number) => (
+                        <span key={idx} className={styles.tagPill}>{d}</span>
+                      ))}
+                    </div>
                   </div>
 
                   <div className={styles.dataRow}>
@@ -560,7 +742,7 @@ export default function SystemMonitorPage() {
           )}
 
           {/* ============================================================ */}
-          {/* ONGLET 4 : TESTEUR DE RECHERCHE & INTÉGRATIONS */}
+          {/* ONGLET 5 : TESTEUR DE RECHERCHE & INTÉGRATIONS */}
           {/* ============================================================ */}
           {activeTab === 'tester' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -575,7 +757,7 @@ export default function SystemMonitorPage() {
                 </div>
 
                 <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: 0 }}>
-                  Tapez un nom de restaurant. Si le restaurant n’existe pas, le système doit renvoyer <strong>0 résultat</strong> et refuser toute invention de faux restaurant.
+                  Tapez un nom de restaurant. Si le restaurant n’existe pas, le système doit renvoyer <strong>0 résultat</strong> et refuser toute invention de faux restaurant. Si le restaurant existe, un lien Google Maps est généré.
                 </p>
 
                 <div className={styles.searchTesterBox}>
@@ -624,11 +806,22 @@ export default function SystemMonitorPage() {
                           <div>
                             <strong>{testSearchResult.results.length} établissement(s) réel(s) trouvé(s) :</strong>
                             <div style={{ fontSize: '0.8rem', marginTop: '4px' }}>
-                              {testSearchResult.results.map((r: any, idx: number) => (
-                                <div key={idx} style={{ marginTop: '2px' }}>
-                                  • <strong>{r.name}</strong> — {r.address} ({r.cuisineType})
-                                </div>
-                              ))}
+                              {testSearchResult.results.map((r: any, idx: number) => {
+                                const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name + ' ' + r.address)}`;
+                                return (
+                                  <div key={idx} style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                    <span>• <strong>{r.name}</strong> — {r.address} ({r.cuisineType})</span>
+                                    <a
+                                      href={mapsLink}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 700 }}
+                                    >
+                                      Fiche Google Maps ↗
+                                    </a>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         </div>

@@ -43,10 +43,12 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Récupération des signaux météo réels (Open-Meteo pour les coordonnées)
+    // Coordonnées GPS réelles du restaurant
     const lat = restaurant?.latitude || 48.8566;
     const lon = restaurant?.longitude || 2.3522;
+    const country = restaurant?.country || 'FR';
 
+    // 1. MÉTÉO RÉELLE EN DIRECT (Open-Meteo)
     let weatherData = {
       temperatureC: 19,
       condition: 'Ciel dégagé',
@@ -82,11 +84,94 @@ export async function GET(req: NextRequest) {
       console.warn('[SYSTEM_MONITOR_WEATHER_ERROR]', wErr);
     }
 
-    // Calcul de l'état d'ouverture en direct
+    // 2. ÉVÉNEMENTS RÉELS (Ticketmaster & Calendarific)
+    const eventSignals: any[] = [];
+    const eventApisStatus = {
+      ticketmaster: {
+        configured: Boolean(process.env.TICKETMASTER_API_KEY),
+        status: 'online',
+        eventsCount: 0,
+        note: '',
+      },
+      calendarific: {
+        configured: Boolean(process.env.CALENDARIFIC_API_KEY),
+        status: 'online',
+        eventsCount: 0,
+        note: '',
+      },
+    };
+
+    // A. Événements Ticketmaster (Sports, concerts, grands rassemblements)
+    if (process.env.TICKETMASTER_API_KEY) {
+      try {
+        const tmUrl = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${process.env.TICKETMASTER_API_KEY}&latlong=${lat.toFixed(4)},${lon.toFixed(4)}&radius=50&unit=${country === 'US' ? 'miles' : 'km'}&size=6&sort=date,asc`;
+        const tmRes = await fetch(tmUrl, { next: { revalidate: 600 } });
+        if (tmRes.ok) {
+          const tmData = await tmRes.json();
+          const events = tmData?._embedded?.events || [];
+          eventApisStatus.ticketmaster.eventsCount = events.length;
+          events.forEach((ev: any) => {
+            eventSignals.push({
+              source: 'Ticketmaster Live',
+              title: ev.name,
+              category: ev.classifications?.[0]?.segment?.name || 'Spectacle / Sport',
+              date: ev.dates?.start?.localDate || 'Prochainement',
+              time: ev.dates?.start?.localTime || '',
+              venue: ev._embedded?.venues?.[0]?.name || 'À proximité',
+              impact: 'Forte affluence potentielle avant & après événement',
+              url: ev.url || null,
+            });
+          });
+        }
+      } catch (tmErr: any) {
+        eventApisStatus.ticketmaster.status = 'error';
+        eventApisStatus.ticketmaster.note = tmErr.message;
+      }
+    }
+
+    // B. Célébrations officielles Calendarific (Jours fériés, fêtes culturelles)
+    if (process.env.CALENDARIFIC_API_KEY) {
+      try {
+        const currentYear = new Date().getFullYear();
+        const calUrl = `https://calendarific.com/api/v2/holidays?api_key=${process.env.CALENDARIFIC_API_KEY}&country=${country}&year=${currentYear}`;
+        const calRes = await fetch(calUrl, { next: { revalidate: 3600 } });
+        if (calRes.ok) {
+          const calData = await calRes.json();
+          const holidays = calData?.response?.holidays || [];
+          eventApisStatus.calendarific.eventsCount = holidays.length;
+
+          // Filtrer les événements des 30 prochains jours
+          const nowMs = Date.now();
+          const thirtyDaysMs = 30 * 24 * 3600 * 1000;
+          const upcoming = holidays.filter((h: any) => {
+            const hDate = new Date(h.date?.iso).getTime();
+            return hDate >= nowMs - 24 * 3600 * 1000 && hDate <= nowMs + thirtyDaysMs;
+          });
+
+          upcoming.forEach((h: any) => {
+            eventSignals.push({
+              source: 'Calendarific API',
+              title: h.name,
+              category: h.primary_type || 'Jour férié / Fête officielle',
+              date: h.date?.iso,
+              time: 'Toute la journée',
+              venue: h.country?.name || country,
+              impact: 'Opportunité d’offres festives, brunchs et formules spéciales',
+              description: h.description || '',
+            });
+          });
+        }
+      } catch (calErr: any) {
+        eventApisStatus.calendarific.status = 'error';
+        eventApisStatus.calendarific.note = calErr.message;
+      }
+    }
+
+    // 3. STATUT SERVICE & HORAIRES
     const now = new Date();
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
-    const currentDayIdx = now.getDay(); // 0 = Dimanche, 6 = Samedi
+    const currentDayIdx = now.getDay();
     const isWeekend = currentDayIdx === 0 || currentDayIdx === 6;
 
     const openingHours = restaurant?.openingHours as any;
@@ -104,6 +189,30 @@ export async function GET(req: NextRequest) {
       currentServiceLabel = 'Créneau Creux Après-midi (Pause)';
     }
 
+    // 4. CALCUL DU TICKET MOYEN
+    // Si des plats sont enregistrés, on calcule la moyenne arithmétique des prix des plats
+    const dishes = restaurant?.dishes || [];
+    let calculatedAverageTicket = restaurant?.profile?.averageTicket || 25;
+    let ticketCalculationMethod = 'Saisi par le restaurateur';
+
+    if (dishes.length > 0) {
+      const prices = dishes
+        .map((d: any) => parseFloat((d.priceText || '').replace(/[^0-9.]/g, '')))
+        .filter((p: number) => !isNaN(p) && p > 0);
+
+      if (prices.length > 0) {
+        const sum = prices.reduce((acc: number, val: number) => acc + val, 0);
+        const avgDishPrice = sum / prices.length;
+        // Ticket moyen type = Plat principal (~65%) + Entrée/Dessert/Boisson (~35%)
+        calculatedAverageTicket = Math.round(avgDishPrice * 1.45 * 10) / 10;
+        ticketCalculationMethod = `Calculé automatiquement depuis ${dishes.length} plat(s) enregistré(s)`;
+      }
+    }
+
+    // URL Google Maps officielle directe vers la fiche du restaurant
+    const queryForGoogle = `${restaurant?.name || ''} ${restaurant?.address || ''}`.trim();
+    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(queryForGoogle)}`;
+
     // Ce que l'IA a compris du restaurant
     const aiUnderstanding = {
       conceptName: restaurant?.name || 'Non défini',
@@ -111,12 +220,15 @@ export async function GET(req: NextRequest) {
       communicationTone: restaurant?.profile?.tone || 'Chaleureux',
       hasTerrace: Boolean(restaurant?.profile?.hasTerrace),
       capacity: restaurant?.profile?.capacityCovers || 40,
-      averageTicket: `${restaurant?.profile?.averageTicket || 25} €`,
+      averageTicket: `${calculatedAverageTicket} €`,
+      ticketCalculationMethod,
+      offPeakDays: restaurant?.profile?.offPeakDays || ['Lundi', 'Mardi'],
       targetAudience: (restaurant?.profile?.customRules as any)?.targetAudience || ['Habitués du quartier', 'Actifs du midi'],
       marketingGoal: (restaurant?.profile?.customRules as any)?.marketingGoal || 'more_clients',
       detectedOffPeakSlots: openingHours?.offPeakSlots || ['14:00 - 15:30', '18:30 - 19:30'],
-      totalDishesStored: restaurant?.dishes?.length || 0,
+      totalDishesStored: dishes.length,
       totalOffersActive: restaurant?.offers?.length || 0,
+      activeEventsMonitored: eventSignals.length,
     };
 
     // Statut des briques & intégrations système
@@ -126,14 +238,28 @@ export async function GET(req: NextRequest) {
         name: 'Supabase PostgreSQL / Base de données',
         category: 'Persistance',
         isLive: true,
-        details: 'Store réactif & persistant synchronisé (Tables restaurants, profiles, dishes, offers).',
+        details: 'Stockage des tables restaurants, profiles, dishes, offers.',
       },
       {
         id: 'weather',
         name: 'Open-Meteo API',
-        category: 'Signaux Réels',
+        category: 'Météo Live',
         isLive: true,
-        details: `Données satellite & météo temps réel (${lat.toFixed(4)}, ${lon.toFixed(4)}).`,
+        details: `Données météo temps réel (${lat.toFixed(4)}, ${lon.toFixed(4)}).`,
+      },
+      {
+        id: 'ticketmaster',
+        name: 'Ticketmaster Discovery API',
+        category: 'Événements & Billetterie',
+        isLive: eventApisStatus.ticketmaster.configured && eventApisStatus.ticketmaster.status === 'online',
+        details: `${eventApisStatus.ticketmaster.eventsCount} événement(s) détecté(s) dans le rayon de 50km.`,
+      },
+      {
+        id: 'calendarific',
+        name: 'Calendarific API',
+        category: 'Jours Fériés & Fêtes',
+        isLive: eventApisStatus.calendarific.configured && eventApisStatus.calendarific.status === 'online',
+        details: `${eventApisStatus.calendarific.eventsCount} célébrations officielles répertoriées pour ${country}.`,
       },
       {
         id: 'ai_copilot',
@@ -141,22 +267,22 @@ export async function GET(req: NextRequest) {
         category: 'Intelligence Artificielle',
         isLive: Boolean(process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY.includes('...')),
         details: process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY.includes('...')
-          ? 'Clé API configurée. Génération dynamique et contextualisée active.'
+          ? 'Clé API active. Génération dynamique et contextualisée.'
           : 'Repli déterministe certifié actif (Ground-truth sans hallucinations).',
       },
       {
         id: 'geo_search',
-        name: 'Recherche Établissements (Nominatim & Places)',
+        name: 'Recherche Établissements (Nominatim & Google Maps)',
         category: 'Géolocalisation',
         isLive: true,
-        details: 'OpenStreetMap mondial actif (0 fake result injecté) + Google Places API.',
+        details: 'OpenStreetMap mondial actif (0 fake result injecté) + fiche Google Maps liée.',
       },
       {
         id: 'social_channels',
         name: 'Diffusion Réseaux Sociaux (Meta & Google)',
-        category: 'Publication',
+        category: 'Publication Directe',
         isLive: (restaurant?.socialAccounts?.length || 0) > 0,
-        details: `${restaurant?.socialAccounts?.length || 0} compte(s) connecté(s) (Instagram, Facebook, Google Business).`,
+        details: `${restaurant?.socialAccounts?.length || 0} compte(s) connecté(s) en OAuth direct officiel.`,
       },
     ];
 
@@ -172,6 +298,7 @@ export async function GET(req: NextRequest) {
             timezone: restaurant.timezone,
             latitude: restaurant.latitude,
             longitude: restaurant.longitude,
+            googleMapsUrl,
             openingHours: {
               ...openingHours,
               isOpenNow,
@@ -179,13 +306,19 @@ export async function GET(req: NextRequest) {
               isWeekend,
             },
             specialties: restaurant.specialties || [],
-            profile: restaurant.profile,
-            dishes: restaurant.dishes || [],
+            profile: {
+              ...restaurant.profile,
+              averageTicket: calculatedAverageTicket,
+              ticketCalculationMethod,
+            },
+            dishes,
             offers: restaurant.offers || [],
             recentOpportunities: restaurant.opportunities || [],
           }
         : null,
       weather: weatherData,
+      events: eventSignals,
+      eventApisStatus,
       aiUnderstanding,
       integrations,
     });
@@ -198,7 +331,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { action, restaurantId, dishData, openingHoursData } = body;
+    const { action, restaurantId, dishData, openingHoursData, profileData } = body;
 
     if (!restaurantId) {
       return error('restaurantId est requis', 400);
@@ -215,6 +348,18 @@ export async function POST(req: NextRequest) {
         },
       });
       return success({ message: 'Plat ajouté avec succès', dish: newDish });
+    }
+
+    if (action === 'update_profile') {
+      const updatedProfile = await (prisma as any).restaurantProfile.update({
+        where: { restaurantId },
+        data: {
+          ...(profileData.capacityCovers ? { capacityCovers: parseInt(profileData.capacityCovers, 10) } : {}),
+          ...(profileData.averageTicket ? { averageTicket: parseFloat(profileData.averageTicket) } : {}),
+          ...(profileData.offPeakDays ? { offPeakDays: profileData.offPeakDays } : {}),
+        },
+      });
+      return success({ message: 'Profil mis à jour avec succès', profile: updatedProfile });
     }
 
     if (action === 'update_hours') {
