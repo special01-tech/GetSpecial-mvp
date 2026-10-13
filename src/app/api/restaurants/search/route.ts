@@ -55,10 +55,70 @@ export async function GET(req: NextRequest) {
 
     const googleApiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-    // 1. REQUÊTE GOOGLE PLACES API OFFICIELLE (si clé configurée)
+    // 1. REQUÊTE GOOGLE PLACES API OFFICIELLE (support Places API New v1 & Legacy)
     if (googleApiKey) {
+      const queryText = [name, city, country].filter(Boolean).join(' ');
+
+      // 1.A. TENTATIVE VIA PLACES API (NEW) - places.googleapis.com/v1/places:searchText
       try {
-        const queryText = [name, city, country].filter(Boolean).join(' ');
+        const newPlacesRes = await fetch('https://places.googleapis.com/v1/places:searchText', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Goog-Api-Key': googleApiKey,
+            'X-Goog-FieldMask':
+              'places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.nationalPhoneNumber,places.internationalPhoneNumber,places.regularOpeningHours,places.photos,places.primaryTypeDisplayName,places.websiteUri',
+          },
+          body: JSON.stringify({
+            textQuery: queryText,
+            languageCode: 'fr',
+          }),
+        });
+
+        if (newPlacesRes.ok) {
+          const newPlacesData = await newPlacesRes.json();
+          if (Array.isArray(newPlacesData.places) && newPlacesData.places.length > 0) {
+            const results: RestaurantSearchResult[] = newPlacesData.places.slice(0, 5).map((p: any, idx: number) => {
+              const photoName = p.photos?.[0]?.name;
+              const photoUrl = photoName
+                ? `https://places.googleapis.com/v1/${photoName}/media?maxHeightPx=800&maxWidthPx=800&key=${googleApiKey}`
+                : undefined;
+
+              const hours = p.regularOpeningHours?.weekdayDescriptions?.slice(0, 2).join(' • ') || undefined;
+              const phone = p.nationalPhoneNumber || p.internationalPhoneNumber || undefined;
+              const category = p.primaryTypeDisplayName?.text || deduceCuisineType(p.displayName?.text || name, country);
+
+              return {
+                id: `google_${p.id || idx}`,
+                name: p.displayName?.text || name,
+                address: p.formattedAddress || [name, city].filter(Boolean).join(', '),
+                city: city,
+                country: country,
+                latitude: p.location?.latitude || 48.8566,
+                longitude: p.location?.longitude || 2.3522,
+                rating: p.rating,
+                reviewsCount: p.userRatingCount,
+                cuisineType: category,
+                phone,
+                openingHours: hours,
+                isOpenNow: true,
+                photoUrl,
+                googlePlaceId: p.id,
+              };
+            });
+
+            return success(results);
+          }
+        } else {
+          const errBody = await newPlacesRes.json().catch(() => ({}));
+          console.warn('[GOOGLE_PLACES_NEW_API_ERROR]', newPlacesRes.status, errBody);
+        }
+      } catch (newApiErr) {
+        console.warn('[GOOGLE_PLACES_NEW_EXCEPTION]', newApiErr);
+      }
+
+      // 1.B. FALLBACK VIA PLACES API LEGACY (si la clé utilise l'ancienne version)
+      try {
         const googleRes = await fetch(
           `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(queryText)}&key=${googleApiKey}`
         );
@@ -87,8 +147,8 @@ export async function GET(req: NextRequest) {
                 country: country,
                 latitude: p.geometry?.location?.lat || 48.8566,
                 longitude: p.geometry?.location?.lng || 2.3522,
-                rating: p.rating || 4.7,
-                reviewsCount: p.user_ratings_total || 0,
+                rating: p.rating,
+                reviewsCount: p.user_ratings_total,
                 cuisineType: category.charAt(0).toUpperCase() + category.slice(1),
                 phone: p.formatted_phone_number || undefined,
                 photoUrl,
