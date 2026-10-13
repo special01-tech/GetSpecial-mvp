@@ -347,6 +347,19 @@ export async function GET(req: NextRequest) {
       const importance = opp.importance || (idx === 0 ? 'HIGH' : 'MEDIUM');
       const impactScore = opp.impactScore || (importance === 'HIGH' ? 90 : 75);
 
+      // Synthèse en 1 phrase unique demandée par le restaurateur :
+      // [Événement détecté] ➔ [Plat & Formule à promouvoir] ➔ [Heure de publication & Réseaux] ➔ [Mot-code]
+      const eventPart = opp.title || opp.factsUsed?.[0] || 'Opportunité du jour';
+      const offerLabel = opp.offer?.label || 'Formule spéciale';
+      const offerDetail = opp.offer?.details ? ` (${opp.offer.details})` : '';
+      const pubTime = opp.distribution?.recommendedPublishTime || '11h30';
+      const channels = Array.isArray(opp.distribution?.channels) && opp.distribution.channels.length > 0
+        ? opp.distribution.channels.map((c: string) => c.charAt(0).toUpperCase() + c.slice(1).toLowerCase()).join(' & ')
+        : 'Instagram & Facebook';
+      const codeWord = opp.offer?.codeWord || 'SPECIAL';
+
+      const oneSentenceSummary = `${eventPart} : promouvez ${offerLabel}${offerDetail} dès ${pubTime} sur ${channels} (mot-code : ${codeWord}).`;
+
       return {
         id: opp.id || `opp_real_${idx + 1}`,
         title: opp.title,
@@ -365,6 +378,7 @@ export async function GET(req: NextRequest) {
         offer: opp.offer,
         distribution: opp.distribution,
         codeWord: opp.offer?.codeWord,
+        oneSentenceSummary,
       };
     });
 

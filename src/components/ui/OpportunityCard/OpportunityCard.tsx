@@ -71,11 +71,17 @@ export default function OpportunityCard({ opportunity, onClick }: OpportunityCar
     return 'Modérée';
   };
 
-  // Sous-texte sobre et contextuel (sans mot-code)
-  const contextSubtitle =
-    opportunity.offer?.validityText ||
-    opportunity.signalOrigin ||
-    opportunity.description;
+  // Phrase de synthèse unique demandée par le restaurateur
+  const channelsText = Array.isArray(opportunity.distribution?.channels) && opportunity.distribution.channels.length > 0
+    ? opportunity.distribution.channels.map((c: string) => c.charAt(0).toUpperCase() + c.slice(1).toLowerCase()).join(' & ')
+    : 'Instagram & Facebook';
+  const pubTimeText = opportunity.distribution?.recommendedPublishTime || '11h30';
+  const offerLabelText = opportunity.offer?.label || 'Formule spéciale';
+  const codeWordText = opportunity.offer?.codeWord || opportunity.codeWord || 'SPECIAL';
+
+  const summaryText =
+    opportunity.oneSentenceSummary ||
+    `${opportunity.title} : promouvez ${offerLabelText} dès ${pubTimeText} sur ${channelsText} (code : ${codeWordText}).`;
 
   return (
     <article
@@ -91,7 +97,7 @@ export default function OpportunityCard({ opportunity, onClick }: OpportunityCar
         }
       }}
     >
-      {/* Partie Gauche : Icône squircle pastel + Titre & Sous-titre */}
+      {/* Partie Gauche : Icône squircle pastel + Titre & Phrase unique de synthèse */}
       <div className={styles.leftSection}>
         <div className={`${styles.iconSquare} ${iconColorClass}`}>
           {icon}
@@ -99,7 +105,9 @@ export default function OpportunityCard({ opportunity, onClick }: OpportunityCar
 
         <div className={styles.textColumn}>
           <h4 className={styles.title}>{opportunity.title}</h4>
-          <p className={styles.subtitle}>{contextSubtitle}</p>
+          <p className={styles.oneSentenceSummary}>
+            {summaryText}
+          </p>
         </div>
       </div>
 

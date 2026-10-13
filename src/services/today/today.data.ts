@@ -56,6 +56,7 @@ export interface TodayOpportunity {
   offer?: OpportunityOffer;
   distribution?: OpportunityDistribution;
   codeWord?: string;
+  oneSentenceSummary?: string;
 }
 
 export interface TodayOffer {
