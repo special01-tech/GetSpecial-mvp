@@ -17,7 +17,6 @@ export async function GET(req: NextRequest) {
         include: {
           profile: true,
           offers: true,
-          dishes: true,
           socialAccounts: true,
           opportunities: {
             orderBy: { createdAt: 'desc' },
@@ -33,7 +32,6 @@ export async function GET(req: NextRequest) {
         include: {
           profile: true,
           offers: true,
-          dishes: true,
           socialAccounts: true,
           opportunities: {
             orderBy: { createdAt: 'desc' },

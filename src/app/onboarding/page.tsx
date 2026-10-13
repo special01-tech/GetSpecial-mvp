@@ -946,15 +946,40 @@ export default function UnifiedOnboardingPage() {
                       <div className={styles.selectedPlaceTitleRow}>
                         <span className={styles.selectedPlaceName}>{selectedGooglePlace.name}</span>
                         <span className={styles.selectedPlaceBadge}>
-                          <Check size={11} strokeWidth={2.5} /> {t('onboarding.unified.linkedToGoogle')}
+                          {selectedGooglePlace.id.startsWith('google_') ? (
+                            <>
+                              <Check size={11} strokeWidth={2.5} /> {t('onboarding.unified.linkedToGoogle')}
+                            </>
+                          ) : selectedGooglePlace.id.startsWith('place_osm_') ? (
+                            <>
+                              <Check size={11} strokeWidth={2.5} /> Vérifié OpenStreetMap
+                            </>
+                          ) : (
+                            <>
+                              <Store size={11} strokeWidth={2.5} /> Fiche personnalisée
+                            </>
+                          )}
                         </span>
                       </div>
                       <div className={styles.selectedPlaceSub}>
-                        <Star size={11} fill="#FF5A00" stroke="#FF5A00" />
-                        <span style={{ fontWeight: 600, color: '#E04F00' }}>{selectedGooglePlace.rating || '4.8'}</span>
-                        <span>• {selectedGooglePlace.cuisineType || t('onboarding.unified.defaultCategory')} •</span>
-                        <MapPin size={11} strokeWidth={1.75} />
-                        <span>{selectedGooglePlace.address}</span>
+                        {selectedGooglePlace.rating ? (
+                          <>
+                            <Star size={11} fill="#FF5A00" stroke="#FF5A00" />
+                            <span style={{ fontWeight: 600, color: '#E04F00' }}>{selectedGooglePlace.rating}</span>
+                            {selectedGooglePlace.reviewsCount ? (
+                              <span style={{ color: '#8A8A8A', fontWeight: 400 }}>({selectedGooglePlace.reviewsCount})</span>
+                            ) : null}
+                            <span>•</span>
+                          </>
+                        ) : null}
+                        <span>{selectedGooglePlace.cuisineType || t('onboarding.unified.defaultCategory')}</span>
+                        {selectedGooglePlace.address && (
+                          <>
+                            <span>•</span>
+                            <MapPin size={11} strokeWidth={1.75} />
+                            <span>{selectedGooglePlace.address}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

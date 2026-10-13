@@ -64,6 +64,12 @@ export async function GET(req: NextRequest) {
         );
         if (googleRes.ok) {
           const googleData = await googleRes.json();
+          if (googleData.status === 'REQUEST_DENIED') {
+            console.warn(
+              '[GOOGLE_PLACES_KEY_RESTRICTION] La clé GOOGLE_PLACES_API_KEY a été rejetée par Google:',
+              googleData.error_message
+            );
+          }
           if (Array.isArray(googleData.results) && googleData.results.length > 0) {
             const results: RestaurantSearchResult[] = googleData.results.slice(0, 5).map((p: any, idx: number) => {
               const photoRef = p.photos?.[0]?.photo_reference;
@@ -193,14 +199,14 @@ export async function GET(req: NextRequest) {
       country: country,
       latitude: lat,
       longitude: lon,
-      rating: 4.8,
-      reviewsCount: 0,
+      rating: undefined,
+      reviewsCount: undefined,
       cuisineType,
       phone: undefined, // Aucun faux numéro généré : l'utilisateur a ses vraies données
       openingHours: undefined,
       isOpenNow: true,
       photoUrl: undefined, // Aucune image fausse ou codée en dur
-      googlePlaceId: `auto_${Date.now()}`,
+      googlePlaceId: undefined,
     };
 
     return success([smartResult]);

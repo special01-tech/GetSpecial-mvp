@@ -32,7 +32,7 @@ export class ContentGeneratorService {
     const opp = await (prisma as any).opportunity.findUnique({
       where: { id: opportunityId },
       include: {
-        restaurant: { include: { profile: true, dishes: true } },
+        restaurant: { include: { profile: true } },
       },
     });
 
