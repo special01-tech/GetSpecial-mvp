@@ -843,13 +843,35 @@ export default function UnifiedOnboardingPage() {
                           </div>
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        className={styles.manualAddressBtn}
-                        onClick={() => setShowManualAddress(true)}
-                      >
-                        {t('onboarding.unified.manualAddressBtn')}
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAddress(city ? `${name}, ${city}` : name);
+                            setShowManualAddress(true);
+                            setHasSearchedGoogle(false);
+                          }}
+                          style={{
+                            background: '#FF5A00',
+                            color: '#FFFFFF',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '8px 14px',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Continuer avec &quot;{name}&quot;
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.manualAddressBtn}
+                          onClick={() => setShowManualAddress(true)}
+                        >
+                          {t('onboarding.unified.manualAddressBtn')}
+                        </button>
+                      </div>
                     </div>
                   )}
 
