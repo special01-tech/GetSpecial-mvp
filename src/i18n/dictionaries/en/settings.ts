@@ -34,12 +34,40 @@ export const settings = {
     capLabel: 'Daily publishing cap',
     capDescription:
       'Limits the number of automatic posts per day so you never tire your audience.',
+    maxPosts: 'Daily publishing cap',
+    description: 'Limits the number of automatic posts per day so you never tire your audience.',
+    saved: 'Frequency saved: {count} post(s) per day.',
     onePerDay: '1 post per day (Recommended)',
     twoPerDay: '2 posts per day max',
     validationLabel: 'Mandatory manager approval',
     validationDescription:
       'Nothing is published without your explicit approval on the Today screen.',
     strictlyActive: 'Strictly active',
+  },
+  autoApprove: {
+    title: 'Automatic Publishing',
+    label: 'Enable automatic posting without confirmation',
+    description:
+      'Automatically publishes approved campaigns at the optimal time without manual action.',
+    noticeEnabled: 'Automatic publishing enabled.',
+    noticeDisabled: 'Mandatory manual validation restored.',
+  },
+  notifications: {
+    title: 'Notifications & Reports',
+    emailReports: 'Daily email reports',
+    emailReportsDesc:
+      'Receive a morning summary of local opportunities and publication performance.',
+  },
+  account: {
+    title: 'Manager Account',
+    subtitle: 'Login credentials and administrator profile',
+    email: 'Login email',
+    name: 'Full name',
+    role: 'Role & Permissions',
+    roleManager: 'Manager / Owner',
+    createdAt: 'Member since',
+    status: 'Account status',
+    statusActive: 'Active & Verified',
   },
   session: {
     label: 'User session',
@@ -48,6 +76,8 @@ export const settings = {
   },
   language: {
     title: 'Interface language',
+    label: 'Display language',
     description: 'Choose the GetSpecial display language.',
   },
+  logout: 'Log out',
 };

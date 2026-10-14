@@ -12,6 +12,8 @@ import {
   Radio,
   Sliders,
   Check,
+  User,
+  ShieldCheck,
 } from 'lucide-react';
 import { authClientService } from '@/services/auth/auth.client.service';
 import LanguageToggle from '@/components/ui/LanguageToggle';
@@ -26,6 +28,12 @@ import styles from './settings.module.css';
 export default function SettingsPage() {
   const router = useRouter();
   const { t } = useLanguage();
+  const [currentUser, setCurrentUser] = useState<{
+    id?: string;
+    email?: string;
+    name?: string | null;
+    createdAt?: string;
+  } | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [maxPostsPerDay, setMaxPostsPerDay] = useState('1');
   const [autoApprove, setAutoApprove] = useState(false);
@@ -120,7 +128,21 @@ export default function SettingsPage() {
         } catch {}
       }
 
-      // 3. Rafraîchissement en direct avec la table Supabase social_accounts
+      // 3. Chargement des infos du compte gérant
+      const userLocal = authClientService.getCurrentUser();
+      if (userLocal) {
+        setCurrentUser(userLocal);
+      }
+      fetch('/api/auth/me')
+        .then((r) => r.json())
+        .then((res) => {
+          if (res.success && res.data?.user) {
+            setCurrentUser(res.data.user);
+          }
+        })
+        .catch(() => {});
+
+      // 4. Rafraîchissement en direct avec la table Supabase social_accounts
       refreshAccountsFromApi(currentRestId);
     } catch {
       // Ignorer
@@ -252,6 +274,62 @@ export default function SettingsPage() {
           {notice}
         </div>
       )}
+
+      {/* Mon Compte Gérant */}
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <User className={styles.sectionIcon} size={22} />
+          <div>
+            <h2 className={styles.sectionTitle}>{t('settings.account.title')}</h2>
+            <div style={{ fontSize: '0.84rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
+              {t('settings.account.subtitle')}
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.cardRow}>
+          <div>
+            <div className={styles.rowLabel}>{t('settings.account.email')}</div>
+            <div className={styles.rowDescription}>
+              {currentUser?.email || 'gerant@getspecial.io'}
+            </div>
+          </div>
+          <span className={styles.badgeConnected}>
+            <ShieldCheck size={14} />
+            <span>{t('settings.account.statusActive')}</span>
+          </span>
+        </div>
+
+        <div className={styles.cardRow}>
+          <div>
+            <div className={styles.rowLabel}>{t('settings.account.name')}</div>
+            <div className={styles.rowDescription}>
+              {currentUser?.name || restaurantName || 'Gérant GetSpecial'}
+            </div>
+          </div>
+          <span style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+            {t('settings.account.roleManager')}
+          </span>
+        </div>
+
+        <div className={styles.cardRow}>
+          <div>
+            <div className={styles.rowLabel}>{t('settings.account.createdAt')}</div>
+            <div className={styles.rowDescription}>
+              {currentUser?.createdAt
+                ? new Date(currentUser.createdAt).toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })
+                : '13 octobre 2026'}
+            </div>
+          </div>
+          <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+            ID: {currentUser?.id ? currentUser.id.slice(0, 12) : 'usr_actuel'}...
+          </span>
+        </div>
+      </section>
 
       {/* Disjoncteur d'urgence */}
       <section className={styles.section}>

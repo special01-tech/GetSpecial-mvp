@@ -24,13 +24,14 @@ import {
   Zap,
   Maximize2,
   Sparkles,
+  Store,
 } from 'lucide-react';
 import { INITIAL_RESTAURANT_OFFERS, RestaurantOffer } from '@/services/restaurant/restaurant-offers.data';
 import { INITIAL_RESTAURANT_EVENTS, RestaurantEvent } from '@/services/restaurant/restaurant-events.data';
 import { useLanguage } from '@/i18n';
 import styles from './create.module.css';
 
-type SourceType = 'offer' | 'event' | 'custom';
+type SourceType = 'custom' | 'event';
 type Platform = 'instagram' | 'facebook' | 'google_business';
 type VisualStyle = 'gourmet' | 'festive' | 'chic' | 'deal';
 
@@ -41,18 +42,18 @@ function StudioCreateContent() {
 
   const [restaurantName, setRestaurantName] = useState("L'Atelier Culinaire");
   const [restaurantId, setRestaurantId] = useState('rest_paris_atelier_1');
+  const [availableRestaurants, setAvailableRestaurants] = useState<any[]>([]);
 
   // Données disponibles
   const [availableOffers, setAvailableOffers] = useState<RestaurantOffer[]>(INITIAL_RESTAURANT_OFFERS);
   const [availableEvents, setAvailableEvents] = useState<RestaurantEvent[]>(INITIAL_RESTAURANT_EVENTS);
 
-  // Formulaire de configuration
-  const [sourceType, setSourceType] = useState<SourceType>('offer');
+  // Formulaire de configuration : 2 modes (Saisie Libre ou Mon Événement)
+  const [sourceType, setSourceType] = useState<SourceType>('custom');
   const [selectedOfferId, setSelectedOfferId] = useState<string>('');
   const [selectedEventId, setSelectedEventId] = useState<string>('');
-  const [customTitle, setCustomTitle] = useState('');
   const [customDescription, setCustomDescription] = useState('');
-  const [customDiscount, setCustomDiscount] = useState('-20%');
+  const [customDiscount, setCustomDiscount] = useState('');
 
   const [platform, setPlatform] = useState<Platform>('instagram');
   const [visualStyle, setVisualStyle] = useState<VisualStyle>('gourmet');
@@ -105,6 +106,25 @@ function StudioCreateContent() {
     }
   };
 
+  const handleSelectRestaurant = (newId: string) => {
+    const target = availableRestaurants.find((r) => r.id === newId);
+    if (!target) return;
+    setRestaurantId(target.id);
+    setRestaurantName(target.name);
+    try {
+      localStorage.setItem(
+        'getspecial_selected_restaurant',
+        JSON.stringify({
+          id: target.id,
+          name: target.name,
+          address: target.address,
+          photoUrl: target.profile?.photos?.[0] || target.photos?.[0],
+        })
+      );
+      localStorage.setItem('getspecial_restaurant_id', target.id);
+    } catch {}
+  };
+
   // Chargement initial
   useEffect(() => {
     try {
@@ -116,17 +136,24 @@ function StudioCreateContent() {
       const storedId = localStorage.getItem('getspecial_restaurant_id');
       if (storedId) setRestaurantId(storedId);
 
-      // Charger offres
-      const storedOffers = localStorage.getItem('getspecial_restaurant_offers');
-      if (storedOffers) {
-        const parsedO = JSON.parse(storedOffers);
-        if (Array.isArray(parsedO) && parsedO.length > 0) {
-          setAvailableOffers(parsedO);
-          setSelectedOfferId(parsedO[0].id);
-        }
-      } else {
-        setSelectedOfferId(INITIAL_RESTAURANT_OFFERS[0].id);
-      }
+      // Charger les restaurants dynamiques de l'utilisateur
+      fetch('/api/restaurants')
+        .then((res) => res.json())
+        .then((json) => {
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            setAvailableRestaurants(json.data);
+            const found = json.data.find(
+              (r: any) =>
+                r.id === storedId ||
+                (restNameStored && r.name === JSON.parse(restNameStored)?.name)
+            );
+            if (found) {
+              setRestaurantId(found.id);
+              setRestaurantName(found.name);
+            }
+          }
+        })
+        .catch(() => {});
 
       // Charger événements
       const storedEvents = localStorage.getItem('getspecial_restaurant_events');
@@ -140,13 +167,14 @@ function StudioCreateContent() {
         setSelectedEventId(INITIAL_RESTAURANT_EVENTS[0].id);
       }
 
-      // Query params éventuels (?type=offer&id=... ou ?type=event&id=...)
-      const pType = searchParams.get('type') as SourceType | null;
+      // Query params éventuels (?type=event&id=...)
+      const pType = searchParams.get('type');
       const pId = searchParams.get('id');
-      if (pType && ['offer', 'event', 'custom'].includes(pType)) {
-        setSourceType(pType);
-        if (pType === 'offer' && pId) setSelectedOfferId(pId);
-        if (pType === 'event' && pId) setSelectedEventId(pId);
+      if (pType === 'event') {
+        setSourceType('event');
+        if (pId) setSelectedEventId(pId);
+      } else {
+        setSourceType('custom');
       }
     } catch {
       // Ignorer
@@ -184,12 +212,7 @@ function StudioCreateContent() {
     let descToUse = '';
     let discountToUse: string | undefined = undefined;
 
-    if (sourceType === 'offer') {
-      const targetOffer = availableOffers.find((o) => o.id === selectedOfferId) || availableOffers[0];
-      titleToUse = targetOffer?.name || t('content.studio.fallbacks.offerTitle');
-      descToUse = targetOffer?.description || t('content.studio.fallbacks.offerDesc');
-      discountToUse = targetOffer?.discount || '-20%';
-    } else if (sourceType === 'event') {
+    if (sourceType === 'event') {
       const targetEvent = availableEvents.find((e) => e.id === selectedEventId) || availableEvents[0];
       titleToUse = targetEvent?.title || t('content.studio.fallbacks.eventTitle');
       descToUse =
@@ -201,8 +224,10 @@ function StudioCreateContent() {
         ? t('content.studio.fallbacks.eventTimeBadge', { time: targetEvent.time })
         : t('content.studio.fallbacks.eventBadge');
     } else {
-      titleToUse = customTitle.trim() || t('content.studio.fallbacks.customTitle');
-      descToUse = customDescription.trim() || t('content.studio.fallbacks.customDesc');
+      const text = customDescription.trim();
+      descToUse = text || 'Plat du jour préparé avec des produits frais de saison';
+      const firstLine = text.split('\n')[0].replace(/^[-*•\s]+/, '').slice(0, 50);
+      titleToUse = firstLine.length > 3 ? firstLine : (restaurantName ? `Spécialité chez ${restaurantName}` : 'Création du Chef');
       discountToUse = customDiscount.trim() || undefined;
     }
 
@@ -351,15 +376,39 @@ function StudioCreateContent() {
             </div>
 
             <div className={styles.cardBody}>
-              {/* Sélecteur de type : Offre, Événement ou Saisie Libre */}
+              {/* Sélecteur dynamique d'établissement */}
+              <div className={styles.fieldGroup} style={{ marginBottom: '1.25rem' }}>
+                <label className={styles.label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Store size={15} style={{ color: 'var(--color-primary, #FF6B35)' }} />
+                  <span>Établissement sélectionné</span>
+                </label>
+                <select
+                  value={restaurantId}
+                  onChange={(e) => handleSelectRestaurant(e.target.value)}
+                  className={styles.select}
+                  style={{ fontWeight: 600 }}
+                >
+                  {availableRestaurants.length > 0 ? (
+                    availableRestaurants.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value={restaurantId}>{restaurantName}</option>
+                  )}
+                </select>
+              </div>
+
+              {/* Sélecteur de mode : 2 modes (Saisie Libre ou Mon Événement) */}
               <div className={styles.typeSelector}>
                 <button
                   type="button"
-                  onClick={() => setSourceType('offer')}
-                  className={`${styles.typeBtn} ${sourceType === 'offer' ? styles.typeBtnActive : ''}`}
+                  onClick={() => setSourceType('custom')}
+                  className={`${styles.typeBtn} ${sourceType === 'custom' ? styles.typeBtnActive : ''}`}
                 >
-                  <Tag size={15} />
-                  <span>{t('content.studio.sourceOffer')}</span>
+                  <PenTool size={15} />
+                  <span>Saisie libre / Plat du jour</span>
                 </button>
 
                 <button
@@ -368,38 +417,40 @@ function StudioCreateContent() {
                   className={`${styles.typeBtn} ${sourceType === 'event' ? styles.typeBtnActive : ''}`}
                 >
                   <Calendar size={15} />
-                  <span>{t('content.studio.sourceEvent')}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setSourceType('custom')}
-                  className={`${styles.typeBtn} ${sourceType === 'custom' ? styles.typeBtnActive : ''}`}
-                >
-                  <PenTool size={15} />
-                  <span>{t('content.studio.sourceCustom')}</span>
+                  <span>Mon événement</span>
                 </button>
               </div>
 
-              {/* CAS 1 : Choisir parmi les offres configurées */}
-              {sourceType === 'offer' && (
-                <div className={styles.fieldGroup}>
-                  <label className={styles.label}>{t('content.studio.offerLabel')}</label>
-                  <select
-                    value={selectedOfferId}
-                    onChange={(e) => setSelectedOfferId(e.target.value)}
-                    className={styles.select}
-                  >
-                    {availableOffers.map((off) => (
-                      <option key={off.id} value={off.id}>
-                        {off.name} {off.discount ? `(${off.discount})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              {/* CAS 1 : Saisie libre / Plat du jour (Champ unifié) */}
+              {sourceType === 'custom' && (
+                <>
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.label}>
+                      <span>Votre annonce, plat ou création du jour</span>
+                    </label>
+                    <textarea
+                      value={customDescription}
+                      onChange={(e) => setCustomDescription(e.target.value)}
+                      placeholder="Décrivez simplement ce que vous souhaitez promouvoir (ex : Plat du jour : Pavé de saumon croustillant, mousseline de patates douces et sauce aneth. Ou : Formule déjeuner express entrée + plat à 19€)..."
+                      className={styles.textarea}
+                      rows={4}
+                    />
+                  </div>
+
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.label}>Avantage ou réduction (facultatif)</label>
+                    <input
+                      type="text"
+                      value={customDiscount}
+                      onChange={(e) => setCustomDiscount(e.target.value)}
+                      placeholder="Ex: -20% le midi, Dessert offert, Menu à 19€..."
+                      className={styles.input}
+                    />
+                  </div>
+                </>
               )}
 
-              {/* CAS 2 : Choisir parmi les événements configurés */}
+              {/* CAS 2 : Choisir parmi les événements du restaurant */}
               {sourceType === 'event' && (
                 <div className={styles.fieldGroup}>
                   <label className={styles.label}>{t('content.studio.eventLabel')}</label>
@@ -415,43 +466,6 @@ function StudioCreateContent() {
                     ))}
                   </select>
                 </div>
-              )}
-
-              {/* CAS 3 : Saisie libre / Plat du jour */}
-              {sourceType === 'custom' && (
-                <>
-                  <div className={styles.fieldGroup}>
-                    <label className={styles.label}>{t('content.studio.customTitleLabel')}</label>
-                    <input
-                      type="text"
-                      value={customTitle}
-                      onChange={(e) => setCustomTitle(e.target.value)}
-                      placeholder={t('content.studio.customTitlePlaceholder')}
-                      className={styles.input}
-                    />
-                  </div>
-
-                  <div className={styles.fieldGroup}>
-                    <label className={styles.label}>{t('content.studio.customDescLabel')}</label>
-                    <textarea
-                      value={customDescription}
-                      onChange={(e) => setCustomDescription(e.target.value)}
-                      placeholder={t('content.studio.customDescPlaceholder')}
-                      className={styles.textarea}
-                    />
-                  </div>
-
-                  <div className={styles.fieldGroup}>
-                    <label className={styles.label}>{t('content.studio.customDiscountLabel')}</label>
-                    <input
-                      type="text"
-                      value={customDiscount}
-                      onChange={(e) => setCustomDiscount(e.target.value)}
-                      placeholder={t('content.studio.customDiscountPlaceholder')}
-                      className={styles.input}
-                    />
-                  </div>
-                </>
               )}
 
               {/* Réseau social cible */}
