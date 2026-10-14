@@ -13,16 +13,17 @@ export class TicketmasterCollector {
       throw new Error('TICKETMASTER_API_KEY non configurée.');
     }
 
-    const config = getCountryConfig(country);
+    const cleanCountry = country.toUpperCase();
+    const config = getCountryConfig(cleanCountry);
     const geoPoint = `${lat.toFixed(4)},${lon.toFixed(4)}`;
     const radius = config.distanceUnit === 'miles' ? Math.max(1, Math.round(radiusKm * 0.621371)) : radiusKm;
     const unit = config.distanceUnit; // 'miles' for US/UK, 'km' for others
 
-    // Recherche Ticketmaster basée sur les coordonnées GPS réelles et le rayon
-    const url = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${this.apiKey}&latlong=${geoPoint}&radius=${radius}&unit=${unit}&size=10&sort=date,asc`;
+    // Recherche Ticketmaster basée strictement sur les coordonnées et le code pays du restaurant
+    const url = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${this.apiKey}&latlong=${geoPoint}&radius=${radius}&unit=${unit}&countryCode=${cleanCountry}&size=10&sort=date,asc`;
 
     let attempts = 0;
-    const maxAttempts = 3;
+    const maxAttempts = 2;
     let lastError: any = null;
 
     while (attempts < maxAttempts) {
@@ -35,11 +36,24 @@ export class TicketmasterCollector {
         clearTimeout(timeout);
 
         if (!res.ok) {
+          // Si le pays n'est pas couvert par Ticketmaster ou code 400/404, renvoyer liste vide sans erreur bloquante
+          if (res.status === 400 || res.status === 404) {
+            return [];
+          }
           throw new Error(`Ticketmaster HTTP ${res.status} (${res.statusText})`);
         }
 
         const data = await res.json();
-        const events = data?._embedded?.events || [];
+        const rawEvents = data?._embedded?.events || [];
+
+        // Filtrage strict : éliminer tout événement qui n'est pas dans le pays du restaurant
+        const events = rawEvents.filter((ev: any) => {
+          const venueCountry = ev._embedded?.venues?.[0]?.country?.countryCode;
+          if (venueCountry && venueCountry.toUpperCase() !== cleanCountry) {
+            return false;
+          }
+          return true;
+        });
 
         return events.map((ev: any): NormalizedSignal => {
           const startDateTime = ev.dates?.start?.dateTime || ev.dates?.start?.localDate || new Date().toISOString();
@@ -51,11 +65,11 @@ export class TicketmasterCollector {
           });
 
           let title = `Événement : ${ev.name}`;
-          let summary = `${ev.name} prévu le ${dateStr} à ${venue}. Forte opportunité d'affluence avant/après événement.`;
+          let summary = `${ev.name} prévu le ${dateStr} à ${venue}. Opportunité d'affluence locale.`;
 
           if (config.language !== 'fr') {
             title = `Event: ${ev.name}`;
-            summary = `${ev.name} scheduled for ${dateStr} at ${venue}. High potential for pre/post event dining crowd.`;
+            summary = `${ev.name} scheduled for ${dateStr} at ${venue}. Potential dining crowd.`;
           }
 
           return {
@@ -65,7 +79,7 @@ export class TicketmasterCollector {
             timestamp: startDateTime,
             title,
             summary,
-            rawPayload: { id: ev.id, name: ev.name, url: ev.url, venue, distance: radiusKm },
+            rawPayload: { id: ev.id, name: ev.name, url: ev.url, venue, distance: radiusKm, country: cleanCountry },
           };
         });
       } catch (err: any) {

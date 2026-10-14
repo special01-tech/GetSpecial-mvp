@@ -233,53 +233,74 @@ Rédige le texte complet pour ${platform} en français naturel.`;
     }
 
     // =========================================================================
-    // ÉTAPE 2 : PROMPT D'ART DIRECTION CULINAIRE EN ANGLAIS
+    // ÉTAPE 2 : CLAUDE (OPENROUTER) DIRECTEUR ARTISTIQUE : AFFICHE PUBLICITAIRE RESTAURANT
     // =========================================================================
     let visualPrompt = '';
-    const artDirectionPrompt = `Commercial food photography of delicious ${offerLabel}, ${offerDetails}. Professionally plated in an authentic ${restaurant.type || 'french bistro'} setting, warm cozy ambient dining lighting, shallow depth of field, appetizing textures, soft natural steam, rustic restaurant table, 8k resolution, photorealistic, no text, no letters.`;
+    const artDirectionPrompt = `High-end commercial restaurant advertising poster for Instagram and Facebook featuring delicious ${offerLabel}, ${offerDetails}. The composition is styled as an authentic ${restaurant.type || 'warm French bistro'} promotional campaign poster with elegant chalkboard and slate banner layout, warm ambient candlelight, decorative culinary herbs, appetizing presentation, 8k resolution, professional food promo flyer artwork, no distorted letters.`;
 
     if (key) {
       try {
-        const claudeSystemPrompt = `You are the master food photography and culinary art director for GetSpecial.
-Your role is to write an ultra-realistic, mouth-watering image generation prompt in English for a commercial food photo.
+        const claudeSystemPrompt = `You are an elite graphic designer and advertising creative director specializing in restaurant marketing posters and social media promotional flyers.
+Your mission is to write an image generation prompt in English for an EYE-CATCHING RESTAURANT ADVERTISING POSTER / SOCIAL MEDIA PROMO FLYER.
 
-STRICT INSTRUCTIONS:
-- Focus entirely on visual styling: composition, camera angle, soft warm cinematic lighting, textures, appetizing steam or glossy sauces.
-- NEVER include any written text, words, prices, or letters inside the image prompt.
-- Target aspect ratio: 1:1 square.
-- Output ONLY the raw descriptive prompt in English (1-2 compact sentences), without quotes or commentary.`;
+CRITICAL DIRECTIVES:
+1. THIS IS AN ADVERTISING POSTER / PROMO GRAPHIC FLYER, NOT A SIMPLE PHOTO OF A DISH.
+2. The visual must look like a high-end commercial restaurant campaign poster designed for Instagram & Facebook.
+3. Central focal point: The featured culinary specialty ("${offerLabel}") presented with stunning styling, appetizing textures, soft steam, rich colors, and delicious presentation.
+4. Poster composition & layout: Integrate sleek restaurant promotional poster aesthetics—warm ambient dining atmosphere, slate or chalkboard textured menu framing, elegant subtle decorative culinary herbs, warm festive bistro bokeh lights, and stylish advertising flyer balance.
+5. Brand atmosphere: ${brandTone}, color accents matching ${Array.isArray(colorPalette) ? colorPalette.join(', ') : '#ff5a00'}.
+6. Aspect ratio: 1:1 square.
+7. Output ONLY the raw descriptive prompt in English (2-3 rich, evocative sentences). No title, no quotes, no markdown, no commentary.`;
 
-        const claudeUserPrompt = `Create a photorealistic food photography prompt for:
-- Dish: ${offerLabel} (${offerDetails})
-- Style: ${restaurant.type || 'Bistrot'}
-- Atmosphere: ${brandTone}`;
+        const claudeUserPrompt = `Create an advertising poster image prompt for:
+- Restaurant: ${restaurant.name} (${restaurant.type || 'Bistrot & Gastronomie'})
+- City: ${restaurant.city || restaurant.address || 'France'}
+- Promoted Offer / Dish: ${offerLabel} (${offerDetails})
+- Code Word: ${codeWord}
+- Occasion / Signal: ${oppTitle} (${oppDesc})
+- Target audience: ${targetAudience}`;
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const claudeModels = [
+          'anthropic/claude-haiku-4.5',
+          'anthropic/claude-3.5-sonnet:beta',
+          'openai/gpt-4o-mini',
+        ];
 
-        const claudeRes = await fetch(`${baseUrl}/chat/completions`, {
-          method: 'POST',
-          signal: controller.signal,
-          headers: {
-            Authorization: `Bearer ${key}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://getspecial.dev',
-          },
-          body: JSON.stringify({
-            model: 'openai/gpt-4o-mini',
-            temperature: 0.6,
-            messages: [
-              { role: 'system', content: claudeSystemPrompt },
-              { role: 'user', content: claudeUserPrompt },
-            ],
-          }),
-        }).finally(() => clearTimeout(timeoutId));
+        for (const cMod of claudeModels) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        if (claudeRes.ok) {
-          const claudeData = await claudeRes.json();
-          const p = claudeData.choices?.[0]?.message?.content?.trim();
-          if (p) {
-            visualPrompt = p;
+            const claudeRes = await fetch(`${baseUrl}/chat/completions`, {
+              method: 'POST',
+              signal: controller.signal,
+              headers: {
+                Authorization: `Bearer ${key}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': 'https://getspecial.dev',
+                'X-Title': 'GetSpecial Poster Art Director',
+              },
+              body: JSON.stringify({
+                model: cMod,
+                temperature: 0.6,
+                messages: [
+                  { role: 'system', content: claudeSystemPrompt },
+                  { role: 'user', content: claudeUserPrompt },
+                ],
+              }),
+            }).finally(() => clearTimeout(timeoutId));
+
+            if (claudeRes.ok) {
+              const claudeData = await claudeRes.json();
+              const p = claudeData.choices?.[0]?.message?.content?.trim();
+              if (p && !p.startsWith('{') && p.length > 30) {
+                // Nettoyer les éventuels préfixes markdown
+                visualPrompt = p.replace(/^#+.*?\n+/g, '').replace(/^"|"$/g, '').trim();
+                break;
+              }
+            }
+          } catch (cErr: any) {
+            console.warn(`[CLAUDE_${cMod}_ERROR]`, cErr.message);
           }
         }
       } catch (promptErr: any) {

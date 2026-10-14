@@ -119,6 +119,10 @@ export interface ContextDossier {
     isOffPeakDay: boolean;
     isClosed: boolean;
     hoursText?: string;
+    currentTime?: string;
+    currentHour?: number;
+    timeOfDay?: 'morning' | 'lunch' | 'afternoon' | 'evening' | 'night';
+    timeOfDayFr?: string;
   };
   weather: {
     available: boolean;

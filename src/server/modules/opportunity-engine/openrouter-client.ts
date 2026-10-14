@@ -44,17 +44,25 @@ export class OpenRouterClient {
 Ton objectif est de détecter jusqu'à 5 opportunités commerciales concrètes, ultra-claires et pertinentes aujourd'hui pour cet établissement.
 
 RÈGLES D'OR INTANGIBLES (GUARDRAILS & BASE DE CONNAISSANCES) :
-1. GROUND TRUTH ABSOLU : Tu n'as STRICTEMENT AUCUN DROIT d'inventer des plats, boissons ou concepts absents des spécialités ou plats réels du restaurant. Utilise UNIQUEMENT les spécialités réelles de l'établissement.
-2. SYNTHÈSE EN UNE PHRASE DIRECTE (oneSentenceSummary) : Produis pour chaque opportunité une phrase unique limpide qui résume TOUT : [Événement/signal détecté] : promouvez [Plat/formule & avantage] dès [Heure] sur [Réseaux] (mot-code : [CODE]).
-3. HIÉRARCHIE DES OFFRES (Section 5.8) : Priorise : (1) Article offert conditionné (dessert, café, boisson avec un plat : point mort très bas 1-2 couverts), (2) Formule à marge saine (plat + boisson/dessert), (3) Happy hour sur créneau creux précis (15h-18h30), (4) Remise en pourcentage modérée. Évite absolument le "deux pour un".
-4. CE QUE L'IA NE DOIT JAMAIS FAIRE (Section 13) : Ne jamais inventer de chiffres financiers ou de prévisions fantaisistes. Ne jamais promettre de résultats. Ne jamais dépasser la marge brute du restaurant.
-5. DESCRIPTION & RAISONS PÉDAGOGIQUES : 2 phrases complètes, chaleureuses et faciles à comprendre en 10 secondes. Dans "reasons", 2 à 3 bullet points percutants et courts.
-6. MOT-CODE ORAL AU COMPTOIR : Chaque offre DOIT comporter un mot-code court (ex: MATCH15, SOLEIL25, BURGER8) facile à prononcer et mémorisable pour le client et le serveur.
-7. FORCE ET IMPORTANCE : Tu dois évaluer la force/importance de chaque opportunité via "importance" ("HIGH", "MEDIUM", "MODERATE") et "impactScore" (score entier entre 1 et 100).
-8. "category" doit être STRICTEMENT l'une de ces valeurs : "LOCAL_EVENT", "WEATHER_BOOST", "EMPTY_SLOT", "OFFER_PROMOTION", "SPECIAL_OCCASION".
-9. SOBRIÉTÉ : Si aucune action commerciale n'a de sens crédible aujourd'hui, renvoie hasOpportunity: false et une liste vide.
-10. PLAFOND : Maximum 5 opportunités.
-11. RÉPONSE : Retourne STRICTEMENT un objet JSON valide conforme au schéma demandé, sans aucun markdown ni texte autour.
+1. ALIGNEMENT TEMPOREL ET HEURE LOCALE STRICTE (RÈGLE ABSOLUE) :
+- L'heure locale chez le restaurateur est ${dossier.currentDay.currentTime || 'en cours'} (${dossier.currentDay.timeOfDayFr || 'Aujourd’hui'}, tranche: ${dossier.currentDay.timeOfDay || 'lunch'}).
+- SI timeOfDay = 'morning' (matinée avant 11h) : Propose des actions pour attirer au DÉJEUNER DU MIDI (plat du jour, formule express, terrasse si soleil). Heure de publication recommandée : 10h45 - 11h30.
+- SI timeOfDay = 'lunch' (11h-14h) : Propose une action déjeuner immédiate ou dessert/café gourmand. Heure de publication recommandée : immédiate ou ${dossier.currentDay.currentTime || '12:00'}.
+- SI timeOfDay = 'afternoon' (14h-18h) : Propose des actions AFTERWORK, HAPPY HOUR, APÉRO ou DÎNER DU SOIR (planches, cocktails/bières, grillades du soir). Heure de publication recommandée : 16h30 - 17h30.
+- SI timeOfDay = 'evening' (18h-23h) : INTERDICTION FORMELLE DE PROPOSER UN PETIT-DÉJEUNER OU UN DÉJEUNER DU MIDI ! Propose des actions pour le DÎNER EN COURS (plat signature pour ce soir, dessert offert, boisson du chef, ambiance chaleureuse). Heure de publication recommandée : Immédiate ou ${dossier.currentDay.currentTime || '19:00'}.
+- SI timeOfDay = 'night' (après 23h) : Propose d'annoncer l'ardoise et le plat du jour de DEMAIN MIDI. Heure de publication : 10h45.
+2. ÉVÉNEMENTS STRICTEMENT LOCAUX : Tu n'as STRICTEMENT AUCUN DROIT de mentionner des événements venant d'un autre pays ou d'une autre région. Si la liste events[] est vide, c'est parfaitement normal : concentre-toi sur la météo locale, le jour de la semaine et les spécialités réelles du restaurant.
+3. GROUND TRUTH ABSOLU : Tu n'as STRICTEMENT AUCUN DROIT d'inventer des plats, boissons ou concepts absents des spécialités ou plats réels du restaurant. Utilise UNIQUEMENT les spécialités réelles de l'établissement.
+4. SYNTHÈSE EN UNE PHRASE DIRECTE (oneSentenceSummary) : Produis pour chaque opportunité une phrase unique limpide qui résume TOUT : [Événement/signal détecté] : promouvez [Plat/formule & avantage] dès [Heure] sur [Réseaux] (mot-code : [CODE]).
+5. HIÉRARCHIE DES OFFRES (Section 5.8) : Priorise : (1) Article offert conditionné (dessert, café, boisson avec un plat : point mort très bas 1-2 couverts), (2) Formule à marge saine (plat + boisson/dessert), (3) Happy hour sur créneau creux précis (15h-18h30), (4) Remise en pourcentage modérée. Évite absolument le "deux pour un".
+6. CE QUE L'IA NE DOIT JAMAIS FAIRE (Section 13) : Ne jamais inventer de chiffres financiers ou de prévisions fantaisistes. Ne jamais promettre de résultats. Ne jamais dépasser la marge brute du restaurant.
+7. DESCRIPTION & RAISONS PÉDAGOGIQUES : 2 phrases complètes, chaleureuses et faciles à comprendre en 10 secondes. Dans "reasons", 2 à 3 bullet points percutants et courts.
+8. MOT-CODE ORAL AU COMPTOIR : Chaque offre DOIT comporter un mot-code court (ex: MATCH15, SOLEIL25, BURGER8) facile à prononcer et mémorisable pour le client et le serveur.
+9. FORCE ET IMPORTANCE : Tu dois évaluer la force/importance de chaque opportunité via "importance" ("HIGH", "MEDIUM", "MODERATE") et "impactScore" (score entier entre 1 et 100).
+10. "category" doit être STRICTEMENT l'une de ces valeurs : "LOCAL_EVENT", "WEATHER_BOOST", "EMPTY_SLOT", "OFFER_PROMOTION", "SPECIAL_OCCASION".
+11. SOBRIÉTÉ : Si aucune action commerciale n'a de sens crédible aujourd'hui, renvoie hasOpportunity: false et une liste vide.
+12. PLAFOND : Maximum 5 opportunités.
+13. RÉPONSE : Retourne STRICTEMENT un objet JSON valide conforme au schéma demandé, sans aucun markdown ni texte autour.
 
 ---
 EXTRAITS OFFICIELS DE LA BASE DE CONNAISSANCES RESTAURATION :
@@ -249,7 +257,42 @@ Produis la réponse JSON au format exact suivant :
     const primeSpec = specialties[0];
     const secondSpec = specialties[1] || 'boisson au choix';
 
-    // 1. Opportunité Événement Voisin (si présent)
+    const timeOfDay = dossier.currentDay.timeOfDay || 'lunch';
+    const currentTime = dossier.currentDay.currentTime || '12:00';
+
+    let defaultPubTime = '11:30';
+    let defaultValidity = 'Aujourd’hui';
+    let currentSlotTitle = `Formule Déjeuner : ${primeSpec}`;
+    let currentSlotDesc = `Mettez en avant ${primeSpec} pour attirer les clients du midi.`;
+
+    if (timeOfDay === 'evening') {
+      defaultPubTime = currentTime;
+      defaultValidity = 'Ce soir pour le service du dîner';
+      currentSlotTitle = `Ce Soir à Table : Dégustation ${primeSpec}`;
+      currentSlotDesc = `Proposez une expérience chaleureuse ce soir avec ${primeSpec} et ${secondSpec}.`;
+    } else if (timeOfDay === 'afternoon') {
+      defaultPubTime = '17:00';
+      defaultValidity = 'Ce soir dès 17h30 pour l’Afterwork & Dîner';
+      currentSlotTitle = `Afterwork & Apéro : Formule Conviviale ${primeSpec}`;
+      currentSlotDesc = `Captez les sorties de bureau avec une formule détente autour de ${primeSpec}.`;
+    } else if (timeOfDay === 'morning') {
+      defaultPubTime = '11:15';
+      defaultValidity = 'Ce midi de 12h00 à 14h30';
+      currentSlotTitle = `Midi Express : La Spécialité ${primeSpec}`;
+      currentSlotDesc = `Attirez les actifs du quartier pour le déjeuner avec ${primeSpec}.`;
+    } else if (timeOfDay === 'lunch') {
+      defaultPubTime = currentTime;
+      defaultValidity = 'Ce midi pour le service du déjeuner';
+      currentSlotTitle = `Service du Midi : Formule ${primeSpec}`;
+      currentSlotDesc = `Proposez ${primeSpec} dès maintenant pour les retardataires du déjeuner.`;
+    } else {
+      defaultPubTime = '10:45';
+      defaultValidity = 'Demain midi';
+      currentSlotTitle = `Demain Midi : L’Ardoise du Chef avec ${primeSpec}`;
+      currentSlotDesc = `Anticipez le service de demain midi en annonçant ${primeSpec}.`;
+    }
+
+    // 1. Opportunité Événement Voisin (si présent et dans le même pays)
     if (dossier.events.length > 0) {
       const topEvent = dossier.events[0];
       const isSport = topEvent.type.toLowerCase().includes('sport') || topEvent.title.toLowerCase().includes('match');
@@ -275,8 +318,8 @@ Produis la réponse JSON au format exact suivant :
         ],
         distribution: {
           channels: ['INSTAGRAM', 'FACEBOOK', 'GOOGLE_BUSINESS'],
-          recommendedPublishTime: '11:30',
-          publishTimingReason: 'Heure à laquelle les spectateurs organisent leur pause repas.',
+          recommendedPublishTime: timeOfDay === 'evening' ? currentTime : '16:30',
+          publishTimingReason: 'Heure à laquelle les spectateurs organisent leur sortie repas.',
         },
         factsUsed: [
           `Événement détecté : ${topEvent.title}`,
@@ -289,7 +332,7 @@ Produis la réponse JSON au format exact suivant :
     // 2. Opportunité Météo Terrasse (si terrasse + soleil)
     if (dossier.weather.available && dossier.weather.isSunny && rest.hasTerrace) {
       opps.push({
-        title: 'Météo Favorable : Terrasse & Dégustation',
+        title: timeOfDay === 'evening' || timeOfDay === 'afternoon' ? 'Terrasse & Douceur de Soirée' : 'Météo Favorable : Terrasse & Dégustation',
         description: 'Profitez des conditions ensoleillées pour remplir votre terrasse ce midi ou en début de soirée.',
         category: 'WEATHER_BOOST',
         urgency: 'medium',
@@ -299,7 +342,7 @@ Produis la réponse JSON au format exact suivant :
           label: `Moment Terrasse : ${secondSpec} & ${primeSpec}`,
           details: `Formule dégustation en terrasse autour de vos ${primeSpec}.`,
           codeWord: 'SOLEIL25',
-          validityText: 'Aujourd’hui pendant les heures de service en terrasse',
+          validityText: timeOfDay === 'evening' || timeOfDay === 'afternoon' ? 'Ce soir en terrasse' : 'Ce midi en terrasse',
         },
         reasons: [
           `Météo dégagée annoncée : ${dossier.weather.summary}.`,
@@ -308,8 +351,8 @@ Produis la réponse JSON au format exact suivant :
         ],
         distribution: {
           channels: ['INSTAGRAM', 'FACEBOOK'],
-          recommendedPublishTime: '10:30',
-          publishTimingReason: 'Pour capter les décisions de déjeuner et d’afterwork au soleil.',
+          recommendedPublishTime: timeOfDay === 'evening' || timeOfDay === 'afternoon' ? '17:00' : '11:15',
+          publishTimingReason: 'Pour capter les décisions de sortie au soleil.',
         },
         factsUsed: [
           `Météo : ${dossier.weather.summary}`,
@@ -383,6 +426,38 @@ Produis la réponse JSON au format exact suivant :
             `Description : ${activeOffer.description}`,
           ],
         });
+    }
+
+    // 5. Opportunité socle synchronisée sur l'heure locale si aucune opportunité externe
+    if (opps.length === 0) {
+      opps.push({
+        title: currentSlotTitle,
+        description: currentSlotDesc,
+        category: timeOfDay === 'evening' || timeOfDay === 'afternoon' ? 'SPECIAL_OCCASION' : 'OFFER_PROMOTION',
+        urgency: 'high',
+        importance: 'HIGH',
+        impactScore: 92,
+        offer: {
+          label: `Privilège du Moment : ${primeSpec}`,
+          details: `${primeSpec} préparé maison avec ${secondSpec}.`,
+          codeWord: 'GOURMAND',
+          validityText: defaultValidity,
+        },
+        reasons: [
+          `Action directement synchronisée sur le créneau en cours (${dossier.currentDay.timeOfDayFr || 'Aujourd’hui'}).`,
+          `Mise en avant de votre spécialité phare (${primeSpec}) pour attirer une clientèle qualifiée.`,
+        ],
+        distribution: {
+          channels: ['INSTAGRAM', 'FACEBOOK'],
+          recommendedPublishTime: defaultPubTime,
+          publishTimingReason: `Créneau de diffusion optimal pour capter les clients à ${defaultPubTime}.`,
+        },
+        factsUsed: [
+          `Moment : ${dossier.currentDay.timeOfDayFr || 'Aujourd’hui'}`,
+          `Spécialité : ${primeSpec}`,
+          `Adresse : ${rest.address}`,
+        ],
+      });
     }
 
     // Plafonner à 5 opportunités maximum (comme spécifié)

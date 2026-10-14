@@ -238,6 +238,48 @@ export async function GET(req: NextRequest) {
       ? restaurant.specialties
       : ['Cuisine & Spécialités maison'];
 
+    // 4. CALCUL DE L'HEURE LOCALE RÉELLE ET TRANCHE HORAIRE (Opportunity Engine)
+    const timezone = restaurant.timezone || (country === 'US' ? 'America/Chicago' : country === 'BJ' ? 'Africa/Porto-Novo' : country === 'CI' ? 'Africa/Abidjan' : 'Europe/Paris');
+    let localHour = now.getHours();
+    let localMinute = now.getMinutes();
+    let localTimeStr = `${String(localHour).padStart(2, '0')}:${String(localMinute).padStart(2, '0')}`;
+
+    try {
+      const formatter = new Intl.DateTimeFormat('fr-FR', {
+        timeZone: timezone,
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: false,
+      });
+      const parts = formatter.formatToParts(now);
+      const h = parts.find((p) => p.type === 'hour')?.value;
+      const m = parts.find((p) => p.type === 'minute')?.value;
+      if (h) localHour = parseInt(h, 10);
+      if (m) localMinute = parseInt(m, 10);
+      localTimeStr = `${String(localHour).padStart(2, '0')}:${String(localMinute).padStart(2, '0')}`;
+    } catch {}
+
+    // Détermination contextuelle de la tranche horaire
+    let timeOfDay: 'morning' | 'lunch' | 'afternoon' | 'evening' | 'night' = 'lunch';
+    let timeOfDayFr = 'Midi / Service du déjeuner';
+
+    if (localHour >= 5 && localHour < 11) {
+      timeOfDay = 'morning';
+      timeOfDayFr = 'Matinée (Avant le service du midi)';
+    } else if (localHour >= 11 && localHour < 14) {
+      timeOfDay = 'lunch';
+      timeOfDayFr = 'Midi / Service du déjeuner';
+    } else if (localHour >= 14 && localHour < 18) {
+      timeOfDay = 'afternoon';
+      timeOfDayFr = 'Après-midi (Préparation afterwork, apéro & soirée)';
+    } else if (localHour >= 18 && localHour < 22) {
+      timeOfDay = 'evening';
+      timeOfDayFr = 'Soirée / Service du dîner';
+    } else {
+      timeOfDay = 'night';
+      timeOfDayFr = 'Fin de soirée & nuit (Préparation du service de demain)';
+    }
+
     const realDossier: ContextDossier = {
       restaurant: {
         id: restaurant.id,
@@ -245,7 +287,7 @@ export async function GET(req: NextRequest) {
         type: restaurant.type || 'Restaurant',
         address: restaurant.address,
         city: restaurant.city || restaurant.address.split(',')[1]?.trim() || '',
-        timezone: restaurant.timezone || 'Europe/Paris',
+        timezone: restaurant.timezone || timezone,
         specialties,
         hasTerrace: restaurant.profile?.hasTerrace ?? false,
         averageTicket: '25 €',
@@ -261,6 +303,10 @@ export async function GET(req: NextRequest) {
         isOffPeakDay,
         isClosed: false,
         hoursText: 'Service continu',
+        currentTime: localTimeStr,
+        currentHour: localHour,
+        timeOfDay,
+        timeOfDayFr,
       },
       weather: weatherData?.available ? {
         available: true,

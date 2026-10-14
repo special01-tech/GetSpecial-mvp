@@ -102,27 +102,34 @@ export async function GET(req: NextRequest) {
       },
     };
 
-    // A. Événements Ticketmaster (Sports, concerts, grands rassemblements)
+    // A. Événements Ticketmaster (Sports, concerts, grands rassemblements locaux)
     if (tmApiKey) {
       try {
-        let tmUrl = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${tmApiKey}&countryCode=${country}&size=6&sort=date,asc`;
-        if (country === 'US') {
-          tmUrl = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${tmApiKey}&latlong=${lat.toFixed(4)},${lon.toFixed(4)}&radius=50&unit=miles&size=6&sort=date,asc`;
+        const cleanCountry = country.toUpperCase();
+        let tmUrl = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${tmApiKey}&countryCode=${cleanCountry}&size=6&sort=date,asc`;
+        if (cleanCountry === 'US') {
+          tmUrl = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${tmApiKey}&latlong=${lat.toFixed(4)},${lon.toFixed(4)}&radius=50&unit=miles&countryCode=US&size=6&sort=date,asc`;
         }
 
         let tmRes = await fetch(tmUrl, { next: { revalidate: 600 } });
         let tmData = tmRes.ok ? await tmRes.json() : null;
         let events = tmData?._embedded?.events || [];
 
-        // Si aucun résultat local pour ce pays, on essaie une recherche par ville ou générale
+        // Si aucun résultat local pour ce pays, on essaie une recherche par ville dans le même pays
         if (events.length === 0 && restaurant?.city) {
-          const tmCityUrl = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${tmApiKey}&city=${encodeURIComponent(restaurant.city)}&size=6&sort=date,asc`;
+          const tmCityUrl = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${tmApiKey}&city=${encodeURIComponent(restaurant.city)}&countryCode=${cleanCountry}&size=6&sort=date,asc`;
           const cityRes = await fetch(tmCityUrl, { next: { revalidate: 600 } });
           if (cityRes.ok) {
             const cityData = await cityRes.json();
             events = cityData?._embedded?.events || [];
           }
         }
+
+        // Filtrage strict : éliminer tout événement hors du pays du restaurant
+        events = events.filter((ev: any) => {
+          const venueCountry = ev._embedded?.venues?.[0]?.country?.countryCode;
+          return !venueCountry || venueCountry.toUpperCase() === cleanCountry;
+        });
 
         eventApisStatus.ticketmaster.eventsCount = events.length;
         events.forEach((ev: any) => {
