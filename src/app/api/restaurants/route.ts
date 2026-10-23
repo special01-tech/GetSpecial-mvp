@@ -315,6 +315,13 @@ export async function POST(req: NextRequest) {
       };
     });
 
+    // Déduction automatique des spécialités depuis les plats signatures ou les premiers plats du menu
+    const signatureDishes = formattedDishes.filter((d) => d.isSignature).map((d) => d.name).slice(0, 5);
+    const fallbackDishes = formattedDishes.slice(0, 4).map((d) => d.name);
+    const resolvedSpecialties = (Array.isArray(specialties) && specialties.length > 0)
+      ? specialties
+      : (signatureDishes.length > 0 ? signatureDishes : fallbackDishes);
+
     // Recherche d'un restaurant existant appartenant à cet utilisateur (pour éviter les doublons lors de l'onboarding)
     let existingRestaurant: any = null;
     if (explicitId && explicitId !== 'current' && explicitId !== 'default') {
@@ -362,7 +369,7 @@ export async function POST(req: NextRequest) {
           longitude: lon ?? 2.3522,
           timezone: calculatedTimezone,
           openingHours: structuredOpeningHours,
-          specialties,
+          specialties: resolvedSpecialties.length > 0 ? resolvedSpecialties : (existingRestaurant.specialties || []),
         },
       });
 
@@ -443,7 +450,7 @@ export async function POST(req: NextRequest) {
           longitude: lon ?? 2.3522,
           timezone: calculatedTimezone,
           openingHours: structuredOpeningHours,
-          specialties,
+          specialties: resolvedSpecialties,
           userId: targetUserId,
           profile: {
             create: {

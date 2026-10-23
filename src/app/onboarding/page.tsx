@@ -677,12 +677,38 @@ export default function UnifiedOnboardingPage() {
         const json = await res.json();
         if (json.success && json.data) {
           const { dishes, extractedOffers, rawSummary, menuMetadata } = json.data;
-          setExtractedMenuDishes(dishes || []);
-          setExtractedMenuOffers(extractedOffers || []);
+          const safeDishes = dishes || [];
+          const safeOffers = extractedOffers || [];
+          setExtractedMenuDishes(safeDishes);
+          setExtractedMenuOffers(safeOffers);
           setMenuRawSummary(rawSummary || '');
           setMenuMetadataState(menuMetadata || null);
+
+          // Persistance locale immédiate (zéro perte de données en cas de reload)
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('getspecial_restaurant_dishes', JSON.stringify(safeDishes));
+            localStorage.setItem('getspecial_restaurant_offers', JSON.stringify(safeOffers));
+            if (menuMetadata) {
+              localStorage.setItem('getspecial_restaurant_menu', JSON.stringify(menuMetadata));
+            }
+          }
+
+          // Persistance immédiate en base de données si un restaurantId existe déjà
+          const existingRestId = typeof window !== 'undefined' ? localStorage.getItem('getspecial_restaurant_id') : null;
+          if (existingRestId && existingRestId !== 'rest_onboarding_temp') {
+            fetch(`/api/restaurants/${existingRestId}/dishes`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                dishes: safeDishes,
+                rawSummary: rawSummary || null,
+                menuMetadata: menuMetadata || null,
+              }),
+            }).catch(e => console.warn('[AUTO_SAVE_DISHES_WARN]', e));
+          }
+
           setMenuExtractionNotice(
-            `✨ Menu analysé : ${dishes?.length || 0} plat(s) et ${extractedOffers?.length || 0} offre(s) détecté(s).`
+            `✨ Menu analysé : ${safeDishes.length} plat(s) et ${safeOffers.length} offre(s) détecté(s).`
           );
         } else {
           setMenuExtractionNotice(
@@ -810,6 +836,10 @@ export default function UnifiedOnboardingPage() {
               targetAudience: targetAudiences,
               logoUrl: logoPreview || undefined,
               brandColors: customColors.filter(Boolean),
+              dishes: extractedMenuDishes.length > 0 ? extractedMenuDishes : undefined,
+              extractedOffers: extractedMenuOffers.length > 0 ? extractedMenuOffers : undefined,
+              rawSummary: menuRawSummary || undefined,
+              menuMetadata: menuMetadataState || undefined,
             }),
           });
           const initJson = await initRes.json().catch(() => null);
@@ -864,12 +894,20 @@ export default function UnifiedOnboardingPage() {
     }
   };
 
-  // Passer et compléter plus tard (non bloquant)
+  // Passer et compléter plus tard (non bloquant, sauvegarde intégrale des données déjà acquises)
   const handleSkipLater = async () => {
     setIsSubmitting(true);
     try {
       if (name.trim()) {
         const clientTz = typeof window !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'Europe/Paris';
+        const signatureDishes = extractedMenuDishes
+          .filter((d: any) => d.isSignature)
+          .map((d: any) => d.name)
+          .slice(0, 5);
+        const derivedSpecialties = signatureDishes.length > 0
+          ? signatureDishes
+          : extractedMenuDishes.slice(0, 4).map((d: any) => d.name);
+
         const res = await fetch('/api/restaurants', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -878,10 +916,26 @@ export default function UnifiedOnboardingPage() {
             type: restaurantType || 'restaurant',
             address: address.trim() || `${name.trim()}, ${city.trim() || 'Paris'}`,
             city: city.trim() || undefined,
+            postalCode: postalCode ? postalCode.trim() : undefined,
             country: country.trim().toUpperCase() || 'FR',
             latitude: customCoords?.lat,
             longitude: customCoords?.lon,
             timezone: clientTz,
+            phone: phone.trim() || undefined,
+            website: website.trim() || undefined,
+            hasTerrace,
+            hasDelivery,
+            capacityCovers: parseInt(capacityCovers, 10) || undefined,
+            averageTicket: parseFloat(averageTicket) || undefined,
+            offPeakDays,
+            marketingGoal,
+            targetAudience: targetAudiences,
+            specialties: derivedSpecialties.length > 0 ? derivedSpecialties : undefined,
+            menuUrl: menuFileName ? `menu://${menuFileName}` : undefined,
+            rawSummary: menuRawSummary || undefined,
+            menuMetadata: menuMetadataState || undefined,
+            dishes: extractedMenuDishes.length > 0 ? extractedMenuDishes : undefined,
+            extractedOffers: extractedMenuOffers.length > 0 ? extractedMenuOffers : undefined,
           }),
         });
         const json = await res.json().catch(() => null);
@@ -963,7 +1017,11 @@ export default function UnifiedOnboardingPage() {
           phone: phone.trim() || undefined,
           website: website.trim() || undefined,
           openingHours: scrapedOpeningHoursRaw || selectedGooglePlace?.openingHours || undefined,
-          specialties: (selectedGooglePlace as any)?.specialties || [],
+          specialties: ((selectedGooglePlace as any)?.specialties?.length ? (selectedGooglePlace as any).specialties : (
+            extractedMenuDishes.filter((d: any) => d.isSignature).map((d: any) => d.name).slice(0, 5).length
+              ? extractedMenuDishes.filter((d: any) => d.isSignature).map((d: any) => d.name).slice(0, 5)
+              : extractedMenuDishes.slice(0, 4).map((d: any) => d.name)
+          )),
           tone,
           hasTerrace,
           hasDelivery,
