@@ -141,79 +141,99 @@ export default function PostInsights({ post, onViewPost }: PostInsightsProps) {
           <span className={styles.badgeAudience}>{t('common.components.postInsights.audienceBadge')}</span>
         </div>
 
-        <div className={styles.demographicsCard}>
-          {/* Répartition Hommes / Femmes */}
-          <div className={styles.genderBlock}>
-            <div className={styles.genderHeader}>
-              <span className={styles.subHeading}>{t('common.components.postInsights.genderHeading')}</span>
-              <span className={styles.genderRatioText}>
-                {t('common.components.postInsights.genderRatio', {
-                  women: post.demographics.gender.women,
-                  men: post.demographics.gender.men,
-                })}
-              </span>
-            </div>
+        {post.demographics ? (
+          <div className={styles.demographicsCard}>
+            {/* Répartition Hommes / Femmes */}
+            <div className={styles.genderBlock}>
+              <div className={styles.genderHeader}>
+                <span className={styles.subHeading}>{t('common.components.postInsights.genderHeading')}</span>
+                <span className={styles.genderRatioText}>
+                  {t('common.components.postInsights.genderRatio', {
+                    women: post.demographics.gender.women,
+                    men: post.demographics.gender.men,
+                  })}
+                </span>
+              </div>
 
-            {/* Barre visuelle Hommes / Femmes */}
-            <div className={styles.genderBarTrack}>
-              <div
-                className={styles.womenSegment}
-                style={{ width: `${post.demographics.gender.women}%` }}
-                title={t('common.components.postInsights.womenTitle', {
-                  pct: post.demographics.gender.women,
-                })}
-              />
-              <div
-                className={styles.menSegment}
-                style={{ width: `${post.demographics.gender.men}%` }}
-                title={t('common.components.postInsights.menTitle', {
-                  pct: post.demographics.gender.men,
-                })}
-              />
-            </div>
-
-            <div className={styles.genderLegend}>
-              <div className={styles.legendItem}>
-                <span className={`${styles.legendDot} ${styles.dotWomen}`} />
-                <span>
-                  {t('common.components.postInsights.womenLegend', {
+              {/* Barre visuelle Hommes / Femmes */}
+              <div className={styles.genderBarTrack}>
+                <div
+                  className={styles.womenSegment}
+                  style={{ width: `${post.demographics.gender.women}%` }}
+                  title={t('common.components.postInsights.womenTitle', {
                     pct: post.demographics.gender.women,
                   })}
-                </span>
-              </div>
-              <div className={styles.legendItem}>
-                <span className={`${styles.legendDot} ${styles.dotMen}`} />
-                <span>
-                  {t('common.components.postInsights.menLegend', {
+                />
+                <div
+                  className={styles.menSegment}
+                  style={{ width: `${post.demographics.gender.men}%` }}
+                  title={t('common.components.postInsights.menTitle', {
                     pct: post.demographics.gender.men,
                   })}
-                </span>
+                />
+              </div>
+
+              <div className={styles.genderLegend}>
+                <div className={styles.legendItem}>
+                  <span className={`${styles.legendDot} ${styles.dotWomen}`} />
+                  <span>
+                    {t('common.components.postInsights.womenLegend', {
+                      pct: post.demographics.gender.women,
+                    })}
+                  </span>
+                </div>
+                <div className={styles.legendItem}>
+                  <span className={`${styles.legendDot} ${styles.dotMen}`} />
+                  <span>
+                    {t('common.components.postInsights.menLegend', {
+                      pct: post.demographics.gender.men,
+                    })}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Tranches d'âge */}
+            <div className={styles.ageBlock}>
+              <span className={styles.subHeading}>{t('common.components.postInsights.ageRangesHeading')}</span>
+
+              <div className={styles.ageBarsList}>
+                {post.demographics.ageRanges.map((age) => (
+                  <div key={age.range} className={styles.ageRow}>
+                    <span className={styles.ageRangeLabel}>{age.range}</span>
+
+                    <div className={styles.ageBarTrack}>
+                      <div
+                        className={styles.ageBarFill}
+                        style={{ width: `${age.percentage}%` }}
+                      />
+                    </div>
+
+                    <span className={styles.agePercentLabel}>{age.percentage}%</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-
-          {/* Tranches d'âge */}
-          <div className={styles.ageBlock}>
-            <span className={styles.subHeading}>{t('common.components.postInsights.ageRangesHeading')}</span>
-
-            <div className={styles.ageBarsList}>
-              {post.demographics.ageRanges.map((age) => (
-                <div key={age.range} className={styles.ageRow}>
-                  <span className={styles.ageRangeLabel}>{age.range}</span>
-
-                  <div className={styles.ageBarTrack}>
-                    <div
-                      className={styles.ageBarFill}
-                      style={{ width: `${age.percentage}%` }}
-                    />
-                  </div>
-
-                  <span className={styles.agePercentLabel}>{age.percentage}%</span>
-                </div>
-              ))}
-            </div>
+        ) : (
+          <div
+            style={{
+              padding: '24px 20px',
+              background: '#f8fafc',
+              border: '1.5px dashed #cbd5e1',
+              borderRadius: '12px',
+              textAlign: 'center',
+              color: '#64748b',
+              fontSize: '13px',
+              lineHeight: 1.5,
+            }}
+          >
+            📊 <strong>Statistiques d&apos;audience en cours de collecte</strong>
+            <p style={{ margin: '6px 0 0', fontSize: '12px' }}>
+              Les répartitions par tranche d&apos;âge et genre seront disponibles dès que la publication cumulera des interactions certifiées sur {post.platform || 'le réseau social'}.
+            </p>
           </div>
-        </div>
+        )}
       </section>
     </div>
   );

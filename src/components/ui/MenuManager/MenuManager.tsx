@@ -7,13 +7,8 @@ import {
   Image as ImageIcon,
   UploadCloud,
   Sparkles,
-  Check,
-  CheckCircle2,
   Trash2,
-  X,
   Loader2,
-  Plus,
-  RefreshCw,
 } from 'lucide-react';
 import {
   RestaurantMenuData,
@@ -26,21 +21,28 @@ interface MenuManagerProps {
   restaurantName: string;
   onImportOffers: (newOffers: RestaurantOffer[]) => void;
   onNotice: (message: string) => void;
+  onMenuExtracted?: (result: {
+    dishes: any[];
+    extractedOffers: any[];
+    rawSummary?: string;
+    detectedCategories?: string[];
+  }) => void;
 }
 
 export default function MenuManager({
   restaurantName,
   onImportOffers,
   onNotice,
+  onMenuExtracted,
 }: MenuManagerProps) {
   const [activeTab, setActiveTab] = useState<'pdf' | 'url' | 'image'>('pdf');
   const [menuData, setMenuData] = useState<RestaurantMenuData | null>(INITIAL_RESTAURANT_MENU);
   const [webUrl, setWebUrl] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [extractionResult, setExtractionResult] = useState<any | null>(null);
-  const [selectedOfferIds, setSelectedOfferIds] = useState<string[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Base64 du dernier fichier uploadé (PDF ou image) — envoyé directement à l'API
+  const [uploadedFileBase64, setUploadedFileBase64] = useState<string | null>(null);
 
   // Charger le menu stocké au montage
   useEffect(() => {
@@ -65,7 +67,7 @@ export default function MenuManager({
     }
   };
 
-  // Gestion de l'upload de fichier (PDF ou Image)
+  // Gestion de l'upload de fichier (PDF ou Image) — lecture base64 pour l'envoi IA
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -89,11 +91,19 @@ export default function MenuManager({
       }),
     };
 
-    saveMenuData(newMenu);
-    onNotice(`Fichier « ${file.name} » ajouté avec succès. Prêt pour l’analyse IA.`);
-
-    // Lancer automatiquement l'analyse après l'upload
-    analyzeMenu(newMenu);
+    // Lecture du fichier en base64 pour envoi à l'API d'extraction IA
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      setUploadedFileBase64(base64);
+      saveMenuData(newMenu);
+      onNotice(`Fichier « ${file.name} » chargé. Analyse IA en cours...`);
+      analyzeMenu(newMenu, base64);
+    };
+    reader.onerror = () => {
+      onNotice('Erreur lors de la lecture du fichier. Réessayez.');
+    };
+    reader.readAsDataURL(file);
   };
 
   // Validation du site web
@@ -123,11 +133,14 @@ export default function MenuManager({
   };
 
   // Appel de l'analyse IA via /api/menu/extract
-  const analyzeMenu = async (currentMenu?: RestaurantMenuData | null) => {
+  const analyzeMenu = async (currentMenu?: RestaurantMenuData | null, fileBase64Override?: string) => {
     const targetMenu = currentMenu || menuData;
     if (!targetMenu) return;
 
     setIsAnalyzing(true);
+
+    // Base64 à utiliser : priorité au paramètre direct (upload frais), sinon état
+    const fileBase64ToSend = fileBase64Override || uploadedFileBase64 || null;
 
     try {
       const res = await fetch('/api/menu/extract', {
@@ -136,7 +149,9 @@ export default function MenuManager({
         body: JSON.stringify({
           sourceType: targetMenu.sourceType,
           fileName: targetMenu.name,
-          url: targetMenu.url,
+          fileSize: targetMenu.fileSize,
+          url: targetMenu.url || undefined,
+          fileBase64: fileBase64ToSend || undefined,
           restaurantName,
         }),
       });
@@ -144,11 +159,7 @@ export default function MenuManager({
       const json = await res.json();
       if (json.success && json.data) {
         const result = json.data;
-        setExtractionResult(result);
-        // Sélectionner toutes les offres extraites par défaut
-        if (result.extractedOffers && result.extractedOffers.length > 0) {
-          setSelectedOfferIds(result.extractedOffers.map((o: any) => o.id));
-        }
+
         // Mettre à jour les métadonnées du menu enregistré
         const updatedMenu: RestaurantMenuData = {
           ...targetMenu,
@@ -156,46 +167,53 @@ export default function MenuManager({
           extractedCount: result.extractedOffers?.length || 0,
         };
         saveMenuData(updatedMenu);
-        onNotice('Menu analysé ! L’IA a détecté vos formules et offres phares.');
+
+        // Persister les dishes extraits en base de données
+        if (result.dishes && result.dishes.length > 0) {
+          try {
+            const restaurantId =
+              (typeof window !== 'undefined'
+                ? localStorage.getItem('getspecial_restaurant_id')
+                : null) || 'current';
+
+            await fetch(`/api/restaurants/${restaurantId}/dishes`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                dishes: result.dishes.map((d: any) => ({
+                  name: d.name,
+                  description: d.description || '',
+                  priceText: d.price || '',
+                })),
+              }),
+            });
+          } catch (dbErr) {
+            console.warn('[MENU_DISHES_DB_PATCH_ERROR]', dbErr);
+          }
+        }
+
+        // Sauvegarder dans le localStorage pour persistance immédiate
+        if (typeof window !== 'undefined') {
+          if (result.dishes) {
+            localStorage.setItem('getspecial_restaurant_dishes', JSON.stringify(result.dishes));
+          }
+          if (result.rawSummary) {
+            localStorage.setItem('getspecial_restaurant_menu_summary', result.rawSummary);
+          }
+        }
+
+        // Émettre au composant parent (RestaurantOffersPage) pour mettre à jour la section Plats ou Offres
+        onMenuExtracted?.(result);
+
+        onNotice(`✅ ${result.dishes?.length || 0} plat(s) et ${result.extractedOffers?.length || 0} offre(s) extraits de votre menu !`);
       } else {
-        throw new Error(json.error || 'Erreur lors de l’analyse');
+        throw new Error(json.error || 'Erreur lors de l\'analyse');
       }
     } catch (err: any) {
       console.warn('Erreur extraction:', err);
-      onNotice('Impossible d’analyser le menu pour le moment.');
+      onNotice('Impossible d\'analyser le menu pour le moment.');
     } finally {
       setIsAnalyzing(false);
-    }
-  };
-
-  // Toggle sélection d'une offre extraite
-  const toggleOfferSelection = (id: string) => {
-    setSelectedOfferIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
-
-  // Importer les offres sélectionnées dans les offres principales
-  const handleImportSelected = () => {
-    if (!extractionResult?.extractedOffers) return;
-
-    const offersToImport: RestaurantOffer[] = extractionResult.extractedOffers
-      .filter((o: any) => selectedOfferIds.includes(o.id))
-      .map((o: any) => ({
-        id: `off_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-        name: o.name,
-        description: o.description,
-        discount: o.discount,
-        period: o.period,
-        image: o.image,
-        status: 'active' as const,
-        platforms: o.platforms || ['instagram', 'facebook', 'google_business'],
-      }));
-
-    if (offersToImport.length > 0) {
-      onImportOffers(offersToImport);
-      onNotice(`${offersToImport.length} offre(s) importée(s) dans vos offres principales !`);
-      setExtractionResult(null);
     }
   };
 
@@ -334,7 +352,14 @@ export default function MenuManager({
           <div className={styles.activeMenuActions}>
             <button
               type="button"
-              onClick={() => analyzeMenu(menuData)}
+              onClick={() => {
+                if (menuData.sourceType !== 'url' && !uploadedFileBase64) {
+                  onNotice('Veuillez resélectionner le fichier de votre carte pour relancer l’analyse.');
+                  fileInputRef.current?.click();
+                  return;
+                }
+                analyzeMenu(menuData);
+              }}
               disabled={isAnalyzing}
               className={styles.analyzeBtn}
             >
@@ -363,104 +388,6 @@ export default function MenuManager({
             >
               <Trash2 size={13} />
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================= */}
-      {/* MODALE DES RÉSULTATS D'EXTRACTION DE MENU PAR IA          */}
-      {/* ========================================================= */}
-      {extractionResult && (
-        <div className={styles.extractionModalOverlay} role="dialog" aria-modal="true">
-          <div className={styles.extractionModalCard}>
-            <div className={styles.extractionModalHeader}>
-              <div className={styles.extractionHeaderTitleRow}>
-                <div className={styles.sparkleCircle}>
-                  <Sparkles size={18} />
-                </div>
-                <div>
-                  <h4 className={styles.extractionModalTitle}>Formules & Offres détectées</h4>
-                  <p className={styles.extractionModalSubtitle}>
-                    {extractionResult.source?.name} • Sélectionnez les offres à importer dans vos offres principales.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setExtractionResult(null)}
-                className={styles.closeModalBtn}
-                aria-label="Fermer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className={styles.extractionModalBody}>
-              {/* Catégories détectées */}
-              {extractionResult.detectedCategories?.length > 0 && (
-                <div className={styles.categoriesTagsRow}>
-                  {extractionResult.detectedCategories.map((cat: string, i: number) => (
-                    <span key={i} className={styles.categoryTag}>
-                      {cat}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Liste des formules extraites */}
-              <div className={styles.extractedOffersList}>
-                {extractionResult.extractedOffers?.map((off: any) => {
-                  const isChecked = selectedOfferIds.includes(off.id);
-                  return (
-                    <div
-                      key={off.id}
-                      className={`${styles.extractedOfferCard} ${
-                        isChecked ? styles.extractedOfferSelected : ''
-                      }`}
-                      onClick={() => toggleOfferSelection(off.id)}
-                    >
-                      <div className={styles.checkboxCol}>
-                        <div
-                          className={`${styles.customCheckbox} ${
-                            isChecked ? styles.customCheckboxChecked : ''
-                          }`}
-                        >
-                          {isChecked && <Check size={12} strokeWidth={3} />}
-                        </div>
-                      </div>
-
-                      <div className={styles.extractedOfferContent}>
-                        <div className={styles.extractedOfferTop}>
-                          <h5 className={styles.extractedOfferName}>{off.name}</h5>
-                          <span className={styles.extractedOfferPrice}>{off.discount}</span>
-                        </div>
-                        <p className={styles.extractedOfferDesc}>{off.description}</p>
-                        <div className={styles.extractedOfferPeriod}>
-                          🕒 {off.period}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className={styles.extractionModalFooter}>
-              <span className={styles.selectedCountNotice}>
-                {selectedOfferIds.length} offre(s) sélectionnée(s)
-              </span>
-
-              <button
-                type="button"
-                onClick={handleImportSelected}
-                disabled={selectedOfferIds.length === 0}
-                className={styles.importSelectedBtn}
-              >
-                <Plus size={15} />
-                <span>Importer dans mes offres principales ({selectedOfferIds.length})</span>
-              </button>
-            </div>
           </div>
         </div>
       )}

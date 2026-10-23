@@ -21,7 +21,7 @@ export const ASPECT: Record<ImageFormat, string> = {
 };
 
 export function parseDataUrl(url: string): { data: Buffer; mime: string } | null {
-  const m = /^data:([^;,]+);base64,(.+)$/s.exec(url);
+  const m = /^data:([^;,]+);base64,([\\s\\S]+)$/.exec(url);
   return m ? { mime: m[1], data: Buffer.from(m[2], "base64") } : null;
 }
 

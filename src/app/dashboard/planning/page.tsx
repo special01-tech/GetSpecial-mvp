@@ -4,18 +4,25 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Calendar as CalendarIcon,
+  CalendarDays,
+  CalendarPlus,
   ChevronLeft,
   ChevronRight,
   Download,
   X,
   Plus,
-  CalendarDays,
-  CalendarPlus,
   Pencil,
   Trash2,
   Clock,
   Sparkles,
-  ArrowLeft,
+  ArrowRight,
+  List,
+  LayoutGrid,
+  Flame,
+  Tag,
+  Share2,
+  Layers,
+  CheckCircle2,
 } from 'lucide-react';
 import { useLanguage } from '@/i18n';
 import styles from './planning.module.css';
@@ -65,12 +72,29 @@ export default function PlanningPage() {
   const router = useRouter();
   const { t } = useLanguage();
 
-  // Bannière d'installation PWA
-  const [showInstallBanner, setShowInstallBanner] = useState(true);
+  // Bannière d'installation PWA (dismissible et mémorisée)
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
 
-  // Date actuelle du calendrier (Initialisé sur octobre 2026 pour correspondre fidèlement à la maquette)
+  useEffect(() => {
+    try {
+      const dismissed = localStorage.getItem('gs_pwa_banner_dismissed');
+      if (!dismissed) setShowInstallBanner(true);
+    } catch {}
+  }, []);
+
+  const handleDismissInstallBanner = () => {
+    setShowInstallBanner(false);
+    try {
+      localStorage.setItem('gs_pwa_banner_dismissed', 'true');
+    } catch {}
+  };
+
+  // Mode d'affichage : 'agenda' (semaine + jour, mobile-first), 'month' (grille 42 jours), 'timeline' (flux continu)
+  const [viewMode, setViewMode] = useState<'agenda' | 'month' | 'timeline'>('agenda');
+
+  // Date de référence (initialisée sur octobre 2026 selon la maquette)
   const [currentDate, setCurrentDate] = useState(() => new Date(2026, 9, 9));
-  const [selectedDay, setSelectedDay] = useState<number | null>(9);
+  const [selectedDateStr, setSelectedDateStr] = useState<string>('2026-10-09');
 
   // Localisation du restaurant pour la carte d'événements à venir
   const [restaurantCity] = useState('Lomé, Togo');
@@ -157,79 +181,133 @@ export default function PlanningPage() {
       ];
       setUserEvents(initialUserEvents);
       localStorage.setItem('gs_user_events', JSON.stringify(initialUserEvents));
-    } catch {
-      // Ignorer
-    }
+    } catch {}
   }, []);
 
   // ---------------------------------------------------------------------------
-  // Publications Programmées (Vert - Persisté)
+  // Publications Programmées (Vert - Persisté & Synchronisé API)
   // ---------------------------------------------------------------------------
   const [scheduledPosts, setScheduledPosts] = useState<ScheduledPost[]>([]);
 
   useEffect(() => {
+    let initialPosts: ScheduledPost[] = [];
     try {
       const stored = localStorage.getItem('gs_scheduled_posts');
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
+          initialPosts = parsed;
           setScheduledPosts(parsed);
-          return;
         }
       }
-      const initialPosts: ScheduledPost[] = [
-        {
-          id: 'post_1',
-          title: 'Cocktail Signature du Vendredi',
-          dateStr: '2026-10-09',
-          timeStr: '18:30',
-          platform: 'Instagram',
-          status: 'scheduled',
-        },
-        {
-          id: 'post_2',
-          title: 'Menu Découverte du Chef',
-          dateStr: '2026-10-15',
-          timeStr: '12:00',
-          platform: 'Facebook',
-          status: 'scheduled',
-        },
-        {
-          id: 'post_3',
-          title: "Menu d'Halloween Frissonnant",
-          dateStr: '2026-10-31',
-          timeStr: '17:00',
-          platform: 'Instagram',
-          status: 'scheduled',
-        },
-      ];
-      setScheduledPosts(initialPosts);
-      localStorage.setItem('gs_scheduled_posts', JSON.stringify(initialPosts));
-    } catch {
-      // Ignorer
-    }
+      if (initialPosts.length === 0) {
+        initialPosts = [
+          {
+            id: 'post_1',
+            title: 'Cocktail Signature du Vendredi',
+            dateStr: '2026-10-09',
+            timeStr: '18:30',
+            platform: 'Instagram',
+            status: 'scheduled',
+          },
+          {
+            id: 'post_2',
+            title: 'Menu Découverte du Chef',
+            dateStr: '2026-10-15',
+            timeStr: '12:00',
+            platform: 'Facebook',
+            status: 'scheduled',
+          },
+          {
+            id: 'post_3',
+            title: "Menu d'Halloween Frissonnant",
+            dateStr: '2026-10-31',
+            timeStr: '17:00',
+            platform: 'Instagram',
+            status: 'scheduled',
+          },
+        ];
+        setScheduledPosts(initialPosts);
+        localStorage.setItem('gs_scheduled_posts', JSON.stringify(initialPosts));
+      }
+    } catch {}
+
+    // Synchronisation API
+    const syncFromApi = async () => {
+      try {
+        const storedRestId =
+          localStorage.getItem('getspecial_restaurant_id') ||
+          (() => {
+            const r = localStorage.getItem('getspecial_selected_restaurant');
+            try {
+              return r ? JSON.parse(r)?.id : null;
+            } catch {
+              return null;
+            }
+          })();
+
+        if (!storedRestId) return;
+
+        const res = await fetch(`/api/posts?restaurantId=${storedRestId}`);
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          const apiPosts: ScheduledPost[] = json.data
+            .filter((p: any) => ['scheduled', 'approved', 'published'].includes(p.status))
+            .map((p: any) => {
+              const dateObj = p.scheduledAt ? new Date(p.scheduledAt) : new Date(p.createdAt);
+              const dateStr = dateObj.toISOString().split('T')[0];
+              const timeStr = dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+              const title =
+                (Array.isArray(p.verifiedFacts) && p.verifiedFacts[0]) ||
+                (p.text ? p.text.slice(0, 35) + '...' : 'Publication');
+              return {
+                id: p.id,
+                title,
+                dateStr,
+                timeStr,
+                imageUrl: p.imageUrl || undefined,
+                platform: p.platform ? p.platform.charAt(0).toUpperCase() + p.platform.slice(1) : 'Instagram',
+                status: p.status === 'published' ? 'published' : 'scheduled',
+              };
+            });
+
+          setScheduledPosts((prev) => {
+            const map = new Map<string, ScheduledPost>();
+            apiPosts.forEach((p) => map.set(p.id, p));
+            prev.forEach((p) => {
+              if (!map.has(p.id)) map.set(p.id, p);
+            });
+            const merged = Array.from(map.values());
+            try {
+              localStorage.setItem('gs_scheduled_posts', JSON.stringify(merged));
+            } catch {}
+            return merged;
+          });
+        }
+      } catch (e) {
+        console.warn('[PLANNING_API_SYNC_ERROR]', e);
+      }
+    };
+
+    syncFromApi();
   }, []);
 
   const saveUserEventsToStorage = (events: UserEvent[]) => {
     setUserEvents(events);
     try {
       localStorage.setItem('gs_user_events', JSON.stringify(events));
-    } catch {
-      // Ignorer
-    }
+    } catch {}
   };
 
   const saveScheduledPostsToStorage = (posts: ScheduledPost[]) => {
     setScheduledPosts(posts);
     try {
       localStorage.setItem('gs_scheduled_posts', JSON.stringify(posts));
-    } catch {
-      // Ignorer
-    }
+    } catch {}
   };
 
   // ---------------------------------------------------------------------------
-  // Navigation & Mois
+  // Date Helpers & Navigation
   // ---------------------------------------------------------------------------
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
@@ -241,40 +319,110 @@ export default function PlanningPage() {
     });
   }, [currentDate]);
 
-  const weekDayLabels = ['DIM', 'LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM'];
+  // Jours de la semaine de référence (pour le ruban hebdomadaire tactile)
+  const weekDays = useMemo(() => {
+    const selectedDate = new Date(selectedDateStr + 'T12:00:00');
+    const day = selectedDate.getDay(); // 0 Dimanche, 1 Lundi...
+    const diffToMonday = (day === 0 ? -6 : 1) - day;
+    const monday = new Date(selectedDate);
+    monday.setDate(selectedDate.getDate() + diffToMonday);
 
-  const handlePrevMonth = () => {
-    setCurrentDate(new Date(currentYear, currentMonth - 1, 1));
-    setSelectedDay(null);
-  };
+    const days: {
+      dateStr: string;
+      dayNum: number;
+      dayShort: string;
+      isToday: boolean;
+      isSelected: boolean;
+      hasNational: boolean;
+      hasUserEvent: boolean;
+      hasScheduledPost: boolean;
+    }[] = [];
 
-  const handleNextMonth = () => {
-    setCurrentDate(new Date(currentYear, currentMonth + 1, 1));
-    setSelectedDay(null);
-  };
+    for (let i = 0; i < 7; i++) {
+      const cur = new Date(monday);
+      cur.setDate(monday.getDate() + i);
+      const y = cur.getFullYear();
+      const m = String(cur.getMonth() + 1).padStart(2, '0');
+      const d = String(cur.getDate()).padStart(2, '0');
+      const dateStr = `${y}-${m}-${d}`;
 
-  // Date sélectionnée sous forme "YYYY-MM-DD"
-  const selectedDateStr = useMemo(() => {
-    if (!selectedDay) return `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-09`;
-    return `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
-  }, [currentYear, currentMonth, selectedDay]);
+      const isToday = y === 2026 && cur.getMonth() === 9 && cur.getDate() === 9;
+      const isSelected = dateStr === selectedDateStr;
 
+      days.push({
+        dateStr,
+        dayNum: cur.getDate(),
+        dayShort: cur.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '').toUpperCase(),
+        isToday,
+        isSelected,
+        hasNational: nationalEvents.some((e) => e.dateStr === dateStr),
+        hasUserEvent: userEvents.some((e) => e.dateStr === dateStr),
+        hasScheduledPost: scheduledPosts.some((p) => p.dateStr === dateStr),
+      });
+    }
+
+    return days;
+  }, [selectedDateStr, nationalEvents, userEvents, scheduledPosts]);
+
+  // Formatage texte du jour sélectionné
   const selectedDateFormatted = useMemo(() => {
-    if (!selectedDay) return '';
-    const dateObj = new Date(currentYear, currentMonth, selectedDay);
+    const dateObj = new Date(selectedDateStr + 'T12:00:00');
     return dateObj.toLocaleDateString('fr-FR', {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
       year: 'numeric',
     });
-  }, [currentYear, currentMonth, selectedDay]);
+  }, [selectedDateStr]);
+
+  // Navigation dans le ruban de la semaine
+  const handlePrevWeek = () => {
+    const cur = new Date(selectedDateStr + 'T12:00:00');
+    cur.setDate(cur.getDate() - 7);
+    const y = cur.getFullYear();
+    const m = String(cur.getMonth() + 1).padStart(2, '0');
+    const d = String(cur.getDate()).padStart(2, '0');
+    const newDateStr = `${y}-${m}-${d}`;
+    setSelectedDateStr(newDateStr);
+    setCurrentDate(cur);
+  };
+
+  const handleNextWeek = () => {
+    const cur = new Date(selectedDateStr + 'T12:00:00');
+    cur.setDate(cur.getDate() + 7);
+    const y = cur.getFullYear();
+    const m = String(cur.getMonth() + 1).padStart(2, '0');
+    const d = String(cur.getDate()).padStart(2, '0');
+    const newDateStr = `${y}-${m}-${d}`;
+    setSelectedDateStr(newDateStr);
+    setCurrentDate(cur);
+  };
+
+  const handleJumpToToday = () => {
+    setSelectedDateStr('2026-10-09');
+    setCurrentDate(new Date(2026, 9, 9));
+  };
+
+  // Navigation mois (pour vue mois)
+  const handlePrevMonth = () => {
+    const prev = new Date(currentYear, currentMonth - 1, 1);
+    setCurrentDate(prev);
+  };
+
+  const handleNextMonth = () => {
+    const next = new Date(currentYear, currentMonth + 1, 1);
+    setCurrentDate(next);
+  };
 
   // ---------------------------------------------------------------------------
-  // Cellules du calendrier avec les 3 couleurs
+  // Grille Mensuelle (42 cases)
   // ---------------------------------------------------------------------------
+  const weekDayLabels = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
+
   const calendarCells = useMemo(() => {
-    const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
+    const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+    // En JS 0 = Dimanche, 1 = Lundi. Pour aligner LUN en première colonne :
+    const firstDayIndex = (firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1);
     const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
 
@@ -291,7 +439,7 @@ export default function PlanningPage() {
     }[] = [];
 
     // Jours du mois précédent
-    for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+    for (let i = firstDayIndex - 1; i >= 0; i--) {
       const dayNum = daysInPrevMonth - i;
       cells.push({
         key: `prev-${dayNum}`,
@@ -309,12 +457,8 @@ export default function PlanningPage() {
     // Jours du mois courant
     for (let day = 1; day <= daysInCurrentMonth; day++) {
       const isToday = currentYear === 2026 && currentMonth === 9 && day === 9;
-      const isSelected = selectedDay === day;
       const cellDateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-
-      const hasNational = nationalEvents.some((e) => e.dateStr === cellDateStr);
-      const hasUserEvent = userEvents.some((e) => e.dateStr === cellDateStr);
-      const hasScheduledPost = scheduledPosts.some((p) => p.dateStr === cellDateStr);
+      const isSelected = selectedDateStr === cellDateStr;
 
       cells.push({
         key: `curr-${day}`,
@@ -323,9 +467,9 @@ export default function PlanningPage() {
         isCurrentMonth: true,
         isToday,
         isSelected,
-        hasNational,
-        hasUserEvent,
-        hasScheduledPost,
+        hasNational: nationalEvents.some((e) => e.dateStr === cellDateStr),
+        hasUserEvent: userEvents.some((e) => e.dateStr === cellDateStr),
+        hasScheduledPost: scheduledPosts.some((p) => p.dateStr === cellDateStr),
       });
     }
 
@@ -346,13 +490,12 @@ export default function PlanningPage() {
     }
 
     return cells;
-  }, [currentYear, currentMonth, selectedDay, nationalEvents, userEvents, scheduledPosts]);
+  }, [currentYear, currentMonth, selectedDateStr, nationalEvents, userEvents, scheduledPosts]);
 
+  // ---------------------------------------------------------------------------
   // Événements pour le jour sélectionné
+  // ---------------------------------------------------------------------------
   const dayEvents = useMemo(() => {
-    if (!selectedDateStr) {
-      return { nationalEvents: [], userEvents: [], scheduledPosts: [] };
-    }
     return {
       nationalEvents: nationalEvents.filter((e) => e.dateStr === selectedDateStr),
       userEvents: userEvents.filter((e) => e.dateStr === selectedDateStr),
@@ -366,11 +509,38 @@ export default function PlanningPage() {
     dayEvents.scheduledPosts.length;
 
   // ---------------------------------------------------------------------------
-  // Gestion de la Modale : Liste des événements du jour & CRUD
+  // Événements pour la vue Timeline (Tous les événements triés chronologiquement)
+  // ---------------------------------------------------------------------------
+  const timelineDays = useMemo(() => {
+    const datesSet = new Set<string>();
+    nationalEvents.forEach((e) => datesSet.add(e.dateStr));
+    userEvents.forEach((e) => datesSet.add(e.dateStr));
+    scheduledPosts.forEach((p) => datesSet.add(p.dateStr));
+
+    const sortedDates = Array.from(datesSet).sort();
+
+    return sortedDates.map((dateStr) => {
+      const dateObj = new Date(dateStr + 'T12:00:00');
+      const formatted = dateObj.toLocaleDateString('fr-FR', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+      });
+      return {
+        dateStr,
+        formatted,
+        isToday: dateStr === '2026-10-09',
+        national: nationalEvents.filter((e) => e.dateStr === dateStr),
+        user: userEvents.filter((e) => e.dateStr === dateStr),
+        posts: scheduledPosts.filter((p) => p.dateStr === dateStr),
+      };
+    });
+  }, [nationalEvents, userEvents, scheduledPosts]);
+
+  // ---------------------------------------------------------------------------
+  // Modale / Drawer d'Ajout & Modification (CRUD)
   // ---------------------------------------------------------------------------
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<'day_overview' | 'create_event' | 'edit_event'>('day_overview');
-
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [formTitle, setFormTitle] = useState('');
   const [formDateStr, setFormDateStr] = useState('');
@@ -378,14 +548,6 @@ export default function PlanningPage() {
   const [formCategory, setFormCategory] = useState<UserEvent['category']>('tasting');
   const [formDescription, setFormDescription] = useState('');
 
-  // 1. Clic sur une date du calendrier -> Ouvre la modal des événements du jour avec possibilité de CRUD
-  const handleDayClick = (dayNumber: number, dateStr: string) => {
-    setSelectedDay(dayNumber);
-    setModalMode('day_overview');
-    setIsModalOpen(true);
-  };
-
-  // 2. Clic sur le CTA "Ajouter un événement" -> Ouvre directement le formulaire de création
   const handleOpenCreateModal = (defaultDate?: string) => {
     setEditingEventId(null);
     setFormTitle('');
@@ -393,11 +555,9 @@ export default function PlanningPage() {
     setFormTimeStr('19:30');
     setFormCategory('tasting');
     setFormDescription('');
-    setModalMode('create_event');
     setIsModalOpen(true);
   };
 
-  // 3. Clic sur Modifier un événement perso (Update)
   const handleOpenEditModal = (event: UserEvent) => {
     setEditingEventId(event.id);
     setFormTitle(event.title);
@@ -405,17 +565,15 @@ export default function PlanningPage() {
     setFormTimeStr(event.timeStr || '19:30');
     setFormCategory(event.category);
     setFormDescription(event.description || '');
-    setModalMode('edit_event');
     setIsModalOpen(true);
   };
 
-  // 4. Enregistrement (Création / Modification)
   const handleSaveEvent = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formTitle.trim()) return;
 
     if (editingEventId) {
-      // Modification (Update)
+      // Modification
       const updated = userEvents.map((evt) =>
         evt.id === editingEventId
           ? {
@@ -430,7 +588,7 @@ export default function PlanningPage() {
       );
       saveUserEventsToStorage(updated);
     } else {
-      // Création (Create)
+      // Création
       const newEvent: UserEvent = {
         id: `uevt_${Date.now()}`,
         title: formTitle.trim(),
@@ -443,29 +601,30 @@ export default function PlanningPage() {
       saveUserEventsToStorage([newEvent, ...userEvents]);
     }
 
-    // Synchronisation de la date sélectionnée
-    const [y, m, d] = formDateStr.split('-').map(Number);
-    if (y === currentYear && m - 1 === currentMonth) {
-      setSelectedDay(d);
-    }
-
-    // Retour à la liste du jour dans la modale
-    setModalMode('day_overview');
+    setSelectedDateStr(formDateStr);
+    setIsModalOpen(false);
   };
 
-  // 5. Suppression d'un événement utilisateur (Delete)
   const handleDeleteUserEvent = (id: string) => {
     const updated = userEvents.filter((e) => e.id !== id);
     saveUserEventsToStorage(updated);
     if (editingEventId === id) {
-      setModalMode('day_overview');
+      setIsModalOpen(false);
     }
   };
 
-  // 6. Suppression d'une publication programmée
   const handleDeleteScheduledPost = (id: string) => {
     const updated = scheduledPosts.filter((p) => p.id !== id);
     saveScheduledPostsToStorage(updated);
+  };
+
+  const handleCreatePostInStudio = (title: string, desc?: string) => {
+    const params = new URLSearchParams();
+    params.set('type', 'custom');
+    params.set('title', title);
+    if (desc) params.set('desc', desc);
+    params.set('theme', title);
+    router.push(`/dashboard/create?${params.toString()}`);
   };
 
   const getCategoryLabel = (cat: UserEvent['category']) => {
@@ -477,225 +636,678 @@ export default function PlanningPage() {
     <div className={styles.screenWrapper}>
       <div className={styles.container}>
         {/* ========================================================= */}
-        {/* BANNIÈRE D'INSTALLATION PWA (EN HAUT)                    */}
+        {/* BANNIÈRE D'INSTALLATION PWA (Dismissible et fine)        */}
         {/* ========================================================= */}
         {showInstallBanner && (
           <div className={styles.installBanner} role="banner">
             <div className={styles.bannerLeft}>
               <div className={styles.bannerIconBadge}>
-                <Download size={18} strokeWidth={2.3} />
+                <Download size={16} strokeWidth={2.4} />
               </div>
               <div className={styles.bannerTexts}>
-                <h4 className={styles.bannerTitle}>{t('content.planning.banner.title')}</h4>
-                <p className={styles.bannerSubtitle}>{t('content.planning.banner.subtitle')}</p>
+                <h4 className={styles.bannerTitle}>Installer GetSpecial</h4>
+                <p className={styles.bannerSubtitle}>Accès instantané à votre planning en plein écran sur smartphone.</p>
               </div>
             </div>
             <div className={styles.bannerRight}>
               <button
                 type="button"
                 className={styles.bannerInstallBtn}
-                onClick={() => alert('GetSpecial est prêt pour votre écran d’accueil.')}
+                onClick={() => alert('Appuyez sur "Partager" puis "Sur l\'écran d\'accueil" sur Safari ou le menu Chrome.')}
               >
-                {t('content.planning.banner.installBtn')}
+                Installer
               </button>
               <button
                 type="button"
                 className={styles.bannerCloseBtn}
-                onClick={() => setShowInstallBanner(false)}
+                onClick={handleDismissInstallBanner}
                 aria-label="Fermer la bannière"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
           </div>
         )}
 
         {/* ========================================================= */}
-        {/* EN-TÊTE : Titre "Planifié" + Bouton "+ Ajouter un événement"*/}
+        {/* EN-TÊTE DE LA PAGE PLANNING                              */}
         {/* ========================================================= */}
         <header className={styles.header}>
-          <div className={styles.headerTexts}>
-            <h1 className={styles.pageTitle}>{t('content.planning.title')}</h1>
-            <p className={styles.pageSubtitle}>{t('content.planning.subtitle')}</p>
+          <div className={styles.headerTitleRow}>
+            <div className={styles.iconCircle} aria-hidden="true">
+              <CalendarDays size={22} color="#ff5a00" strokeWidth={2.2} />
+            </div>
+            <div className={styles.headerTitleGroup}>
+              <h1 className={styles.pageTitle}>Planning & Événements</h1>
+              <p className={styles.pageSubtitle}>
+                Synchronisez vos animations en salle et vos publications réseaux.
+              </p>
+            </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => handleOpenCreateModal()}
-            className={styles.newBtn}
-            title="Ajouter un événement"
-          >
-            <Plus size={18} strokeWidth={2.4} />
-            <span>Ajouter un événement</span>
-          </button>
+          <div className={styles.headerActionsRow}>
+            {/* Segmented Control : Choix de la Vue (Agenda / Mois / Timeline) */}
+            <nav className={styles.viewSegmentedControl} aria-label="Mode de vue planning">
+              <button
+                type="button"
+                onClick={() => setViewMode('agenda')}
+                className={`${styles.viewTabBtn} ${viewMode === 'agenda' ? styles.viewTabActive : ''}`}
+                title="Vue Semaine & Journée tactile"
+              >
+                <Clock size={15} />
+                <span>Agenda</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('month')}
+                className={`${styles.viewTabBtn} ${viewMode === 'month' ? styles.viewTabActive : ''}`}
+                title="Vue Calendrier Mensuel"
+              >
+                <LayoutGrid size={15} />
+                <span>Mois</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('timeline')}
+                className={`${styles.viewTabBtn} ${viewMode === 'timeline' ? styles.viewTabActive : ''}`}
+                title="Flux continu des prochains événements"
+              >
+                <Layers size={15} />
+                <span>Flux</span>
+              </button>
+            </nav>
+
+            {/* Bouton CTA Principal d'Ajout */}
+            <button
+              type="button"
+              onClick={() => handleOpenCreateModal()}
+              className={styles.newBtn}
+              title="Ajouter un événement au restaurant"
+            >
+              <Plus size={18} strokeWidth={2.4} />
+              <span>Ajouter un événement</span>
+            </button>
+          </div>
         </header>
 
         {/* ========================================================= */}
-        {/* GRILLE 2 COLONNES (CALENDRIER À GAUCHE, 2 CARTES À DROITE)*/}
+        {/* CORPS PRINCIPAL : GAUCHE (VUE ACTIVE) / DROITE (DESKTOP)   */}
         {/* ========================================================= */}
         <div className={styles.planningGrid}>
           {/* ------------------------------------------------------- */}
-          {/* COLONNE GAUCHE : CARTE DU CALENDRIER                    */}
+          {/* COLONNE GAUCHE (CONTENU PRINCIPAL)                      */}
           {/* ------------------------------------------------------- */}
-          <section className={styles.calendarCard} aria-label="Calendrier des événements">
-            {/* Header du calendrier : Mois et flèches de navigation */}
-            <div className={styles.calendarHeader}>
-              <div className={styles.monthTitleGroup}>
-                <CalendarIcon size={19} className={styles.calendarHeaderIcon} />
-                <h2 className={styles.monthTitle}>{monthName}</h2>
-              </div>
+          <main className={styles.mainColumn}>
+            {/* ----------------------------------------------------- */}
+            {/* 1. MODE AGENDA MOBILE-FIRST (SEMAINE + DÉTAIL DU JOUR) */}
+            {/* ----------------------------------------------------- */}
+            {viewMode === 'agenda' && (
+              <section className={styles.agendaSection}>
+                {/* Ruban de la Semaine Tactile */}
+                <div className={styles.weekRibbonCard}>
+                  <div className={styles.weekNavRow}>
+                    <button
+                      type="button"
+                      onClick={handlePrevWeek}
+                      className={styles.weekArrowBtn}
+                      aria-label="Semaine précédente"
+                    >
+                      <ChevronLeft size={18} />
+                    </button>
 
-              <div className={styles.calendarNavBtns}>
-                <button
-                  type="button"
-                  onClick={handlePrevMonth}
-                  className={styles.navBtn}
-                  aria-label="Mois précédent"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleNextMonth}
-                  className={styles.navBtn}
-                  aria-label="Mois suivant"
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            </div>
+                    <div className={styles.weekNavTitleWrap}>
+                      <span className={styles.weekRangeText}>
+                        Semaine du {weekDays[0]?.dayNum} au {weekDays[6]?.dayNum} {monthName}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleJumpToToday}
+                        className={styles.todayPillBtn}
+                        title="Revenir à aujourd'hui"
+                      >
+                        Aujourd&apos;hui
+                      </button>
+                    </div>
 
-            {/* Jours de la semaine : DIM LUN MAR MER JEU VEN SAM */}
-            <div className={styles.weekHeaderGrid} role="row">
-              {weekDayLabels.map((dayLabel) => (
-                <div key={dayLabel} className={styles.weekDayLabel} role="columnheader">
-                  {dayLabel}
+                    <button
+                      type="button"
+                      onClick={handleNextWeek}
+                      className={styles.weekArrowBtn}
+                      aria-label="Semaine suivante"
+                    >
+                      <ChevronRight size={18} />
+                    </button>
+                  </div>
+
+                  {/* 7 Capsules de Jours de la Semaine */}
+                  <div className={styles.weekDaysStrip}>
+                    {weekDays.map((d) => (
+                      <button
+                        key={d.dateStr}
+                        type="button"
+                        onClick={() => setSelectedDateStr(d.dateStr)}
+                        className={`${styles.dayPill} ${d.isSelected ? styles.dayPillSelected : ''} ${
+                          d.isToday ? styles.dayPillToday : ''
+                        }`}
+                      >
+                        <span className={styles.dayPillShort}>{d.dayShort}</span>
+                        <span className={styles.dayPillNum}>{d.dayNum}</span>
+
+                        {/* Puces de couleur sous le jour */}
+                        <div className={styles.dayPillDots}>
+                          {d.hasNational && <span className={styles.dotNational} title="Fête / Événement national" />}
+                          {d.hasUserEvent && <span className={styles.dotUser} title="Événement restaurant" />}
+                          {d.hasScheduledPost && <span className={styles.dotPost} title="Post programmé" />}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
 
-            {/* Grille des 42 cellules du mois avec Code Couleur */}
-            <div className={styles.daysGrid} role="grid">
-              {calendarCells.map((cell) => {
-                // Jours hors du mois (capsules grises douces)
-                if (!cell.isCurrentMonth) {
-                  return (
-                    <div key={cell.key} className={styles.outsideDayCell} aria-disabled="true">
-                      <span>{cell.dayNumber}</span>
-                    </div>
-                  );
-                }
-
-                // Jours du mois courant
-                const cellClasses = [
-                  styles.dayCell,
-                  cell.isToday ? styles.todayCell : '',
-                  cell.isSelected ? styles.selectedCell : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ');
-
-                return (
-                  <div
-                    key={cell.key}
-                    className={cellClasses}
-                    onClick={() => handleDayClick(cell.dayNumber, cell.cellDateStr)}
-                    role="gridcell"
-                    tabIndex={0}
-                    title="Cliquer pour voir et gérer les événements du jour"
-                  >
-                    <div className={styles.dayNumberRow}>
-                      <span className={styles.dayNumber}>{cell.dayNumber}</span>
-                      {cell.isToday && (
-                        <span className={styles.todayBadge}>
-                          {t('content.planning.calendar.todayBadge')}
-                        </span>
-                      )}
+                {/* Section Agenda de la Journée Sélectionnée */}
+                <div className={styles.dayAgendaCard}>
+                  <div className={styles.dayAgendaHeader}>
+                    <div>
+                      <h2 className={styles.dayAgendaTitle}>
+                        {selectedDateFormatted}
+                      </h2>
+                      <p className={styles.dayAgendaSub}>
+                        {totalDayEventsCount === 0
+                          ? 'Aucun événement programmé pour cette journée'
+                          : `${totalDayEventsCount} événement${totalDayEventsCount > 1 ? 's' : ''} et publication${totalDayEventsCount > 1 ? 's' : ''}`}
+                      </p>
                     </div>
 
-                    {/* Pastilles de couleur pour chaque type d'événement */}
-                    <div className={styles.eventIndicatorsRow}>
-                      {cell.hasNational && (
-                        <span
-                          className={styles.dotNational}
-                          title="Événement national / Férié (Violet)"
-                        />
-                      )}
-                      {cell.hasUserEvent && (
-                        <span
-                          className={styles.dotUser}
-                          title="Événement du restaurant (Orange)"
-                        />
-                      )}
-                      {cell.hasScheduledPost && (
-                        <span
-                          className={styles.dotPost}
-                          title="Publication programmée (Vert)"
-                        />
-                      )}
+                    <button
+                      type="button"
+                      onClick={() => handleOpenCreateModal(selectedDateStr)}
+                      className={styles.quickAddBtn}
+                      title="Ajouter un événement pour ce jour"
+                    >
+                      <Plus size={15} strokeWidth={2.4} />
+                      <span>Ajouter</span>
+                    </button>
+                  </div>
+
+                  {/* Liste des cartes du jour */}
+                  {totalDayEventsCount === 0 ? (
+                    <div className={styles.emptyDayBox}>
+                      <div className={styles.emptyDayIcon}>
+                        <Clock size={28} color="#94a3b8" />
+                      </div>
+                      <h3 className={styles.emptyDayHeading}>Journée libre</h3>
+                      <p className={styles.emptyDayText}>
+                        Profitez de cette journée pour annoncer un plat du jour ou programmer une promotion sur vos réseaux sociaux.
+                      </p>
+                      <div className={styles.emptyDayActions}>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenCreateModal(selectedDateStr)}
+                          className={styles.emptyAddEventBtn}
+                        >
+                          <CalendarPlus size={15} />
+                          <span>Ajouter une animation</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCreatePostInStudio(`Spécial du ${selectedDateFormatted}`)}
+                          className={styles.emptyCreatePostBtn}
+                        >
+                          <Sparkles size={15} />
+                          <span>Créer un post dans le Studio</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={styles.dayCardsList}>
+                      {/* 1. Publications Programmées (Vert) */}
+                      {dayEvents.scheduledPosts.map((post) => (
+                        <div key={post.id} className={`${styles.itemCard} ${styles.itemPost}`}>
+                          <div className={styles.itemTopRow}>
+                            <div className={styles.itemBadgeGroup}>
+                              <span className={styles.badgePost}>
+                                <Share2 size={12} />
+                                <span>{post.platform}</span>
+                              </span>
+                              <span className={styles.itemTime}>
+                                <Clock size={12} />
+                                <span>{post.timeStr}</span>
+                              </span>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteScheduledPost(post.id)}
+                              className={styles.deleteMiniBtn}
+                              title="Annuler cette publication"
+                              aria-label="Annuler la publication"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+
+                          <h3 className={styles.itemTitle}>{post.title}</h3>
+
+                          <div className={styles.itemFooter}>
+                            <span className={styles.statusScheduledPill}>
+                              <CheckCircle2 size={12} />
+                              <span>Prêt pour diffusion</span>
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() => handleCreatePostInStudio(post.title)}
+                              className={styles.openInStudioBtn}
+                            >
+                              <span>Modifier dans le Studio</span>
+                              <ArrowRight size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* 2. Événements Personnalisés du Restaurant (Orange) */}
+                      {dayEvents.userEvents.map((evt) => (
+                        <div key={evt.id} className={`${styles.itemCard} ${styles.itemUser}`}>
+                          <div className={styles.itemTopRow}>
+                            <div className={styles.itemBadgeGroup}>
+                              <span className={styles.badgeUser}>
+                                {getCategoryLabel(evt.category)}
+                              </span>
+                              {evt.timeStr && (
+                                <span className={styles.itemTime}>
+                                  <Clock size={12} />
+                                  <span>{evt.timeStr}</span>
+                                </span>
+                              )}
+                            </div>
+
+                            <div className={styles.itemActionIcons}>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditModal(evt)}
+                                className={styles.editMiniBtn}
+                                title="Modifier l'événement"
+                                aria-label="Modifier"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteUserEvent(evt.id)}
+                                className={styles.deleteMiniBtn}
+                                title="Supprimer l'événement"
+                                aria-label="Supprimer"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
+
+                          <h3 className={styles.itemTitle}>{evt.title}</h3>
+                          {evt.description && (
+                            <p className={styles.itemDesc}>{evt.description}</p>
+                          )}
+
+                          <div className={styles.itemFooter}>
+                            <button
+                              type="button"
+                              onClick={() => handleCreatePostInStudio(evt.title, evt.description)}
+                              className={styles.createPostBtnOrange}
+                            >
+                              <Sparkles size={14} />
+                              <span>Créer un post pour cet événement</span>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* 3. Événements Nationaux / Marketing (Violet) */}
+                      {dayEvents.nationalEvents.map((evt) => (
+                        <div key={evt.id} className={`${styles.itemCard} ${styles.itemNational}`}>
+                          <div className={styles.itemTopRow}>
+                            <span className={styles.badgeNational}>{evt.category}</span>
+                            <span className={styles.nationalBadgeDate}>{evt.dateBadge}</span>
+                          </div>
+
+                          <h3 className={styles.itemTitle}>{evt.title}</h3>
+
+                          <div className={styles.itemFooter}>
+                            <button
+                              type="button"
+                              onClick={() => handleCreatePostInStudio(evt.title)}
+                              className={styles.createPostBtnPurple}
+                            >
+                              <Sparkles size={14} />
+                              <span>Générer un post IA pour cette fête</span>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {/* ----------------------------------------------------- */}
+            {/* 2. MODE CALENDRIER MENSUEL (GRILLE COMPLÈTE)           */}
+            {/* ----------------------------------------------------- */}
+            {viewMode === 'month' && (
+              <section className={styles.monthSection}>
+                <div className={styles.calendarCard}>
+                  {/* Header du mois */}
+                  <div className={styles.calendarHeader}>
+                    <div className={styles.monthTitleGroup}>
+                      <CalendarIcon size={19} className={styles.calendarHeaderIcon} />
+                      <h2 className={styles.monthTitle}>{monthName}</h2>
+                    </div>
+
+                    <div className={styles.calendarNavBtns}>
+                      <button
+                        type="button"
+                        onClick={handlePrevMonth}
+                        className={styles.navBtn}
+                        aria-label="Mois précédent"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleNextMonth}
+                        className={styles.navBtn}
+                        aria-label="Mois suivant"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
                     </div>
                   </div>
-                );
-              })}
-            </div>
 
-            {/* En bas du calendrier : Strictement le Code Couleur */}
-            <div className={styles.calendarFooterBox}>
-              <div className={styles.colorLegendBar}>
-                <div className={styles.colorLegendItem}>
-                  <span className={styles.legendDotNational} />
-                  <span>Événements nationaux</span>
+                  {/* Noms des jours LUN MAR MER JEU VEN SAM DIM */}
+                  <div className={styles.weekHeaderGrid} role="row">
+                    {weekDayLabels.map((dayLabel) => (
+                      <div key={dayLabel} className={styles.weekDayLabel} role="columnheader">
+                        {dayLabel}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Grille des 42 cellules */}
+                  <div className={styles.daysGrid} role="grid">
+                    {calendarCells.map((cell) => {
+                      if (!cell.isCurrentMonth) {
+                        return (
+                          <div key={cell.key} className={styles.outsideDayCell} aria-disabled="true">
+                            <span>{cell.dayNumber}</span>
+                          </div>
+                        );
+                      }
+
+                      const cellClasses = [
+                        styles.dayCell,
+                        cell.isToday ? styles.todayCell : '',
+                        cell.isSelected ? styles.selectedCell : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ');
+
+                      return (
+                        <div
+                          key={cell.key}
+                          className={cellClasses}
+                          onClick={() => setSelectedDateStr(cell.cellDateStr)}
+                          role="gridcell"
+                          tabIndex={0}
+                          title="Cliquer pour afficher l'agenda du jour"
+                        >
+                          <div className={styles.dayNumberRow}>
+                            <span className={styles.dayNumber}>{cell.dayNumber}</span>
+                            {cell.isToday && <span className={styles.todayBadge}>Auj.</span>}
+                          </div>
+
+                          <div className={styles.eventIndicatorsRow}>
+                            {cell.hasNational && <span className={styles.dotNational} title="Fête" />}
+                            {cell.hasUserEvent && <span className={styles.dotUser} title="Événement restaurant" />}
+                            {cell.hasScheduledPost && <span className={styles.dotPost} title="Post programmé" />}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Légende du Code Couleur */}
+                  <div className={styles.calendarFooterBox}>
+                    <div className={styles.colorLegendBar}>
+                      <div className={styles.colorLegendItem}>
+                        <span className={styles.legendDotNational} />
+                        <span>Fêtes & National</span>
+                      </div>
+                      <div className={styles.colorLegendItem}>
+                        <span className={styles.legendDotUser} />
+                        <span>Animations restaurant</span>
+                      </div>
+                      <div className={styles.colorLegendItem}>
+                        <span className={styles.legendDotPost} />
+                        <span>Publications programmées</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className={styles.colorLegendItem}>
-                  <span className={styles.legendDotUser} />
-                  <span>Événements du restaurant</span>
+
+                {/* Agenda du jour sous la grille mensuelle (sans popup) */}
+                <div className={styles.monthDayPreview}>
+                  <div className={styles.dayAgendaHeader}>
+                    <div>
+                      <h3 className={styles.dayAgendaTitle}>{selectedDateFormatted}</h3>
+                      <p className={styles.dayAgendaSub}>
+                        {totalDayEventsCount === 0
+                          ? 'Aucun événement ce jour-là'
+                          : `${totalDayEventsCount} événement(s) programmé(s)`}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenCreateModal(selectedDateStr)}
+                      className={styles.quickAddBtn}
+                    >
+                      <Plus size={15} />
+                      <span>Ajouter</span>
+                    </button>
+                  </div>
+
+                  {totalDayEventsCount === 0 ? (
+                    <p className={styles.monthEmptyText}>
+                      Sélectionnez une date avec des pastilles de couleur pour voir ses détails ou planifiez une nouvelle animation.
+                    </p>
+                  ) : (
+                    <div className={styles.dayCardsList}>
+                      {dayEvents.scheduledPosts.map((post) => (
+                        <div key={post.id} className={`${styles.itemCard} ${styles.itemPost}`}>
+                          <div className={styles.itemTopRow}>
+                            <span className={styles.badgePost}>{post.platform} • {post.timeStr}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteScheduledPost(post.id)}
+                              className={styles.deleteMiniBtn}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                          <h4 className={styles.itemTitle}>{post.title}</h4>
+                        </div>
+                      ))}
+
+                      {dayEvents.userEvents.map((evt) => (
+                        <div key={evt.id} className={`${styles.itemCard} ${styles.itemUser}`}>
+                          <div className={styles.itemTopRow}>
+                            <span className={styles.badgeUser}>{getCategoryLabel(evt.category)} • {evt.timeStr}</span>
+                            <div className={styles.itemActionIcons}>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditModal(evt)}
+                                className={styles.editMiniBtn}
+                              >
+                                <Pencil size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteUserEvent(evt.id)}
+                                className={styles.deleteMiniBtn}
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </div>
+                          <h4 className={styles.itemTitle}>{evt.title}</h4>
+                          {evt.description && <p className={styles.itemDesc}>{evt.description}</p>}
+                        </div>
+                      ))}
+
+                      {dayEvents.nationalEvents.map((evt) => (
+                        <div key={evt.id} className={`${styles.itemCard} ${styles.itemNational}`}>
+                          <span className={styles.badgeNational}>{evt.category}</span>
+                          <h4 className={styles.itemTitle}>{evt.title}</h4>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className={styles.colorLegendItem}>
-                  <span className={styles.legendDotPost} />
-                  <span>Publications programmées</span>
+              </section>
+            )}
+
+            {/* ----------------------------------------------------- */}
+            {/* 3. MODE FLUX CONTINU / TIMELINE (30 PROCHAINS JOURS)   */}
+            {/* ----------------------------------------------------- */}
+            {viewMode === 'timeline' && (
+              <section className={styles.timelineSection}>
+                <div className={styles.timelineHeader}>
+                  <h2 className={styles.timelineTitle}>Prochains Temps Forts & Publications</h2>
+                  <p className={styles.timelineSub}>
+                    Vue d&apos;ensemble de toutes les animations et diffusions prévues.
+                  </p>
                 </div>
-              </div>
-            </div>
-          </section>
+
+                <div className={styles.timelineList}>
+                  {timelineDays.map((td) => (
+                    <div key={td.dateStr} className={styles.timelineDayGroup}>
+                      <div className={styles.timelineDateBadge}>
+                        <span className={styles.timelineDateDay}>{td.formatted}</span>
+                        {td.isToday && <span className={styles.todaySmallBadge}>Aujourd&apos;hui</span>}
+                      </div>
+
+                      <div className={styles.timelineCardsStack}>
+                        {td.posts.map((p) => (
+                          <div key={p.id} className={`${styles.itemCard} ${styles.itemPost}`}>
+                            <div className={styles.itemTopRow}>
+                              <span className={styles.badgePost}>{p.platform} • {p.timeStr}</span>
+                              <span className={styles.statusScheduledPill}>Programmé</span>
+                            </div>
+                            <h4 className={styles.itemTitle}>{p.title}</h4>
+                            <div className={styles.itemFooter}>
+                              <button
+                                type="button"
+                                onClick={() => handleCreatePostInStudio(p.title)}
+                                className={styles.openInStudioBtn}
+                              >
+                                <span>Ouvrir dans le Studio</span>
+                                <ArrowRight size={13} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+
+                        {td.user.map((u) => (
+                          <div key={u.id} className={`${styles.itemCard} ${styles.itemUser}`}>
+                            <div className={styles.itemTopRow}>
+                              <span className={styles.badgeUser}>{getCategoryLabel(u.category)} • {u.timeStr}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditModal(u)}
+                                className={styles.editMiniBtn}
+                              >
+                                <Pencil size={13} />
+                              </button>
+                            </div>
+                            <h4 className={styles.itemTitle}>{u.title}</h4>
+                            {u.description && <p className={styles.itemDesc}>{u.description}</p>}
+                            <div className={styles.itemFooter}>
+                              <button
+                                type="button"
+                                onClick={() => handleCreatePostInStudio(u.title, u.description)}
+                                className={styles.createPostBtnOrange}
+                              >
+                                <Sparkles size={13} />
+                                <span>Créer un post pour cet event</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+
+                        {td.national.map((n) => (
+                          <div key={n.id} className={`${styles.itemCard} ${styles.itemNational}`}>
+                            <div className={styles.itemTopRow}>
+                              <span className={styles.badgeNational}>{n.category}</span>
+                            </div>
+                            <h4 className={styles.itemTitle}>{n.title}</h4>
+                            <div className={styles.itemFooter}>
+                              <button
+                                type="button"
+                                onClick={() => handleCreatePostInStudio(n.title)}
+                                className={styles.createPostBtnPurple}
+                              >
+                                <Sparkles size={13} />
+                                <span>Générer un post IA</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </main>
 
           {/* ------------------------------------------------------- */}
-          {/* COLONNE DROITE : 2 CARTES                               */}
+          {/* COLONNE DROITE : 2 CARTES DE SYNTHÈSE (DESKTOP)         */}
           {/* ------------------------------------------------------- */}
           <aside className={styles.sideCardsColumn}>
-            {/* CARTE 1 : ÉVÉNEMENTS À VENIR (NATIONAUX & MARKETING) */}
+            {/* CARTE 1 : ÉVÉNEMENTS NATIONAUX & MARKETING À VENIR */}
             <div className={styles.eventsCard}>
               <h3 className={styles.cardHeaderTitle}>
                 <CalendarDays size={14} />
-                <span>{t('content.planning.upcomingEvents.title')}</span>
+                <span>Événements à venir</span>
               </h3>
               <p className={styles.cardHeaderSub}>
-                {t('content.planning.upcomingEvents.subtitle', { city: restaurantCity })}
+                Événements marketing et jours fériés à {restaurantCity}.
               </p>
 
-              {nationalEvents.slice(0, 3).map((evt) => (
-                <div key={evt.id} className={styles.eventListItem}>
-                  <div className={styles.eventItemInfo}>
-                    <h4 className={styles.eventItemTitle}>{evt.title}</h4>
-                    <span className={styles.eventItemCategory}>{evt.category}</span>
+              <div className={styles.eventsListStack}>
+                {nationalEvents.slice(0, 3).map((evt) => (
+                  <div key={evt.id} className={styles.eventListItem}>
+                    <div className={styles.eventItemInfo}>
+                      <h4 className={styles.eventItemTitle}>{evt.title}</h4>
+                      <span className={styles.eventItemCategory}>{evt.category}</span>
+                    </div>
+                    <span className={styles.eventItemBadge}>{evt.dateBadge}</span>
                   </div>
-                  <span className={styles.eventItemBadge}>{evt.dateBadge}</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
-            {/* CARTE 2 : STRICTEMENT LE CTA D'AJOUT D'ÉVÉNEMENT */}
+            {/* CARTE 2 : STATISTIQUES & AJOUT RAPIDE */}
             <div className={styles.eventsActionCard}>
               <div className={styles.actionCardHeaderRow}>
-                <span className={styles.actionCardTag}>Événements du restaurant</span>
-                <span className={styles.eventCountBadge}>{userEvents.length} perso(s)</span>
+                <span className={styles.actionCardTag}>Animations Restaurant</span>
+                <span className={styles.eventCountBadge}>{userEvents.length} enregistrée(s)</span>
               </div>
 
-              <h3 className={styles.actionCardTitle}>Planifier un événement</h3>
+              <h3 className={styles.actionCardTitle}>Planifier une animation</h3>
               <p className={styles.actionCardDesc}>
-                Soirée match, concert, dégustation ou promotion : planifiez vos événements et synchronisez votre communication.
+                Soirée match, concert live, dégustation ou offre flash : synchronisez votre communication restaurant.
               </p>
 
-              {/* Bouton CTA Principal */}
               <button
                 type="button"
                 className={styles.addEventMainBtn}
@@ -710,7 +1322,7 @@ export default function PlanningPage() {
       </div>
 
       {/* ========================================================= */}
-      {/* MODALE D'ÉVÉNEMENTS DU JOUR & CRUD COMPLET                */}
+      {/* MODALE / BOTTOM SHEET TACTILE (CRÉATION & MODIFICATION)   */}
       {/* ========================================================= */}
       {isModalOpen && (
         <div
@@ -721,38 +1333,18 @@ export default function PlanningPage() {
           role="dialog"
           aria-modal="true"
         >
-          <div
-            className={`${styles.modalCard} ${
-              modalMode === 'day_overview' ? styles.modalCardLarge : ''
-            }`}
-          >
-            {/* En-tête de la modale */}
+          <div className={styles.modalCard}>
+            {/* Poignée tactile pour smartphone */}
+            <div className={styles.modalDragHandle} />
+
             <div className={styles.modalHeader}>
-              <div className={styles.modalHeaderLeft}>
-                {modalMode !== 'day_overview' && (
-                  <button
-                    type="button"
-                    className={styles.modalBackBtn}
-                    onClick={() => setModalMode('day_overview')}
-                    aria-label="Retour aux événements du jour"
-                    title="Retour"
-                  >
-                    <ArrowLeft size={18} />
-                  </button>
-                )}
-                <div className={styles.modalTitleGroup}>
-                  <h3 className={styles.modalTitle}>
-                    {modalMode === 'day_overview' && `Événements du ${selectedDateFormatted || `${selectedDay} ${monthName}`}`}
-                    {modalMode === 'create_event' && 'Ajouter un événement'}
-                    {modalMode === 'edit_event' && 'Modifier l’événement'}
-                  </h3>
-                  <p className={styles.modalSubtitle}>
-                    {modalMode === 'day_overview' &&
-                      `${totalDayEventsCount} événement(s) programmé(s) pour cette date`}
-                    {modalMode !== 'day_overview' &&
-                      'Organisez vos animations et synchronisez vos réseaux sociaux.'}
-                  </p>
-                </div>
+              <div className={styles.modalTitleGroup}>
+                <h3 className={styles.modalTitle}>
+                  {editingEventId ? 'Modifier l’événement' : 'Nouvel événement au restaurant'}
+                </h3>
+                <p className={styles.modalSubtitle}>
+                  Programmez vos soirées, dégustations ou promotions.
+                </p>
               </div>
 
               <button
@@ -765,247 +1357,101 @@ export default function PlanningPage() {
               </button>
             </div>
 
-            {/* CORPS DE LA MODALE — MODE 1 : VUE DU JOUR & LISTE CRUD */}
-            {modalMode === 'day_overview' && (
+            <form onSubmit={handleSaveEvent}>
               <div className={styles.modalBody}>
-                {/* Bouton CTA pour créer un événement ce jour */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
-                  <button
-                    type="button"
-                    className={styles.quickAddDayBtn}
-                    onClick={() => handleOpenCreateModal(selectedDateStr)}
-                    style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                  >
-                    <Plus size={14} strokeWidth={2.4} />
-                    <span>Ajouter un événement pour ce jour</span>
-                  </button>
+                {/* Titre */}
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Titre de l’événement *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: Soirée Dégustation Vins & Tapas"
+                    className={styles.formInput}
+                    value={formTitle}
+                    onChange={(e) => setFormTitle(e.target.value)}
+                    autoFocus
+                  />
                 </div>
 
-                {totalDayEventsCount === 0 ? (
-                  <div className={styles.emptyDayBox}>
-                    <p className={styles.emptyDayText}>
-                      Aucun événement ni publication pour cette date.
-                    </p>
-                    <button
-                      type="button"
-                      className={styles.quickAddDayBtn}
-                      onClick={() => handleOpenCreateModal(selectedDateStr)}
-                    >
-                      <Plus size={13} strokeWidth={2.4} />
-                      <span>Ajouter un premier événement</span>
-                    </button>
-                  </div>
-                ) : (
-                  <div className={styles.dayEventsList}>
-                    {/* 1. Événements personnalisés créés par le user (CRUD complet) */}
-                    {dayEvents.userEvents.map((evt) => (
-                      <div key={evt.id} className={`${styles.dayEventCard} ${styles.dayEventUser}`}>
-                        <div className={styles.dayEventTopRow}>
-                          <div className={styles.dayEventBadgeGroup}>
-                            <span className={styles.badgeUser}>{getCategoryLabel(evt.category)}</span>
-                            {evt.timeStr && (
-                              <span className={styles.dayEventTime}>
-                                <Clock size={11} style={{ display: 'inline', marginRight: 3 }} />
-                                {evt.timeStr}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Boutons d'action CRUD (Modifier / Supprimer) */}
-                          <div className={styles.dayEventActions}>
-                            <button
-                              type="button"
-                              className={styles.actionIconBtn}
-                              title="Modifier l'événement"
-                              onClick={() => handleOpenEditModal(evt)}
-                              aria-label="Modifier l'événement"
-                            >
-                              <Pencil size={14} />
-                            </button>
-                            <button
-                              type="button"
-                              className={`${styles.actionIconBtn} ${styles.actionIconBtnDelete}`}
-                              title="Supprimer l'événement"
-                              onClick={() => handleDeleteUserEvent(evt.id)}
-                              aria-label="Supprimer l'événement"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-
-                        <h5 className={styles.dayEventCardTitle}>{evt.title}</h5>
-                        {evt.description && (
-                          <p className={styles.dayEventCardDesc}>{evt.description}</p>
-                        )}
-
-                        <button
-                          type="button"
-                          className={styles.dayEventCreatePostBtn}
-                          onClick={() => {
-                            setIsModalOpen(false);
-                            router.push(`/dashboard/create?theme=${encodeURIComponent(evt.title)}`);
-                          }}
-                          title="Générer une publication IA pour cet événement"
-                        >
-                          <Sparkles size={12} color="#FF5A00" />
-                          <span>Créer un post pour cet event</span>
-                        </button>
-                      </div>
-                    ))}
-
-                    {/* 2. Événements nationaux */}
-                    {dayEvents.nationalEvents.map((evt) => (
-                      <div
-                        key={evt.id}
-                        className={`${styles.dayEventCard} ${styles.dayEventNational}`}
-                      >
-                        <div className={styles.dayEventTopRow}>
-                          <span className={styles.badgeNational}>Événement National</span>
-                        </div>
-                        <h5 className={styles.dayEventCardTitle}>{evt.title}</h5>
-
-                        <button
-                          type="button"
-                          className={styles.dayEventCreatePostBtn}
-                          onClick={() => {
-                            setIsModalOpen(false);
-                            router.push(`/dashboard/create?theme=${encodeURIComponent(evt.title)}`);
-                          }}
-                          title="Générer un post IA pour cette fête"
-                        >
-                          <Sparkles size={12} color="#8B5CF6" />
-                          <span>Générer un post IA</span>
-                        </button>
-                      </div>
-                    ))}
-
-                    {/* 3. Publications programmées */}
-                    {dayEvents.scheduledPosts.map((post) => (
-                      <div key={post.id} className={`${styles.dayEventCard} ${styles.dayEventPost}`}>
-                        <div className={styles.dayEventTopRow}>
-                          <span className={styles.badgePost}>
-                            Publication {post.platform}
-                          </span>
-                          <span className={styles.dayEventTime}>{post.timeStr}</span>
-                          <div className={styles.dayEventActions}>
-                            <button
-                              type="button"
-                              className={`${styles.actionIconBtn} ${styles.actionIconBtnDelete}`}
-                              title="Annuler la publication"
-                              onClick={() => handleDeleteScheduledPost(post.id)}
-                              aria-label="Annuler la publication"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-                        <h5 className={styles.dayEventCardTitle}>{post.title}</h5>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* CORPS DE LA MODALE — MODE 2 & 3 : FORMULAIRE CRUD (CRÉATION / MODIFICATION) */}
-            {modalMode !== 'day_overview' && (
-              <form onSubmit={handleSaveEvent}>
-                <div className={styles.modalBody}>
-                  {/* Titre */}
+                {/* Date et Heure */}
+                <div className={styles.formRow}>
                   <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Titre de l’événement *</label>
+                    <label className={styles.formLabel}>Date *</label>
                     <input
-                      type="text"
+                      type="date"
                       required
-                      placeholder="Ex: Soirée Dégustation Vins & Tapas"
                       className={styles.formInput}
-                      value={formTitle}
-                      onChange={(e) => setFormTitle(e.target.value)}
-                      autoFocus
+                      value={formDateStr}
+                      onChange={(e) => setFormDateStr(e.target.value)}
                     />
                   </div>
-
-                  {/* Date et Heure */}
-                  <div className={styles.formRow}>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Date *</label>
-                      <input
-                        type="date"
-                        required
-                        className={styles.formInput}
-                        value={formDateStr}
-                        onChange={(e) => setFormDateStr(e.target.value)}
-                      />
-                    </div>
-                    <div className={styles.formGroup}>
-                      <label className={styles.formLabel}>Heure de début</label>
-                      <input
-                        type="time"
-                        className={styles.formInput}
-                        value={formTimeStr}
-                        onChange={(e) => setFormTimeStr(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Catégorie */}
                   <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Type d’animation</label>
-                    <div className={styles.categoryPills}>
-                      {CATEGORY_OPTIONS.map((cat) => (
-                        <button
-                          key={cat.id}
-                          type="button"
-                          className={`${styles.categoryPill} ${
-                            formCategory === cat.id ? styles.categoryPillActive : ''
-                          }`}
-                          onClick={() => setFormCategory(cat.id)}
-                        >
-                          <span>{cat.icon}</span>
-                          <span>{cat.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Description / Notes (optionnel)</label>
-                    <textarea
-                      rows={3}
-                      placeholder="Ex: Formule à 25€, concert acoustique à partir de 20h, réservation conseillée..."
-                      className={styles.formTextarea}
-                      value={formDescription}
-                      onChange={(e) => setFormDescription(e.target.value)}
+                    <label className={styles.formLabel}>Heure de début</label>
+                    <input
+                      type="time"
+                      className={styles.formInput}
+                      value={formTimeStr}
+                      onChange={(e) => setFormTimeStr(e.target.value)}
                     />
                   </div>
                 </div>
 
-                <div className={styles.modalFooter}>
-                  {editingEventId && (
-                    <button
-                      type="button"
-                      className={styles.deleteModalBtn}
-                      onClick={() => handleDeleteUserEvent(editingEventId)}
-                    >
-                      <Trash2 size={14} />
-                      <span>Supprimer</span>
-                    </button>
-                  )}
+                {/* Catégories tactiles */}
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Type d’animation</label>
+                  <div className={styles.categoryPills}>
+                    {CATEGORY_OPTIONS.map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        className={`${styles.categoryPill} ${
+                          formCategory === cat.id ? styles.categoryPillActive : ''
+                        }`}
+                        onClick={() => setFormCategory(cat.id)}
+                      >
+                        <span>{cat.icon}</span>
+                        <span>{cat.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Description / Menu spécial (optionnel)</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Ex: Formule 4 plats à 25€, concert acoustique dès 20h..."
+                    className={styles.formTextarea}
+                    value={formDescription}
+                    onChange={(e) => setFormDescription(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className={styles.modalFooter}>
+                {editingEventId && (
                   <button
                     type="button"
-                    className={styles.cancelModalBtn}
-                    onClick={() => setModalMode('day_overview')}
+                    className={styles.deleteModalBtn}
+                    onClick={() => handleDeleteUserEvent(editingEventId)}
                   >
-                    Annuler
+                    <Trash2 size={15} />
+                    <span>Supprimer</span>
                   </button>
-                  <button type="submit" className={styles.submitModalBtn}>
-                    {editingEventId ? 'Mettre à jour' : 'Enregistrer l’événement'}
-                  </button>
-                </div>
-              </form>
-            )}
+                )}
+                <button
+                  type="button"
+                  className={styles.cancelModalBtn}
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Annuler
+                </button>
+                <button type="submit" className={styles.submitModalBtn}>
+                  {editingEventId ? 'Mettre à jour' : 'Enregistrer'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

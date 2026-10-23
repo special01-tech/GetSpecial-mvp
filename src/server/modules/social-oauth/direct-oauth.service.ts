@@ -112,7 +112,12 @@ export class DirectOAuthService {
         );
       }
 
-      const scopes = 'https://www.googleapis.com/auth/business.manage';
+      const scopes = [
+        'https://www.googleapis.com/auth/business.manage',
+        'openid',
+        'email',
+        'profile',
+      ].join(' ');
       const googleUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(
         googleClientId
       )}&redirect_uri=${encodeURIComponent(
@@ -140,6 +145,7 @@ export class DirectOAuthService {
     platform: SupportedSocialPlatform;
     account: any;
     pageName: string;
+    returnUrl?: string;
   }> {
     const verified = this.verifyState(params.state);
     if (!verified) {
@@ -169,6 +175,10 @@ export class DirectOAuthService {
           );
           const tokenData = await tokenRes.json();
 
+          if (tokenData.error) {
+            throw new Error(`Meta OAuth: ${tokenData.error.message || 'Erreur lors de l’échange de code Meta'}`);
+          }
+
           if (tokenData.access_token) {
             // Étape 2 : Échange contre Long-Lived Token (60 jours)
             const longLivedRes = await fetch(
@@ -195,10 +205,22 @@ export class DirectOAuthService {
               } else {
                 username = firstPage.name;
               }
+            } else {
+              // Récupérer au moins le nom du profil Meta utilisateur
+              try {
+                const userMeRes = await fetch(`https://graph.facebook.com/v19.0/me?access_token=${userLongLivedToken}`);
+                const userMe = await userMeRes.json();
+                if (userMe.name) {
+                  username = userMe.name;
+                  pageName = userMe.name;
+                  pageId = userMe.id || pageId;
+                }
+              } catch {}
             }
           }
-        } catch (exchangeErr) {
+        } catch (exchangeErr: any) {
           console.warn('[OAUTH_TOKEN_EXCHANGE_ERROR]', exchangeErr);
+          throw exchangeErr;
         }
       }
     }
@@ -222,6 +244,11 @@ export class DirectOAuthService {
             }),
           });
           const tokenData = await tokenRes.json();
+
+          if (tokenData.error) {
+            throw new Error(`Google OAuth: ${tokenData.error_description || tokenData.error}`);
+          }
+
           if (tokenData.access_token) {
             pageAccessToken = tokenData.access_token;
             try {
@@ -231,33 +258,64 @@ export class DirectOAuthService {
               if (userInfoRes.ok) {
                 const userInfo = await userInfoRes.json();
                 pageName = userInfo.name || pageName;
-                username = userInfo.email || username;
+                username = userInfo.email || userInfo.name || username;
                 pageId = userInfo.id || pageId;
               }
             } catch {}
           }
-        } catch (exchangeErr) {
+        } catch (exchangeErr: any) {
           console.warn('[GOOGLE_OAUTH_TOKEN_EXCHANGE_ERROR]', exchangeErr);
+          throw exchangeErr;
         }
       }
     }
 
-    // Persistance sécurisée dans Supabase / PostgreSQL (table social_accounts)
-    const socialAccount = await (prisma as any).socialAccount.upsert({
-      where: {
-        restaurantId_platform: {
+    // Vérifier si le restaurant existe réellement en base de données
+    const existingRestaurant = await (prisma as any).restaurant.findUnique({
+      where: { id: restaurantId },
+    });
+
+    let socialAccount: any = null;
+
+    if (existingRestaurant) {
+      // Persistance sécurisée dans Supabase / PostgreSQL (table social_accounts)
+      socialAccount = await (prisma as any).socialAccount.upsert({
+        where: {
+          restaurantId_platform: {
+            restaurantId,
+            platform,
+          },
+        },
+        update: {
+          outstandAccountId: pageId,
+          username,
+          accessToken: pageAccessToken,
+          status: 'connected',
+          lastSyncAt: new Date(),
+        },
+        create: {
           restaurantId,
           platform,
+          outstandAccountId: pageId,
+          username,
+          accessToken: pageAccessToken,
+          status: 'connected',
+          lastSyncAt: new Date(),
         },
-      },
-      update: {
-        outstandAccountId: pageId,
-        username,
-        accessToken: pageAccessToken,
-        status: 'connected',
-        lastSyncAt: new Date(),
-      },
-      create: {
+      });
+
+      // Logging d'audit de sécurité
+      await logAudit({
+        restaurantId,
+        action: 'social.oauth_connect',
+        entityType: 'social_account',
+        entityId: socialAccount.id,
+        details: { platform, pageName, pageId, username },
+      });
+    } else {
+      // Cas onboarding : l'établissement n'est pas encore finalisé en base
+      socialAccount = {
+        id: `temp_${platform}_${Date.now()}`,
         restaurantId,
         platform,
         outstandAccountId: pageId,
@@ -265,23 +323,15 @@ export class DirectOAuthService {
         accessToken: pageAccessToken,
         status: 'connected',
         lastSyncAt: new Date(),
-      },
-    });
-
-    // Logging d'audit de sécurité
-    await logAudit({
-      restaurantId,
-      action: 'social.oauth_connect',
-      entityType: 'social_account',
-      entityId: socialAccount.id,
-      details: { platform, pageName, pageId, username },
-    });
+      };
+    }
 
     return {
       restaurantId,
       platform,
       account: socialAccount,
       pageName,
+      returnUrl: verified.returnUrl || '/dashboard/settings',
     };
   }
 
@@ -298,7 +348,7 @@ export class DirectOAuthService {
       },
     });
 
-    if (!existing) return false;
+    if (!existing) return true;
 
     await (prisma as any).socialAccount.delete({
       where: { id: existing.id },

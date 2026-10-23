@@ -101,7 +101,7 @@ async function runFullUserJourneyAndIsolationTest() {
   journeySteps.push({
     step: '7. SOCIAL ACCOUNTS',
     status: 'SUCCESS',
-    detail: `Deferred social linking to dashboard (TikTok ready via Zernio)`,
+    detail: `Deferred social linking to dashboard (Instagram & Google Business ready)`,
   });
 
   // STEP 8: SUMMARY & PERSISTENCE
@@ -212,7 +212,7 @@ async function runFullUserJourneyAndIsolationTest() {
       data: {
         restaurantId,
         content: `Game Day at ${restData.name}! 🏈 Grab our Texas Smoked Brisket Sandwich for just $14.99 during Happy Hour (4 PM - 7 PM). Big screens, cold beer, patio open!`,
-        platform: 'TIKTOK',
+        platform: 'INSTAGRAM',
         status: 'draft',
       },
     });
@@ -220,7 +220,7 @@ async function runFullUserJourneyAndIsolationTest() {
     journeySteps.push({
       step: '13. CAMPAIGN',
       status: 'SUCCESS',
-      detail: `Draft campaign generated for TikTok (Post ID: ${postId})`,
+      detail: `Draft campaign generated for Instagram (Post ID: ${postId})`,
     });
   } catch (err: any) {
     journeySteps.push({ step: '13. CAMPAIGN', status: 'FAILURE', detail: err.message });
@@ -268,7 +268,7 @@ async function runFullUserJourneyAndIsolationTest() {
       step: '16. SOCIAL PUBLISH',
       status: 'SUCCESS',
       detail: hasZernio
-        ? 'Zernio API configured and ready with connected TikTok account (@getspecial_app)'
+        ? 'Zernio API configured and ready for social publishing'
         : 'Zernio publisher mock/pending',
     });
   } catch (err: any) {
@@ -367,7 +367,7 @@ async function runFullUserJourneyAndIsolationTest() {
     data: {
       restaurantId: restB.id,
       content: 'BRAVO TACO TUESDAY: $2 Shrimp Tacos',
-      platform: 'TIKTOK',
+      platform: 'INSTAGRAM',
       status: 'draft',
     },
   });

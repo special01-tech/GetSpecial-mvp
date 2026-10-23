@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
 import { success, error, unauthorized } from '@/server/lib/api-response';
 import { geocodeAddress } from '@/server/lib/geocoding';
+import { resolveRequestUser } from '@/server/lib/session';
+import { sanitizeRestaurant } from '@/server/lib/auth-guard';
 import { logAudit } from '@/server/lib/audit';
 import { z } from 'zod';
 
@@ -9,6 +11,11 @@ const CreateRestaurantApiSchema = z.object({
   name: z.string().min(2),
   type: z.string(),
   address: z.string().min(3),
+  city: z.string().optional(),
+  postalCode: z.string().optional(),
+  phone: z.string().optional(),
+  website: z.string().optional(),
+  googlePlaceId: z.string().optional(),
   userId: z.string().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
@@ -21,6 +28,11 @@ const CreateRestaurantApiSchema = z.object({
   hasDelivery: z.boolean().optional(),
   capacityCovers: z.number().optional(),
   averageTicket: z.number().optional(),
+  currency: z.string().optional(),
+  baselineCovers: z.number().optional(),
+  foodCostPct: z.number().optional(),
+  drinkCostPct: z.number().optional(),
+  maxDiscountPct: z.number().optional(),
   offPeakDays: z.array(z.string()).optional(),
   constraints: z.array(z.string()).optional(),
   targetAudience: z.array(z.string()).optional(),
@@ -29,7 +41,20 @@ const CreateRestaurantApiSchema = z.object({
   photos: z.array(z.string()).optional(),
   brandColors: z.array(z.string()).optional(),
   menuUrl: z.string().optional(),
+  maxPostsPerDay: z.number().optional(),
+  autoApprove: z.boolean().optional(),
   currentOffer: z.string().optional(),
+  socialAccounts: z
+    .array(
+      z.object({
+        platform: z.string(),
+        username: z.string().optional(),
+        outstandAccountId: z.string().optional(),
+        accessToken: z.string().optional(),
+        status: z.string().optional(),
+      })
+    )
+    .optional(),
   dishes: z
     .array(
       z.object({
@@ -51,11 +76,19 @@ function deduceUsTimezone(lon: number): string {
 
 export async function GET(req: NextRequest) {
   try {
+    const sessionUser = await resolveRequestUser(req);
     const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
+    const isLocalDev = process.env.NODE_ENV !== 'production' || process.env.USE_LOCAL_DB === 'true';
+
+    if (!sessionUser && !isLocalDev) {
+      return unauthorized('Authentification requise');
+    }
+
+    const queryUserId = searchParams.get('userId');
+    const effectiveUserId = !isLocalDev ? sessionUser?.userId : (queryUserId || undefined);
 
     const restaurants = await (prisma as any).restaurant.findMany({
-      where: userId ? { userId } : {},
+      where: effectiveUserId ? { userId: effectiveUserId } : {},
       include: {
         profile: true,
         offers: true,
@@ -63,7 +96,7 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    return success(restaurants);
+    return success(restaurants.map(sanitizeRestaurant));
   } catch (err: any) {
     return error(err.message, 500);
   }
@@ -82,17 +115,27 @@ export async function POST(req: NextRequest) {
       name,
       type,
       address,
+      city,
+      postalCode,
+      phone,
+      website,
+      googlePlaceId,
       latitude,
       longitude,
       timezone,
       country,
       openingHours,
       specialties = [],
-      tone = 'friendly',
-      hasTerrace = true,
+      tone = 'chaleureux',
+      hasTerrace = false,
       hasDelivery = false,
-      capacityCovers = 40,
-      averageTicket = 25,
+      capacityCovers,
+      averageTicket,
+      currency = 'EUR',
+      baselineCovers = 15,
+      foodCostPct,
+      drinkCostPct,
+      maxDiscountPct,
       offPeakDays = [],
       constraints = [],
       targetAudience = [],
@@ -101,28 +144,12 @@ export async function POST(req: NextRequest) {
       photos = [],
       brandColors = [],
       menuUrl,
+      maxPostsPerDay = 1,
+      autoApprove = false,
       currentOffer,
+      socialAccounts = [],
       dishes = [],
     } = validated.data;
-
-    // Définition de plats initiaux si aucun plat n'est fourni explicitement
-    const defaultDishesToCreate = dishes.length > 0 ? dishes : [
-      {
-        name: type.toLowerCase().includes('pizz') ? 'Pizza Reine & Champignons frais' : type.toLowerCase().includes('burg') ? 'Classic Bacon Cheeseburger' : 'Plat Signature du Chef',
-        description: 'Préparé sur place avec des ingrédients frais de saison',
-        priceText: '16.50 €',
-      },
-      {
-        name: type.toLowerCase().includes('pizz') ? 'Pizza Margherita D.O.P' : type.toLowerCase().includes('burg') ? 'Crispy Chicken & Sauce Maison' : 'Entrée du Terroir',
-        description: 'Recette signature appréciée par les habitués',
-        priceText: '13.00 €',
-      },
-      {
-        name: type.toLowerCase().includes('cafe') ? 'Pâtisserie & Café de Spécialité' : 'Dessert Gourmand Maison',
-        description: 'Fait maison par notre brigade',
-        priceText: '7.50 €',
-      },
-    ];
 
     let targetUserId = validated.data.userId;
 
@@ -156,45 +183,59 @@ export async function POST(req: NextRequest) {
     let lat = latitude;
     let lon = longitude;
     let detectedCountry = country;
+    let detectedCity = city;
 
     if (lat === undefined || lon === undefined || !detectedCountry) {
       const geo = await geocodeAddress(address);
       if (lat === undefined) lat = geo.latitude;
       if (lon === undefined) lon = geo.longitude;
       if (!detectedCountry) detectedCountry = geo.countryCode;
+      if (!detectedCity && geo.city) detectedCity = geo.city;
     }
 
-    const calculatedTimezone = timezone || deduceUsTimezone(lon);
+    const calculatedTimezone = timezone || deduceUsTimezone(lon || 2.35);
 
     const restaurant = await (prisma as any).restaurant.create({
       data: {
         name,
         type,
         address,
-        latitude: lat,
-        longitude: lon,
+        city: detectedCity || null,
+        postalCode: postalCode || null,
+        country: (detectedCountry || 'FR').toUpperCase(),
+        phone: phone || null,
+        website: website || null,
+        googlePlaceId: googlePlaceId || null,
+        latitude: lat || 48.8566,
+        longitude: lon || 2.3522,
         timezone: calculatedTimezone,
         openingHours: openingHours || null,
-        specialties,
+        specialties, // Pas de spécialités factices injectées
         userId: targetUserId,
         profile: {
           create: {
             tone,
             hasTerrace,
+            hasDelivery,
+            capacityCovers: capacityCovers || null,
+            averageTicket: averageTicket || null,
+            currency,
+            baselineCovers: baselineCovers || 15,
+            foodCostPct: foodCostPct || null,
+            drinkCostPct: drinkCostPct || null,
+            maxDiscountPct: maxDiscountPct || null,
             offPeakDays,
             constraints,
+            targetAudience,
+            marketingGoal,
+            logoUrl: logoUrl || null,
+            photos,
+            brandColors,
+            menuUrl: menuUrl || null,
+            maxPostsPerDay,
+            autoApprove,
             customRules: {
-              capacityCovers,
-              averageTicket,
-              country: (detectedCountry || 'US').toUpperCase(),
-              hasDelivery,
-              targetAudience,
-              marketingGoal,
-              logoUrl,
-              photos,
-              brandColors,
-              menuUrl,
-              dishes: defaultDishesToCreate,
+              dishes,
             },
           },
         },
@@ -207,8 +248,19 @@ export async function POST(req: NextRequest) {
             },
           },
         } : {}),
+        ...(socialAccounts.length > 0 ? {
+          socialAccounts: {
+            create: socialAccounts.map((sa) => ({
+              platform: sa.platform,
+              username: sa.username || `@${sa.platform}_restaurant`,
+              outstandAccountId: sa.outstandAccountId || `acc_${sa.platform}_${Date.now()}`,
+              status: sa.status || 'connected',
+              lastSyncAt: new Date(),
+            })),
+          },
+        } : {}),
       },
-      include: { profile: true, offers: true },
+      include: { profile: true, offers: true, socialAccounts: true },
     });
 
     await logAudit({
@@ -227,7 +279,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const res = success(restaurant, 201);
+    const res = success(sanitizeRestaurant(restaurant), 201);
     res.cookies.set('getspecial_restaurant_id', restaurant.id, {
       path: '/',
       maxAge: 30 * 24 * 60 * 60,

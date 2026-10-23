@@ -1,22 +1,27 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
 import { success, error, unauthorized } from '@/server/lib/api-response';
+import { resolveRequestUser } from '@/server/lib/session';
+import { sanitizeRestaurant } from '@/server/lib/auth-guard';
 
 export async function GET(req: NextRequest) {
   try {
+    const sessionUser = await resolveRequestUser(req);
     const { searchParams } = new URL(req.url);
-    const queryUserId = searchParams.get('userId');
-    const email = searchParams.get('email');
-    const cookieUserId = req.cookies.get('getspecial_session')?.value;
+    const isLocalDev = process.env.NODE_ENV !== 'production' || process.env.USE_LOCAL_DB === 'true';
 
-    const targetUserId = queryUserId || cookieUserId;
+    const queryUserId = isLocalDev ? searchParams.get('userId') : null;
+    const email = isLocalDev ? searchParams.get('email') : null;
 
-    if (!targetUserId && !email) {
+    const targetUserId = sessionUser?.userId || queryUserId;
+    const targetEmail = sessionUser?.email || email;
+
+    if (!targetUserId && !targetEmail) {
       return unauthorized('Utilisateur non authentifié');
     }
 
     const user = await prisma.user.findUnique({
-      where: targetUserId ? { id: targetUserId } : { email: email! },
+      where: targetUserId ? { id: targetUserId } : { email: targetEmail! },
     });
 
     if (!user) {
@@ -32,6 +37,8 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    const safeRestaurants = restaurants.map(sanitizeRestaurant);
+
     return success({
       user: {
         id: user.id,
@@ -40,9 +47,9 @@ export async function GET(req: NextRequest) {
         avatarUrl: user.avatarUrl,
         createdAt: user.createdAt,
       },
-      restaurants,
-      hasRestaurant: restaurants.length > 0,
-      activeRestaurant: restaurants[0] || null,
+      restaurants: safeRestaurants,
+      hasRestaurant: safeRestaurants.length > 0,
+      activeRestaurant: safeRestaurants[0] || null,
     });
   } catch (err: any) {
     return error(err.message, 500);

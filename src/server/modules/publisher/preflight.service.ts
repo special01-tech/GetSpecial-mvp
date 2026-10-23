@@ -53,10 +53,21 @@ export class PreflightService {
 
     // 2. Horaires d'ouverture : vérifier si le restaurant est censé être ouvert aujourd'hui
     const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-    const currentDayKey = days[new Date().getDay()];
-    const hours = (restaurant.openingHours as any)?.[currentDayKey];
-    if (hours && (hours.toLowerCase().includes('ferm') || hours.toLowerCase().includes('closed'))) {
-      return { canPublish: false, blockReason: `Restaurant fermé ce jour (${currentDayKey})`, checks };
+    const frDays = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+    const dayIdx = new Date().getDay();
+    const currentDayKey = days[dayIdx];
+    const currentFrDay = frDays[dayIdx];
+    const rawHours = restaurant.openingHours as any;
+    if (Array.isArray(rawHours)) {
+      const dayEntry = rawHours.find((d: any) => String(d?.day || '').toLowerCase() === currentFrDay);
+      if (dayEntry && dayEntry.isOpen === false) {
+        return { canPublish: false, blockReason: `Restaurant fermé ce jour (${dayEntry.day})`, checks };
+      }
+    } else if (rawHours && typeof rawHours[currentDayKey] === 'string') {
+      const hours = rawHours[currentDayKey];
+      if (hours.toLowerCase().includes('ferm') || hours.toLowerCase().includes('closed')) {
+        return { canPublish: false, blockReason: `Restaurant fermé ce jour (${currentDayKey})`, checks };
+      }
     }
     checks.restaurantOpenCheck = true;
 
@@ -88,7 +99,7 @@ export class PreflightService {
     // 5. Fraîcheur météo : si le post mentionne la pluie ou le soleil, les signaux du jour doivent être récents
     checks.weatherRelevanceCheck = true;
 
-    // 6. Plafond anti-fatigue : max 2 publications publiées par jour
+    // 6. Plafond anti-fatigue : configurable dans les paramètres (défaut 1 post/jour)
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const publishedTodayCount = await (prisma as any).publication.count({
@@ -99,8 +110,17 @@ export class PreflightService {
       },
     });
 
-    if (publishedTodayCount >= 2) {
-      return { canPublish: false, blockReason: 'Limite quotidienne de publications atteinte (2/jour max)', checks };
+    const maxPostsAllowed =
+      typeof restaurant.profile?.maxPostsPerDay === 'number' && restaurant.profile.maxPostsPerDay > 0
+        ? restaurant.profile.maxPostsPerDay
+        : 1;
+
+    if (publishedTodayCount >= maxPostsAllowed) {
+      return {
+        canPublish: false,
+        blockReason: `Limite quotidienne de publications atteinte (${maxPostsAllowed}/jour configuré dans les paramètres)`,
+        checks,
+      };
     }
     checks.dailyLimitCheck = true;
 

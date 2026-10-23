@@ -26,6 +26,12 @@ model Restaurant {
   name           String
   type           String
   address        String
+  city           String?
+  postalCode     String?
+  country        String             @default("FR")
+  phone          String?
+  website        String?
+  googlePlaceId  String?
   latitude       Float
   longitude      Float
   timezone       String             @default("Europe/Paris")
@@ -51,17 +57,33 @@ model Restaurant {
 }
 
 model RestaurantProfile {
-  id           String     @id @default(dbgenerated("(gen_random_uuid())::text"))
-  restaurantId String     @unique
-  tone         String     @default("chaleureux")
-  hasTerrace   Boolean    @default(false)
-  offPeakDays  String[]   @default([])
-  constraints  String[]   @default([])
-  customRules  Json?
-  status       String     @default("active")
-  createdAt    DateTime   @default(now()) @db.Timestamptz(6)
-  updatedAt    DateTime   @default(now()) @updatedAt @db.Timestamptz(6)
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id             String     @id @default(dbgenerated("(gen_random_uuid())::text"))
+  restaurantId   String     @unique
+  tone           String     @default("chaleureux")
+  hasTerrace     Boolean    @default(false)
+  hasDelivery    Boolean    @default(false)
+  capacityCovers Int?
+  averageTicket  Float?
+  currency       String     @default("EUR")
+  baselineCovers Int?       @default(15)
+  foodCostPct    Float?
+  drinkCostPct   Float?
+  maxDiscountPct Float?
+  offPeakDays    String[]   @default([])
+  constraints    String[]   @default([])
+  targetAudience String[]   @default([])
+  marketingGoal  String?
+  logoUrl        String?
+  photos         String[]   @default([])
+  brandColors    String[]   @default([])
+  menuUrl        String?
+  maxPostsPerDay Int        @default(1)
+  autoApprove    Boolean    @default(false)
+  customRules    Json?
+  status         String     @default("active")
+  createdAt      DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime   @default(now()) @updatedAt @db.Timestamptz(6)
+  restaurant     Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("restaurant_profile")
 }
@@ -100,19 +122,27 @@ model SocialAccount {
 }
 
 model Signal {
-  id            String        @id @default(dbgenerated("(gen_random_uuid())::text"))
-  restaurantId  String
-  type          String
-  intensity     Float         @default(1.0)
-  source        String
-  data          Json
-  detectedAt    DateTime      @default(now()) @db.Timestamptz(6)
-  status        String        @default("active")
-  createdAt     DateTime      @default(now()) @db.Timestamptz(6)
-  opportunities Opportunity[]
-  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id             String        @id @default(dbgenerated("(gen_random_uuid())::text"))
+  restaurantId   String
+  externalId     String?
+  type           String
+  category       String?
+  intensity      Float         @default(1.0)
+  source         String
+  data           Json
+  startsAt       DateTime?     @db.Timestamptz(6)
+  endsAt         DateTime?     @db.Timestamptz(6)
+  distanceMeters Int?
+  isFallback     Boolean       @default(false)
+  detectedAt     DateTime      @default(now()) @db.Timestamptz(6)
+  status         String        @default("active")
+  createdAt      DateTime      @default(now()) @db.Timestamptz(6)
+  opportunities  Opportunity[]
+  restaurant     Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
+  @@unique([restaurantId, source, externalId], map: "uq_signals_restaurant_source_external")
   @@index([restaurantId, detectedAt(sort: Desc)], map: "idx_signals_restaurant")
+  @@index([restaurantId, startsAt], map: "idx_signals_restaurant_starts_at")
   @@map("signals")
 }
 
@@ -127,6 +157,9 @@ model Opportunity {
   relevanceScore  Float           @default(0.5)
   factsCited      Json?
   status          String          @default("pending")
+  forDate         String?
+  timeSlot        String?
+  source          String          @default("ai")
   suggestedAt     DateTime        @default(now()) @db.Timestamptz(6)
   createdAt       DateTime        @default(now()) @db.Timestamptz(6)
   updatedAt       DateTime        @default(now()) @updatedAt @db.Timestamptz(6)
@@ -136,6 +169,7 @@ model Opportunity {
   posts           Post[]
 
   @@index([restaurantId, status], map: "idx_opportunities_restaurant")
+  @@index([restaurantId, forDate], map: "idx_opportunities_date")
   @@map("opportunities")
 }
 
@@ -147,7 +181,18 @@ model Post {
   imageUrl      String?
   platform      String
   status        String        @default("pending_approval")
-  verifiedFacts Json?
+  origin            String        @default("generated")
+  campaignType      String?
+  aspectRatio       String        @default("4:5")
+  headline          String?
+  instagramCaption  String?
+  facebookCaption   String?
+  hashtags          String[]      @default([])
+  mediaUrls         String[]      @default([])
+  mediaType         String        @default("image")
+  referenceImages   String[]      @default([])
+  generationPayload Json?
+  verifiedFacts     Json?
   scheduledAt   DateTime?     @db.Timestamptz(6)
   approvedAt    DateTime?     @db.Timestamptz(6)
   publishedAt   DateTime?     @db.Timestamptz(6)

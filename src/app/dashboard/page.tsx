@@ -33,6 +33,7 @@ import {
   WeatherData,
   LocalEventData,
 } from '@/services/today/today.data';
+import PwaInstallBanner from '@/components/pwa/PwaInstallBanner';
 import styles from './dashboard.module.css';
 
 /**
@@ -227,6 +228,9 @@ export default function DashboardPage() {
   return (
     <div className={styles.screenWrapper}>
       <div className={styles.container}>
+        {/* Bannière / Popup d'installation PWA Mobile */}
+        <PwaInstallBanner />
+
         {/* Header Restaurant & Météo compacte en direct à sa place */}
         <header className={styles.header}>
           <div className={styles.restaurantInfo}>
@@ -279,10 +283,20 @@ export default function DashboardPage() {
             </div>
             <div className={styles.compactWeatherMeta}>
               <div className={styles.compactWeatherTemp}>
-                <span className={styles.compactWeatherVal}>{weather?.temperature ?? 24}°</span>
-                <span className={styles.compactWeatherUnit}>{(weather?.tempUnit || 'C').replace('°', '')}</span>
+                <span className={styles.compactWeatherVal}>
+                  {weather?.temperature !== undefined && weather?.temperature !== null
+                    ? `${weather.temperature}°`
+                    : isLoadingLive
+                    ? '...°'
+                    : '--°'}
+                </span>
+                <span className={styles.compactWeatherUnit}>
+                  {(weather?.tempUnit || 'C').replace('°', '')}
+                </span>
               </div>
-              <span className={styles.compactWeatherDesc}>{weather?.condition || 'Ciel dégagé'}</span>
+              <span className={styles.compactWeatherDesc}>
+                {weather?.condition || (isLoadingLive ? 'Chargement météo...' : 'Météo indisponible')}
+              </span>
             </div>
           </div>
         </header>
@@ -290,7 +304,7 @@ export default function DashboardPage() {
         {/* Message d'accueil personnalisé & CTA Opportunités juste en face */}
         <div className={styles.welcomeSection}>
           <div className={styles.welcomeTextGroup}>
-            <h2 className={styles.greetingTitle}>{t('dashboard.greeting.title')}</h2>
+            <h1 className={styles.greetingTitle}>{t('dashboard.greeting.title')}</h1>
             <p className={styles.greetingSubtext}>
               {t('dashboard.greeting.subtitle')}
             </p>
@@ -408,6 +422,7 @@ export default function DashboardPage() {
               events={events}
               loading={isLoadingLive && events.length === 0}
               onActionClick={handleSignalAction}
+              onPreferencesUpdated={() => fetchLiveSignals(true)}
             />
           </div>
         </div>

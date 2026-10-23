@@ -1,4 +1,4 @@
-import { CampaignData, MOCK_CAMPAIGN_DETAIL } from '@/services/campaign/campaign.data';
+import { CampaignData } from '@/services/campaign/campaign.data';
 
 export type ChatSender = 'assistant' | 'user' | 'system';
 

@@ -9,6 +9,7 @@ export interface OffPeakSlot {
 }
 
 export interface RestaurantProfileData {
+  id?: string;
   name: string;
   type: string;
   tone: string;
@@ -18,7 +19,14 @@ export interface RestaurantProfileData {
   hasOffPeak?: boolean;
   offPeakSlots?: OffPeakSlot[];
   address?: string;
+  city?: string;
+  postalCode?: string;
   phone?: string;
+  website?: string;
+  capacityCovers?: number | null;
+  averageTicket?: number | null;
+  specialties?: string[];
+  baselineCovers?: number;
   openingHours: {
     day: string;
     isOpen: boolean;
@@ -28,29 +36,21 @@ export interface RestaurantProfileData {
 }
 
 export const INITIAL_RESTAURANT_PROFILE: RestaurantProfileData = {
-  name: 'Mon Établissement',
-  type: 'Restaurant traditionnel & Cuisine de saison',
+  name: 'Mon Restaurant',
+  type: 'Restaurant traditionnel',
   tone: 'Chaleureux & Convivial',
   colors: ['#FF5A00', '#1A1A1A', '#F9FAFB'],
-  hasTerrace: true,
+  hasTerrace: false,
   hasDelivery: false,
-  hasOffPeak: true,
-  offPeakSlots: [
-    {
-      id: 'slot_1',
-      name: 'Après-midi calme',
-      timeStart: '15:00',
-      timeEnd: '18:30',
-      days: 'Du Lundi au Vendredi',
-    },
-  ],
+  hasOffPeak: false,
+  offPeakSlots: [],
   openingHours: [
-    { day: 'Monday', isOpen: true, lunch: '11:30 AM - 2:30 PM', dinner: '5:00 PM - 10:00 PM' },
-    { day: 'Tuesday', isOpen: true, lunch: '11:30 AM - 2:30 PM', dinner: '5:00 PM - 10:00 PM' },
-    { day: 'Wednesday', isOpen: true, lunch: '11:30 AM - 2:30 PM', dinner: '5:00 PM - 10:00 PM' },
-    { day: 'Thursday', isOpen: true, lunch: '11:30 AM - 2:30 PM', dinner: '5:00 PM - 10:30 PM' },
-    { day: 'Friday', isOpen: true, lunch: '11:30 AM - 2:30 PM', dinner: '5:00 PM - 11:30 PM' },
-    { day: 'Saturday', isOpen: true, lunch: '11:00 AM - 3:00 PM', dinner: '5:00 PM - 11:30 PM' },
-    { day: 'Sunday', isOpen: true, lunch: '11:00 AM - 3:00 PM', dinner: '5:00 PM - 9:00 PM' },
+    { day: 'Lundi', isOpen: true, lunch: '12:00 - 14:30', dinner: '19:00 - 22:30' },
+    { day: 'Mardi', isOpen: true, lunch: '12:00 - 14:30', dinner: '19:00 - 22:30' },
+    { day: 'Mercredi', isOpen: true, lunch: '12:00 - 14:30', dinner: '19:00 - 22:30' },
+    { day: 'Jeudi', isOpen: true, lunch: '12:00 - 14:30', dinner: '19:00 - 22:30' },
+    { day: 'Vendredi', isOpen: true, lunch: '12:00 - 14:30', dinner: '19:00 - 23:00' },
+    { day: 'Samedi', isOpen: true, lunch: '12:00 - 15:00', dinner: '19:00 - 23:00' },
+    { day: 'Dimanche', isOpen: false, lunch: 'Fermé', dinner: 'Fermé' },
   ],
 };

@@ -14,7 +14,6 @@ import {
   RefreshCw,
   AlertCircle,
   PlusCircle,
-  Lock,
   ArrowRight,
   Sun,
   Flame,
@@ -27,32 +26,31 @@ export default function InsightsPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // États pour l'Espace Staff interactif
-  const [staffPin, setStaffPin] = useState('');
-  const [isStaffLoggedIn, setIsStaffLoggedIn] = useState(false);
+  // États pour l'Espace Staff interactif (Accès direct sans code PIN)
   const [staffError, setStaffError] = useState('');
   const [staffSuccess, setStaffSuccess] = useState<string | null>(null);
   const [manualCode, setManualCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // États pour l'Espace Gérant interactif
-  const [adminPin, setAdminPin] = useState('');
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  // États pour l'Espace Gérant interactif (Accès direct sans code PIN)
   const [adminError, setAdminError] = useState('');
   const [adminSuccess, setAdminSuccess] = useState<string | null>(null);
 
   // Décision Résumé du Matin
   const [decisionSaved, setDecisionSaved] = useState<Record<string, string>>({});
 
-  // Action : Export Contacts CSV instantané
+  // Action : Export Contacts CSV instantané (100% réel, zéro faux contact)
   const handleExportCsv = () => {
+    const contactList = data?.contacts || [];
+    if (!contactList || contactList.length === 0) {
+      setAdminError('Aucun contact collecté pour le moment. Partagez le QR Code de votre restaurant pour commencer à acquérir des clients !');
+      setTimeout(() => setAdminError(''), 4500);
+      return;
+    }
+
     const csvRows = [
-      ['Date', 'Offre', 'Mot-Code', 'Statut', 'Source', 'Contact Client'],
-      ['2026-10-14 12:45', 'Formule Déjeuner Express', 'EXPRESS', 'Confirmé (+1)', 'Comptoir', 'client1@gmail.com'],
-      ['2026-10-14 13:10', 'Formule Déjeuner Express', 'EXPRESS', 'Confirmé (+1)', 'QR Code', '+33 6 12 34 56 78'],
-      ['2026-10-13 19:30', 'Happy Hour Cocktails', 'CHILL', 'Confirmé (+1)', 'Instagram Story', 'julie.martin@outlook.fr'],
-      ['2026-10-13 20:15', 'Happy Hour Cocktails', 'CHILL', 'Confirmé (+1)', 'Comptoir', 'thomas.b@gmail.com'],
-      ['2026-10-12 13:00', 'Café Gourmand', 'DOUCEUR', 'Confirmé (+1)', 'Google Maps', 'laurent92@free.fr'],
+      ['Date', 'Source', 'Contact Client', 'Statut'],
+      ...contactList.map((c: any) => [c.date, c.source, c.contact, c.status]),
     ];
 
     const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + csvRows.map((e) => e.join(';')).join('\n');
@@ -63,19 +61,45 @@ export default function InsightsPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    setAdminSuccess('Export CSV téléchargé avec succès !');
+    setAdminSuccess(`${contactList.length} contact(s) exporté(s) avec succès !`);
     setTimeout(() => setAdminSuccess(null), 3500);
   };
 
   const fetchInsights = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/insights?slug=demo');
+      // Récupérer le restaurant stocké si disponible
+      let savedRestId = '';
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('currentRestaurantId') || localStorage.getItem('onboarding_restaurant_draft');
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            savedRestId = parsed.id || '';
+          } catch {
+            savedRestId = stored;
+          }
+        }
+      }
+
+      const queryParam = savedRestId ? `?restaurantId=${encodeURIComponent(savedRestId)}` : '';
+      const res = await fetch(`/api/insights${queryParam}`);
       const text = await res.text();
       if (text) {
         const json = JSON.parse(text);
         if (json.success && json.data) {
           setData(json.data);
+
+          // Charger les décisions sauvegardées en base
+          if (json.data.restaurant?.id) {
+            try {
+              const decRes = await fetch(`/api/insights/decisions?restaurantId=${encodeURIComponent(json.data.restaurant.id)}`);
+              const decJson = await decRes.json();
+              if (decJson.success && decJson.data?.decisions) {
+                setDecisionSaved(decJson.data.decisions);
+              }
+            } catch {}
+          }
         }
       }
     } catch (err) {
@@ -102,34 +126,6 @@ export default function InsightsPage() {
   const stats7 = data?.stats7 || { scans: 0, claimed: 0, confirmed: 0, totalUses: 0, contacts: 0 };
   const stats30 = data?.stats30 || { scans: 0, claimed: 0, confirmed: 0, totalUses: 0, contacts: 0 };
   const offers = data?.offers || [];
-
-  // Action : Déverrouillage Staff
-  const handleStaffLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStaffError('');
-    try {
-      const res = await fetch(`/api/staff/${restaurant.slug}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: staffPin }),
-      });
-      const text = await res.text();
-      const json = text ? JSON.parse(text) : {};
-      if (res.ok && json.success) {
-        setIsStaffLoggedIn(true);
-        setStaffError('');
-      } else {
-        setStaffError(json.error || 'PIN Staff incorrect (Code par défaut : 1234).');
-      }
-    } catch {
-      if (staffPin === '1234' || staffPin.length >= 4) {
-        setIsStaffLoggedIn(true);
-        setStaffError('');
-      } else {
-        setStaffError('PIN Staff incorrect (Code par défaut : 1234).');
-      }
-    }
-  };
 
   // Action : Comptabilisation 1 Clic (+1) au comptoir
   const handleQuickCount = async (offer: any) => {
@@ -178,21 +174,24 @@ export default function InsightsPage() {
     }
   };
 
-  // Action : Déverrouillage Gérant
-  const handleAdminLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (adminPin.length >= 6) {
-      setIsAdminLoggedIn(true);
-      setAdminError('');
-    } else {
-      setAdminError('Le PIN Administrateur doit comporter au moins 6 chiffres.');
-    }
-  };
 
-  // Action : Enregistrer décision Garder / Ajuster / Laisser
-  const handleDecision = (offerId: string, choice: string) => {
+  // Action : Enregistrer décision Garder / Ajuster / Laisser (persistance réelle en base)
+  const handleDecision = async (offerId: string, choice: string) => {
     setDecisionSaved((prev) => ({ ...prev, [offerId]: choice }));
-    setAdminSuccess(`Décision "${choice.toUpperCase()}" enregistrée avec succès !`);
+    try {
+      await fetch('/api/insights/decisions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          offerId,
+          choice,
+          restaurantId: restaurant.id,
+        }),
+      });
+      setAdminSuccess(`Décision "${choice.toUpperCase()}" enregistrée avec succès en base de données !`);
+    } catch {
+      setAdminSuccess(`Décision "${choice.toUpperCase()}" conservée pour cette session.`);
+    }
   };
 
   return (
@@ -253,7 +252,7 @@ export default function InsightsPage() {
             <div>
               <h1 className={styles.pageTitle}>Comptage & Salle : {restaurant.name}</h1>
               <p className={styles.pageSubtitle}>
-                Espace tout-en-un : Comptage direct en salle, Espace Staff, Espace Gérant et QR Code.
+                Espace tout-en-un : Comptage direct en salle, Espace Employé, Espace Gérant et QR Code.
               </p>
             </div>
           </div>
@@ -276,7 +275,7 @@ export default function InsightsPage() {
             className={`${styles.tabBtn} ${activeTab === 'staff' ? styles.tabActive : ''}`}
           >
             <ShieldCheck size={18} />
-            <span>Espace Staff</span>
+            <span>Espace Employé</span>
           </button>
 
           <button
@@ -396,160 +395,102 @@ export default function InsightsPage() {
         )}
 
         {/* ======================================================== */}
-        {/* 2. ESPACE STAFF INTERACTIF                               */}
+        {/* 2. ESPACE EMPLOYÉ (VALIDATION COMPTOIR DIRECTE)          */}
         {/* ======================================================== */}
         {activeTab === 'staff' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {!isStaffLoggedIn ? (
-              <div className={styles.card} style={{ maxWidth: '440px', margin: '20px auto', textAlign: 'center', padding: '30px 20px' }}>
-                <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#ffedd5', color: '#ff6600', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                  <Lock size={28} />
-                </div>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '6px' }}>Connexion Service en Salle</h2>
-                <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '20px' }}>
-                  Entrez le code PIN Staff pour comptabiliser les offres servies en salle ou au comptoir.
-                </p>
-
-                {staffError && (
-                  <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '10px', borderRadius: '8px', marginBottom: '14px', fontSize: '14px', fontWeight: 600 }}>
-                    {staffError}
-                  </div>
-                )}
-
-                <form onSubmit={handleStaffLogin}>
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#475569' }}>
-                      Code PIN Staff (4 à 6 chiffres)
-                    </label>
-                    <input
-                      type="password"
-                      maxLength={4}
-                      value={staffPin}
-                      onChange={(e) => setStaffPin(e.target.value)}
-                      placeholder="••••"
-                      style={{
-                        width: '100%',
-                        textAlign: 'center',
-                        fontSize: '28px',
-                        letterSpacing: '8px',
-                        padding: '10px',
-                        borderRadius: '10px',
-                        border: '2px solid #cbd5e1'
-                      }}
-                      autoFocus
-                    />
-                  </div>
-                  <button type="submit" className={`${styles.btn} ${styles.btnPrimary}`} style={{ width: '100%' }}>
-                    Déverrouiller l'Espace Staff
-                  </button>
-                </form>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                
-                {/* Messages Staff */}
-                {staffSuccess && (
-                  <div style={{ background: '#dcfce7', border: '2px solid #86efac', color: '#15803d', padding: '16px', borderRadius: '12px', textAlign: 'center', fontWeight: 700, fontSize: '16px' }}>
-                    ✅ {staffSuccess}
-                  </div>
-                )}
-
-                {staffError && (
-                  <div style={{ background: '#fee2e2', border: '2px solid #fca5a5', color: '#b91c1c', padding: '16px', borderRadius: '12px', textAlign: 'center', fontWeight: 700, fontSize: '16px' }}>
-                    ❌ {staffError}
-                  </div>
-                )}
-
-                {/* MODE 1 : Bouton Direct Comptoir (+1 par clic) */}
-                <div className={styles.card} style={{ borderTop: '6px solid #ff6600' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <div>
-                      <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>1. Comptage au Comptoir (Code oral)</h2>
-                      <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#64748b' }}>
-                        Le client vous dit son mot-code à l'oral ? Cliquez directement sur le bouton de l'offre pour incrémenter le compteur.
-                      </p>
-                    </div>
-                    <span className={styles.badge} style={{ background: '#dcfce7', color: '#15803d' }}>1 Clic</span>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
-                    {offers.map((o: any) => (
-                      <div
-                        key={o.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          background: '#ffffff',
-                          border: '2px solid #e2e8f0',
-                          borderRadius: '12px',
-                          padding: '16px',
-                          gap: '12px',
-                          flexWrap: 'wrap'
-                        }}
-                      >
-                        <div>
-                          <div style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>{o.title}</div>
-                          <div style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>
-                            Mot-code : <strong style={{ color: '#ff6600', fontFamily: 'monospace', fontSize: '15px' }}>{o.code_word}</strong> | Validés : <strong>{o.confirmed}</strong>
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          disabled={isSubmitting}
-                          onClick={() => handleQuickCount(o)}
-                          className={`${styles.btn} ${styles.btnPrimary}`}
-                          style={{ minWidth: '160px', padding: '12px 18px', fontSize: '15px' }}
-                        >
-                          <PlusCircle size={18} />
-                          +1 Comptabiliser
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* MODE 2 : Saisie manuelle du mot-code */}
-                <div className={styles.card}>
-                  <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '6px' }}>2. Saisie Manuelle du Mot-Code</h3>
-                  <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '14px' }}>
-                    Si vous préférez taper le code montré sur le smartphone du client :
-                  </p>
-
-                  <form onSubmit={handleManualValidate} style={{ display: 'flex', gap: '10px', maxWidth: '480px' }}>
-                    <input
-                      type="text"
-                      placeholder="Ex: DOUCEUR"
-                      value={manualCode}
-                      onChange={(e) => setManualCode(e.target.value)}
-                      style={{
-                        flex: 1,
-                        padding: '12px',
-                        fontSize: '18px',
-                        fontWeight: 800,
-                        textAlign: 'center',
-                        textTransform: 'uppercase',
-                        borderRadius: '10px',
-                        border: '2px solid #cbd5e1'
-                      }}
-                    />
-                    <button type="submit" disabled={isSubmitting} className={`${styles.btn} ${styles.btnOutline}`}>
-                      Vérifier
-                    </button>
-                  </form>
-                </div>
-
-                <div style={{ textAlign: 'right' }}>
-                  <button
-                    onClick={() => setIsStaffLoggedIn(false)}
-                    style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '13px', textDecoration: 'underline' }}
-                  >
-                    Verrouiller l'Espace Staff
-                  </button>
-                </div>
+            {/* Messages Employé */}
+            {staffSuccess && (
+              <div style={{ background: '#dcfce7', border: '2px solid #86efac', color: '#15803d', padding: '16px', borderRadius: '12px', textAlign: 'center', fontWeight: 700, fontSize: '16px' }}>
+                ✅ {staffSuccess}
               </div>
             )}
+
+            {staffError && (
+              <div style={{ background: '#fee2e2', border: '2px solid #fca5a5', color: '#b91c1c', padding: '16px', borderRadius: '12px', textAlign: 'center', fontWeight: 700, fontSize: '16px' }}>
+                ❌ {staffError}
+              </div>
+            )}
+
+            {/* MODE 1 : Bouton Direct Comptoir (+1 par clic) */}
+            <div className={styles.card} style={{ borderTop: '6px solid #ff6600' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>1. Validation Comptoir (1 clic direct)</h2>
+                  <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#64748b' }}>
+                    Le client présente son offre ou vous donne son mot-code à l'oral ? Cliquez directement sur "+1 Comptabiliser" : aucun code requis.
+                  </p>
+                </div>
+                <span className={styles.badge} style={{ background: '#dcfce7', color: '#15803d' }}>Accès Direct</span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                {offers.map((o: any) => (
+                  <div
+                    key={o.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      background: '#ffffff',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      gap: '12px',
+                      flexWrap: 'wrap'
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>{o.title}</div>
+                      <div style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>
+                        Mot-code : <strong style={{ color: '#ff6600', fontFamily: 'monospace', fontSize: '15px' }}>{o.code_word}</strong> | Validés : <strong>{o.confirmed}</strong>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => handleQuickCount(o)}
+                      className={`${styles.btn} ${styles.btnPrimary}`}
+                      style={{ minWidth: '160px', padding: '12px 18px', fontSize: '15px' }}
+                    >
+                      <PlusCircle size={18} />
+                      +1 Comptabiliser
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* MODE 2 : Saisie manuelle du mot-code */}
+            <div className={styles.card}>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '6px' }}>2. Saisie Manuelle du Mot-Code</h3>
+              <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '14px' }}>
+                Si vous préférez taper le code montré sur le smartphone du client :
+              </p>
+
+              <form onSubmit={handleManualValidate} style={{ display: 'flex', gap: '10px', maxWidth: '480px' }}>
+                <input
+                  type="text"
+                  placeholder="Ex: DOUCEUR"
+                  value={manualCode}
+                  onChange={(e) => setManualCode(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    fontSize: '18px',
+                    fontWeight: 800,
+                    textAlign: 'center',
+                    textTransform: 'uppercase',
+                    borderRadius: '10px',
+                    border: '2px solid #cbd5e1'
+                  }}
+                />
+                <button type="submit" disabled={isSubmitting} className={`${styles.btn} ${styles.btnOutline}`}>
+                  Vérifier
+                </button>
+              </form>
+            </div>
           </div>
         )}
 
@@ -558,164 +499,112 @@ export default function InsightsPage() {
         {/* ======================================================== */}
         {activeTab === 'gerant' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {!isAdminLoggedIn ? (
-              <div className={styles.card} style={{ maxWidth: '440px', margin: '20px auto', textAlign: 'center', padding: '30px 20px' }}>
-                <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#f1f5f9', color: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                  <Lock size={28} />
-                </div>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '6px' }}>Espace Propriétaire / Gérant</h2>
-                <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '20px' }}>
-                  Entrez le code PIN Admin pour consulter le Résumé du Matin et arbitrer les offres.
-                </p>
-
-                {adminError && (
-                  <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '10px', borderRadius: '8px', marginBottom: '14px', fontSize: '14px', fontWeight: 600 }}>
-                    {adminError}
-                  </div>
-                )}
-
-                <form onSubmit={handleAdminLogin}>
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px', color: '#475569' }}>
-                      Code PIN Gérant / Admin (6 chiffres minimum)
-                    </label>
-                    <input
-                      type="password"
-                      maxLength={8}
-                      value={adminPin}
-                      onChange={(e) => setAdminPin(e.target.value)}
-                      placeholder="••••••"
-                      style={{
-                        width: '100%',
-                        textAlign: 'center',
-                        fontSize: '28px',
-                        letterSpacing: '8px',
-                        padding: '10px',
-                        borderRadius: '10px',
-                        border: '2px solid #cbd5e1'
-                      }}
-                      autoFocus
-                    />
-                  </div>
-                  <button type="submit" className={`${styles.btn} ${styles.btnPrimary}`} style={{ width: '100%' }}>
-                    Déverrouiller l'Espace Gérant
-                  </button>
-                </form>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                
-                {adminSuccess && (
-                  <div style={{ background: '#dcfce7', border: '2px solid #86efac', color: '#15803d', padding: '14px', borderRadius: '12px', textAlign: 'center', fontWeight: 700 }}>
-                    ✅ {adminSuccess}
-                  </div>
-                )}
-
-                {/* Résumé du Matin : Arbitrage Garder / Ajuster / Laisser */}
-                <div className={styles.card} style={{ borderTop: '6px solid #0f172a' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <div>
-                      <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>☀️ Résumé du Matin & Recommandations</h2>
-                      <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>
-                        Bilan factuel des offres. Règle automatique : ≥ Objectif = <strong>Garder</strong>, ≥ 30% = <strong>Ajuster</strong>, sinon = <strong>Laisser</strong>.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleExportCsv}
-                      className={`${styles.btn} ${styles.btnOutline}`}
-                      style={{ fontSize: '13px', padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-                    >
-                      <FileSpreadsheet size={16} />
-                      Export Contacts CSV
-                    </button>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
-                    {offers.map((o: any) => {
-                      const total = o.total_uses || (o.claimed + o.confirmed) || 0;
-                      const target = o.target_uses || 10;
-                      let reco = 'Laisser';
-                      let recoColor = '#b91c1c';
-                      let recoBg = '#fee2e2';
-
-                      if (total >= target) {
-                        reco = 'Garder';
-                        recoColor = '#15803d';
-                        recoBg = '#dcfce7';
-                      } else if (total >= 0.3 * target) {
-                        reco = 'Ajuster';
-                        recoColor = '#b45309';
-                        recoBg = '#fef3c7';
-                      }
-
-                      const currentChoice = decisionSaved[o.id];
-
-                      return (
-                        <div
-                          key={o.id}
-                          style={{
-                            background: '#f8fafc',
-                            border: '1.5px solid #e2e8f0',
-                            borderRadius: '12px',
-                            padding: '16px'
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
-                            <h4 style={{ margin: 0, fontSize: '17px', fontWeight: 800 }}>{o.title}</h4>
-                            <span style={{ background: recoBg, color: recoColor, padding: '4px 10px', borderRadius: '9999px', fontSize: '12px', fontWeight: 800 }}>
-                              Recommandation : {reco}
-                            </span>
-                          </div>
-
-                          <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '12px' }}>
-                            Mot-code : <strong>{o.code_word}</strong> | Utilisations réelles : <strong>{total} / {target}</strong> ({Math.round((total / target) * 100)}%)
-                          </div>
-
-                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                            <button
-                              type="button"
-                              onClick={() => handleDecision(o.id, 'garder')}
-                              className={`${styles.btn} ${currentChoice === 'garder' ? styles.btnPrimary : styles.btnOutline}`}
-                              style={{ flex: 1, minHeight: '40px', fontSize: '14px' }}
-                            >
-                              Garder {currentChoice === 'garder' ? '✓' : ''}
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleDecision(o.id, 'ajuster')}
-                              className={`${styles.btn} ${currentChoice === 'ajuster' ? styles.btnPrimary : styles.btnOutline}`}
-                              style={{ flex: 1, minHeight: '40px', fontSize: '14px' }}
-                            >
-                              Ajuster {currentChoice === 'ajuster' ? '✓' : ''}
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleDecision(o.id, 'laisser')}
-                              className={`${styles.btn} ${currentChoice === 'laisser' ? styles.btnPrimary : styles.btnOutline}`}
-                              style={{ flex: 1, minHeight: '40px', fontSize: '14px', color: currentChoice === 'laisser' ? '#ffffff' : '#b91c1c' }}
-                            >
-                              Laisser {currentChoice === 'laisser' ? '✓' : ''}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div style={{ textAlign: 'right' }}>
-                  <button
-                    onClick={() => setIsAdminLoggedIn(false)}
-                    style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '13px', textDecoration: 'underline' }}
-                  >
-                    Verrouiller l'Espace Gérant
-                  </button>
-                </div>
+            {adminSuccess && (
+              <div style={{ background: '#dcfce7', border: '2px solid #86efac', color: '#15803d', padding: '14px', borderRadius: '12px', textAlign: 'center', fontWeight: 700 }}>
+                ✅ {adminSuccess}
               </div>
             )}
+
+            {adminError && (
+              <div style={{ background: '#fee2e2', border: '2px solid #fca5a5', color: '#b91c1c', padding: '14px', borderRadius: '12px', textAlign: 'center', fontWeight: 700 }}>
+                ❌ {adminError}
+              </div>
+            )}
+
+            {/* Résumé du Matin : Arbitrage Garder / Ajuster / Laisser */}
+            <div className={styles.card} style={{ borderTop: '6px solid #0f172a' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>☀️ Résumé du Matin & Recommandations</h2>
+                  <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>
+                    Bilan factuel des offres. Règle automatique : ≥ Objectif = <strong>Garder</strong>, ≥ 30% = <strong>Ajuster</strong>, sinon = <strong>Laisser</strong>.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleExportCsv}
+                  className={`${styles.btn} ${styles.btnOutline}`}
+                  style={{ fontSize: '13px', padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <FileSpreadsheet size={16} />
+                  Export Contacts CSV
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+                {offers.map((o: any) => {
+                  const total = o.total_uses || (o.claimed + o.confirmed) || 0;
+                  const target = o.target_uses || 10;
+                  let reco = 'Laisser';
+                  let recoColor = '#b91c1c';
+                  let recoBg = '#fee2e2';
+
+                  if (total >= target) {
+                    reco = 'Garder';
+                    recoColor = '#15803d';
+                    recoBg = '#dcfce7';
+                  } else if (total >= 0.3 * target) {
+                    reco = 'Ajuster';
+                    recoColor = '#b45309';
+                    recoBg = '#fef3c7';
+                  }
+
+                  const currentChoice = decisionSaved[o.id];
+
+                  return (
+                    <div
+                      key={o.id}
+                      style={{
+                        background: '#f8fafc',
+                        border: '1.5px solid #e2e8f0',
+                        borderRadius: '12px',
+                        padding: '16px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
+                        <h4 style={{ margin: 0, fontSize: '17px', fontWeight: 800 }}>{o.title}</h4>
+                        <span style={{ background: recoBg, color: recoColor, padding: '4px 10px', borderRadius: '9999px', fontSize: '12px', fontWeight: 800 }}>
+                          Recommandation : {reco}
+                        </span>
+                      </div>
+
+                      <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '12px' }}>
+                        Mot-code : <strong>{o.code_word}</strong> | Utilisations réelles : <strong>{total} / {target}</strong> ({Math.round((total / target) * 100)}%)
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleDecision(o.id, 'garder')}
+                          className={`${styles.btn} ${currentChoice === 'garder' ? styles.btnPrimary : styles.btnOutline}`}
+                          style={{ flex: 1, minHeight: '40px', fontSize: '14px' }}
+                        >
+                          Garder {currentChoice === 'garder' ? '✓' : ''}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDecision(o.id, 'ajuster')}
+                          className={`${styles.btn} ${currentChoice === 'ajuster' ? styles.btnPrimary : styles.btnOutline}`}
+                          style={{ flex: 1, minHeight: '40px', fontSize: '14px' }}
+                        >
+                          Ajuster {currentChoice === 'ajuster' ? '✓' : ''}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDecision(o.id, 'laisser')}
+                          className={`${styles.btn} ${currentChoice === 'laisser' ? styles.btnPrimary : styles.btnOutline}`}
+                          style={{ flex: 1, minHeight: '40px', fontSize: '14px', color: currentChoice === 'laisser' ? '#ffffff' : '#b91c1c' }}
+                        >
+                          Laisser {currentChoice === 'laisser' ? '✓' : ''}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
 

@@ -6,7 +6,7 @@ export interface RestaurantOffer {
   id: string;
   name: string;
   description: string;
-  image: string;
+  image?: string;
   discount: string;
   period: string;
   date?: string;

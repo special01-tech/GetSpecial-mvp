@@ -12,9 +12,9 @@ export class OpenRouterClient {
   private readonly model: string;
 
   constructor() {
-    this.apiKey = process.env.OPENROUTER_API_KEY;
+    this.apiKey = (process.env.OPENROUTER_API_KEY || '').replace(/^["']|["']$/g, '').trim();
     this.baseUrl = process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1';
-    this.model = process.env.OPENROUTER_MODEL || 'deepseek/deepseek-v4-pro';
+    this.model = process.env.OPENROUTER_MODEL || 'anthropic/claude-3.5-sonnet';
   }
 
   /**
@@ -117,7 +117,6 @@ Produis la réponse JSON au format exact suivant :
           body: JSON.stringify({
             model: modelToUse,
             temperature: 0.2,
-            response_format: { type: 'json_object' },
             messages: [
               { role: 'system', content: systemPrompt },
               { role: 'user', content: userPrompt },
@@ -129,11 +128,11 @@ Produis la réponse JSON au format exact suivant :
       let usedModel = this.model;
       let response = await executeRequest(this.model);
 
-      // Si le modèle configuré échoue, essayer deepseek/deepseek-v4-pro ou openai/gpt-4o-mini
-      if (!response.ok && this.model !== 'deepseek/deepseek-v4-pro') {
-        console.warn(`[OPENROUTER_FALLBACK] Modèle ${this.model} indisponible (${response.status}). Bascule sur deepseek/deepseek-v4-pro...`);
-        usedModel = 'deepseek/deepseek-v4-pro';
-        response = await executeRequest('deepseek/deepseek-v4-pro');
+      // Si le modèle configuré échoue, basculer vers deepseek/deepseek-chat puis openai/gpt-4o-mini
+      if (!response.ok && this.model !== 'deepseek/deepseek-chat') {
+        console.warn(`[OPENROUTER_FALLBACK] Modèle ${this.model} indisponible (${response.status}). Bascule sur deepseek/deepseek-chat...`);
+        usedModel = 'deepseek/deepseek-chat';
+        response = await executeRequest('deepseek/deepseek-chat');
       }
 
       if (!response.ok && usedModel !== 'openai/gpt-4o-mini') {

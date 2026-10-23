@@ -10,10 +10,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import PostInsights from '@/components/ui/PostInsights/PostInsights';
-import {
-  MOCK_DETAILED_POST,
-  DetailedPostStats,
-} from '@/services/insights/post-insights.data';
+import { DetailedPostStats } from '@/services/insights/post-insights.data';
 import { useLanguage } from '@/i18n';
 import styles from './post-detail.module.css';
 
@@ -23,7 +20,20 @@ export default function PostDetailPage() {
   const postId = params?.id as string;
   const { t, formatDate } = useLanguage();
 
-  const [post, setPost] = useState<DetailedPostStats>(MOCK_DETAILED_POST);
+  const [post, setPost] = useState<DetailedPostStats>({
+    id: postId || 'post_current',
+    title: 'Chargement de la publication...',
+    imageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1000&q=80',
+    date: formatDate(new Date().toISOString(), { month: 'short', day: 'numeric', year: 'numeric' }),
+    platform: 'instagram',
+    postUrl: '',
+    views: 0,
+    likes: 0,
+    comments: 0,
+    shares: 0,
+    metrics: { views: 0, likes: 0, comments: 0, shares: 0, engagementRate: '0%' },
+    demographics: undefined,
+  });
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -38,30 +48,30 @@ export default function PostDetailPage() {
             setPost({
               id: matched.id,
               title: matched.content.slice(0, 60) + (matched.content.length > 60 ? '...' : ''),
-              imageUrl: matched.thumbnailUrl || MOCK_DETAILED_POST.imageUrl,
+              imageUrl: matched.thumbnailUrl || matched.imageUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1000&q=80',
               platform: matched.platform || 'instagram',
-              date: formatDate(matched.publishedAt, {
+              date: formatDate(matched.publishedAt || matched.createdAt, {
                 month: 'short',
                 day: 'numeric',
                 year: 'numeric',
               }),
-              time: formatDate(matched.publishedAt, {
+              time: formatDate(matched.publishedAt || matched.createdAt, {
                 hour: 'numeric',
                 minute: '2-digit',
               }),
-              postUrl: matched.url,
+              postUrl: matched.url || '',
               views: matched.views || 0,
               likes: matched.likes || 0,
               comments: matched.comments || 0,
               shares: matched.shares || 0,
               metrics: {
-                views: matched.views,
-                likes: matched.likes,
+                views: matched.views || 0,
+                likes: matched.likes || 0,
                 comments: matched.comments || 0,
                 shares: matched.shares || 0,
-                engagementRate: `${matched.engagementRate}%`,
+                engagementRate: matched.engagementRate ? `${matched.engagementRate}%` : '0%',
               },
-              demographics: MOCK_DETAILED_POST.demographics,
+              demographics: matched.demographics || undefined,
             });
           }
         }

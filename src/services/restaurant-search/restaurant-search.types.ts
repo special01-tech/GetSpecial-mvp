@@ -16,13 +16,19 @@ export interface RestaurantSearchResult {
   rating?: number;
   reviewsCount?: number;
   photoUrl?: string;
+  photoGallery?: string[];
   cuisineType?: string;
   phone?: string;
   website?: string;
   openingHours?: string;
   isOpenNow?: boolean;
-  photoGallery?: string[];
   googlePlaceId?: string;
+  mapsUrl?: string;
+  hasTerrace?: boolean;
+  hasDelivery?: boolean;
+  features?: string[];
+  categories?: string[];
+  rawScraped?: any;
 }
 
 export interface RestaurantSearchQuery {

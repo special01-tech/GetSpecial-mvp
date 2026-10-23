@@ -152,6 +152,23 @@ export default function OnboardingSummaryPage() {
       ].filter(Boolean);
       const formattedAddress = addressParts.length > 0 ? addressParts.join(', ') : 'Adresse du restaurant';
 
+      const storedSocial = localStorage.getItem('getspecial_social_accounts');
+      let parsedSocialAccounts: any[] = [];
+      if (storedSocial) {
+        try {
+          const list = JSON.parse(storedSocial);
+          if (Array.isArray(list)) {
+            parsedSocialAccounts = list
+              .filter((a: any) => a.status === 'connected' || a.status === 'verified')
+              .map((a: any) => ({
+                platform: a.id,
+                username: a.accountHandle || undefined,
+                status: 'connected',
+              }));
+          }
+        } catch {}
+      }
+
       // 1. Sauvegarde réelle en base via POST /api/restaurants
       const response = await fetch('/api/restaurants', {
         method: 'POST',
@@ -160,15 +177,20 @@ export default function OnboardingSummaryPage() {
           name: recap.restaurantName,
           type: parsedTypes[0] || 'restaurant',
           address: formattedAddress,
+          city: parsedRest?.city || undefined,
+          postalCode: parsedRest?.postalCode || undefined,
+          phone: parsedRest?.phone || undefined,
+          website: parsedRest?.website || undefined,
           latitude: parsedRest?.latitude || 48.8566,
           longitude: parsedRest?.longitude || 2.3522,
           country: parsedRest?.country || 'FR',
           userId: parsedUser?.id || undefined,
           openingHours: parsedHours || { general: recap.hours },
-          specialties: [recap.specialties],
-          tone: parsedBrand?.tones?.[0] || 'friendly',
+          specialties: recap.specialties && recap.specialties !== 'Spécialités de la maison' ? [recap.specialties] : [],
+          tone: parsedBrand?.tones?.[0] || 'chaleureux',
           hasTerrace: recap.hasTerrace,
           hasDelivery: recap.hasDelivery,
+          socialAccounts: parsedSocialAccounts,
         }),
       });
 

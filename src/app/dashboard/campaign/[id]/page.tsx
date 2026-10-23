@@ -16,7 +16,7 @@ import {
 import Logo from '@/components/ui/Logo/Logo';
 import CampaignDetail from '@/components/ui/CampaignDetail/CampaignDetail';
 import PrimaryButton from '@/components/ui/PrimaryButton/PrimaryButton';
-import { MOCK_CAMPAIGN_DETAIL, CampaignData } from '@/services/campaign/campaign.data';
+import { CampaignData } from '@/services/campaign/campaign.data';
 import { useLanguage } from '@/i18n';
 import styles from './campaign-page.module.css';
 
@@ -83,8 +83,8 @@ export default function CampaignDetailPage() {
   useEffect(() => {
     const loadCampaign = async () => {
       const restaurantId = typeof window !== 'undefined'
-        ? localStorage.getItem('getspecial_restaurant_id') || 'rest_demo_austin_1'
-        : 'rest_demo_austin_1';
+        ? localStorage.getItem('getspecial_restaurant_id') || ''
+        : '';
 
       let opportunityData: any = null;
       if (typeof window !== 'undefined') {
@@ -140,8 +140,8 @@ export default function CampaignDetailPage() {
   const handleApprove = async () => {
     setIsLoading(true);
     const restaurantId = typeof window !== 'undefined'
-      ? localStorage.getItem('getspecial_restaurant_id') || 'rest_demo_austin_1'
-      : 'rest_demo_austin_1';
+      ? localStorage.getItem('getspecial_restaurant_id') || ''
+      : '';
 
     try {
       // Appel API réel d'approbation sécurisée
@@ -188,8 +188,8 @@ export default function CampaignDetailPage() {
   const handlePublishNow = async () => {
     setIsLoading(true);
     const restaurantId = typeof window !== 'undefined'
-      ? localStorage.getItem('getspecial_restaurant_id') || 'rest_demo_austin_1'
-      : 'rest_demo_austin_1';
+      ? localStorage.getItem('getspecial_restaurant_id') || ''
+      : '';
 
     try {
       const approveRes = await fetch(`/api/posts/${campaign.id}/approve`, {
@@ -233,8 +233,8 @@ export default function CampaignDetailPage() {
   const handleConfirmSchedule = async () => {
     setIsLoading(true);
     const restaurantId = typeof window !== 'undefined'
-      ? localStorage.getItem('getspecial_restaurant_id') || 'rest_demo_austin_1'
-      : 'rest_demo_austin_1';
+      ? localStorage.getItem('getspecial_restaurant_id') || ''
+      : '';
 
     const scheduledDateTime = `${scheduledDate}T${scheduledTime}:00`;
 
@@ -276,8 +276,8 @@ export default function CampaignDetailPage() {
   const handleRegenerate = async () => {
     setIsLoading(true);
     const restaurantId = typeof window !== 'undefined'
-      ? localStorage.getItem('getspecial_restaurant_id') || 'rest_demo_austin_1'
-      : 'rest_demo_austin_1';
+      ? localStorage.getItem('getspecial_restaurant_id') || ''
+      : '';
 
     let opportunityData: any = null;
     if (typeof window !== 'undefined') {

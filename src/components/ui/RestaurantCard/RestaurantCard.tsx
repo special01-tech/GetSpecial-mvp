@@ -18,7 +18,7 @@ export default function RestaurantCard({ restaurant, className = '' }: Restauran
     : undefined;
 
   const validGallery = (restaurant.photoGallery || []).filter(
-    (img) => img && !img.includes('unsplash.com')
+    (img: string) => img && !img.includes('unsplash.com')
   );
 
   return (
@@ -116,7 +116,7 @@ export default function RestaurantCard({ restaurant, className = '' }: Restauran
               <span>{t('common.components.restaurantCard.galleryTitle')}</span>
             </div>
             <div className={styles.galleryGrid}>
-              {validGallery.slice(0, 3).map((imgUrl, idx) => (
+              {validGallery.slice(0, 3).map((imgUrl: string, idx: number) => (
                 <div key={idx} className={styles.galleryThumbWrapper}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img

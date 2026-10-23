@@ -10,7 +10,7 @@ export const EnvSchema = z.object({
   SESSION_SECRET: z.string().min(1).default('gs_session_secret_default_fallback_2026'),
   ADMIN_SETUP_TOKEN: z.string().optional().default('gs_initial_setup_token_change_me'),
   OPENROUTER_API_KEY: z.string().optional(),
-  OPENROUTER_MODEL: z.string().default('anthropic/claude-3.7-sonnet'),
+  OPENROUTER_MODEL: z.string().default('google/gemini-3.8-flash'),
 });
 
 export type EnvConfig = z.infer<typeof EnvSchema>;

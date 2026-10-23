@@ -501,7 +501,368 @@
   cursor: not-allowed;
 }
 
+.modalTabsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #E5E7EB;
+  padding-bottom: 0.5rem;
+}
+
+.modalTabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #6B7280;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modalTabBtn:hover {
+  background: #F3F4F6;
+  color: #111827;
+}
+
+.modalTabBtnActive {
+  background: #FFF2EB;
+  color: #FF5A00;
+  border-color: #FFD1B3;
+}
+
+.summaryBanner {
+  background: #F8FAFC;
+  border-left: 3px solid #FF5A00;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #334155;
+  line-height: 1.45;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Toolbar de recherche et filtrage des plats */
+.dishesToolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #F9FAFB;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+}
+
+.dishesToolbarTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.dishSearchBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  padding: 6px 12px;
+  flex: 1;
+  max-width: 400px;
+  transition: border-color 0.15s ease;
+}
+
+.dishSearchBox:focus-within {
+  border-color: #FF5A00;
+  box-shadow: 0 0 0 2px rgba(255, 90, 0, 0.1);
+}
+
+.dishSearchInput {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.82rem;
+  color: #111827;
+  width: 100%;
+}
+
+.clearSearchBtn {
+  background: transparent;
+  border: none;
+  color: #9CA3AF;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+}
+
+.clearSearchBtn:hover {
+  color: #4B5563;
+}
+
+.viewModeToggle {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: #E5E7EB;
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.viewModeBtn {
+  background: transparent;
+  border: none;
+  color: #6B7280;
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.viewModeBtn:hover {
+  color: #111827;
+}
+
+.viewModeBtnActive {
+  background: #FFFFFF;
+  color: #111827;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Filtres de catégories (Pills) */
+.categoryPillsRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.categoryPillsRow::-webkit-scrollbar {
+  display: none;
+}
+
+.categoryPill {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  color: #4B5563;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.categoryPill:hover {
+  border-color: #D1D5DB;
+  background: #F3F4F6;
+  color: #111827;
+}
+
+.categoryPillActive {
+  background: #111827;
+  border-color: #111827;
+  color: #FFFFFF;
+}
+
+.categoryPillActive:hover {
+  background: #1F2937;
+  color: #FFFFFF;
+}
+
+/* VUE LISTE DES PLATS */
+.dishesList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dishListItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  transition: all 0.15s ease;
+}
+
+.dishListItem:hover {
+  border-color: #D1D5DB;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+}
+
+.dishListMain {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.dishListTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dishName {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.signatureBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #D97706;
+  background: #FEF3C7;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.dishCategory {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6B7280;
+  background: #F3F4F6;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.dishDesc {
+  font-size: 0.77rem;
+  color: #6B7280;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.dishListRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.dishPrice {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #059669;
+  background: #ECFDF5;
+  padding: 4px 9px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.dishPromoteBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #FFF2EB;
+  color: #FF5A00;
+  border: 1px solid #FFE0CC;
+  border-radius: 8px;
+  padding: 6px 11px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.dishPromoteBtn:hover {
+  background: #FF5A00;
+  color: #FFFFFF;
+}
+
+.dishPromotedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #ECFDF5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
+  border-radius: 8px;
+  padding: 6px 11px;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+/* VUE GRILLE DES PLATS */
+.dishesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 12px;
+}
+
+.dishCard {
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 14px;
+  background: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  transition: all 0.15s ease;
+}
+
+.dishCard:hover {
+  border-color: #D1D5DB;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.dishCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dishCardBadges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.dishCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border-top: 1px solid #F3F4F6;
+  padding-top: 8px;
+}
+
+.emptyModalState {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: #6B7280;
+  font-size: 0.85rem;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+

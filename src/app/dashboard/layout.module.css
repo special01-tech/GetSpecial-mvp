@@ -29,10 +29,13 @@
   overflow-x: hidden;
 }
 
-/* Sur mobile (< 768px) : Header fixe haut (60px), BottomNav fixe bas (64px) */
+/* Sur mobile (< 768px) : Header fixe haut avec safe-area top, BottomNav fixe bas avec safe-area bottom */
 @media (max-width: 768px) {
   .main {
     margin-left: 0;
-    padding: calc(var(--header-height, 60px) + 12px) 12px calc(var(--bottom-nav-height, 64px) + 20px) 12px;
+    padding-top: calc(var(--header-height, 60px) + env(safe-area-inset-top, 0px) + 12px);
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
+    padding-bottom: calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 24px);
   }
 }

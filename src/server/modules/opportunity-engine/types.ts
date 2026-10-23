@@ -14,6 +14,19 @@ export type OpportunityCategory =
 
 export type DistributionChannel = 'INSTAGRAM' | 'FACEBOOK' | 'GOOGLE_BUSINESS';
 
+export interface OpportunityCandidate {
+  id: string;
+  type: string;
+  signalId?: string;
+  offerId?: string;
+  sourceEvent?: any;
+  suggestedTitle: string;
+  suggestedAngle: string;
+  urgency: OpportunityUrgency | 'high' | 'medium' | 'low';
+  rawScore: number;
+  facts: string[];
+}
+
 /**
  * Schéma Zod de l'offre commerciale en salle
  */

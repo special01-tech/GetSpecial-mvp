@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
 import './globals.css';
 import { LanguageProvider, LOCALE_COOKIE, isLocale } from '@/i18n';
+import PwaRegister from '@/components/pwa/PwaRegister';
 
 /* =============================================================================
  * Root Layout
@@ -39,7 +40,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
   themeColor: '#FF5A00',
 };
 
@@ -56,6 +56,7 @@ export default async function RootLayout({
     <html lang={initialLocale}>
       <body>
         <LanguageProvider initialLocale={initialLocale}>{children}</LanguageProvider>
+        <PwaRegister />
       </body>
     </html>
   );

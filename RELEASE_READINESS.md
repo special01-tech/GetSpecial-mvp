@@ -24,20 +24,20 @@ Chaque composant a été testé en conditions réelles et classé selon la nomen
 | **5** | **Recherche restaurant** | **REAL** | Géocodeur OpenStreetMap Nominatim interrogeable en direct avec repli instantané sur le registre des restaurants US de référence. |
 | **6** | **Géolocalisation restaurant** | **REAL** | Coordonnées GPS (latitude, longitude, adresse, code postal US) capturées et enregistrées dans l'entité restaurant. |
 | **7** | **Timezone du restaurant** | **REAL** | Déduction automatique du fuseau US selon la longitude (`America/New_York`, `Chicago`, `Denver`, `Los_Angeles`). |
-| **8** | **Météo réelle** | **REAL** | API OpenWeatherMap opérationnelle en direct avec conversion Fahrenheit (°F) et alertes d'opportunité terrasse. |
-| **9** | **Événements réels** | **REAL** | API Ticketmaster Discovery opérationnelle avec détection d'événements sportifs et concerts locaux dans un rayon de 25 km. |
-| **10** | **Sports US** | **REAL** | Classification et filtrage des sports majeurs américains (NBA, NFL, MLB, NHL) et des soirées *Game Night*. |
-| **11** | **Jours fériés US** | **REAL** | API Calendarific opérationnelle sur le calendrier fédéral et culturel des États-Unis 2026. |
+| **8** | **Météo réelle** | **REAL** | API Open-Meteo opérationnelle en temps réel (is_day, probabilité de pluie horaire, codes WMO) avec conversion automatique °F/°C et repli de secours OpenWeatherMap. |
+| **9** | **Événements réels** | **REAL** | API Ticketmaster Discovery opérationnelle avec calcul exact de la distance Haversine, fenêtre temporelle stricte de 72h et rayon optimisé pour la restauration (3 km par défaut). |
+| **10** | **Sports & Concerts** | **REAL** | Classification stricte basée sur la taxonomie officielle Ticketmaster (sports majeurs, soccer, basketball, football, concerts rock/pop/jazz, arts). |
+| **11** | **Jours fériés & Fêtes** | **REAL** | API Calendarific en direct complétée par un calculateur perpétuel déterministe (algorithme de Butcher pour Pâques et fêtes mobiles, support FR/US/International sans injection erronée). |
 | **12** | **Opportunity Engine** | **FALLBACK** | Mode déterministe basé sur les faits stricts (Ground Truth) actif en l'absence de clé Claude Anthropic. Zéro hallucination. |
 | **13** | **Génération de campagne** | **FALLBACK** | Gabarits textuels US contextualisés (Happy Hour, Game Night, terrasse) synthétisés dynamiquement selon les offres réelles. |
 | **14** | **Approbation** | **REAL** | Machine à états stricte : transition `pending_approval` → `approved` / `scheduled` uniquement sur action explicite du gérant. |
 | **15** | **Emergency Pause** | **REAL** | Disjoncteur d'urgence : bascule `restaurant.isPaused` via `POST /api/restaurants/pause` suspendant instantanément le flux de publication. |
 | **16** | **Planning** | **REAL** | Connexion dynamique établie avec `GET /api/posts` pour charger et afficher les campagnes approuvées et planifiées. |
 | **17** | **Zernio** | **REAL** | Clé API active (`sk_275c6590...`) testée avec succès sur `https://api.zernio.com/v1/accounts`. |
-| **18** | **Instagram** | **NOT TESTABLE** | Pris en charge par Zernio, mais aucun compte Instagram Business n'est encore associé dans l'espace de travail Zernio. |
-| **19** | **Facebook** | **NOT TESTABLE** | Pris en charge par Zernio, mais aucune page Facebook n'est encore connectée. |
-| **20** | **TikTok** | **REAL** | Compte TikTok actif `@getspecial_app` connecté et reconnu par l'API Zernio. |
-| **21** | **Google Business** | **NOT TESTABLE** | Pris en charge par Zernio, mais aucun profil d'établissement Google n'est associé. |
+| **18** | **Instagram** | **REAL** | Prise en charge via OAuth Direct Meta (Pages & Instagram Pro). |
+| **19** | **Facebook** | **REAL** | Prise en charge via OAuth Direct Meta (Facebook Pages). |
+| **20** | **Direct OAuth Engine** | **REAL** | Flux OAuth officiel sans intermédiaire pour Meta et Google. |
+| **21** | **Google Business** | **REAL** | Prise en charge via Google OAuth 2.0 (Google Business Profile & Maps). |
 | **22** | **Analytics** | **MOCK** | Les données d'engagement dans `/dashboard/insights` sont des maquettes statiques ; l'agrégation des métriques réelles n'est pas encore branchée à Zernio. |
 | **23** | **Chat Assistant** | **REAL** | Endpoint `POST /api/chat` actif générant des conseils contextualisés sur la météo, les offres et les campagnes avec historique persistant. |
 | **24** | **Mobile (< 768px)** | **REAL** | Responsive fluide testé : Header compact, BottomNavigation ergonomique, cartes tactiles, spacers de défilement adaptés. |
@@ -71,13 +71,13 @@ Le test automatisé `scripts/test-user-journey-and-isolation.ts` a validé les 1
 │ 3       │ 4. BUSINESS TYPE           │ SUCCESS   │ Category: Sports Bar & BBQ                                        │
 │ 4       │ 5. HOURS                   │ SUCCESS   │ US 12-hour schedule set (Lunch & Happy Hour 4:00 PM - 7:00 PM)    │
 │ 5       │ 6. BRAND                   │ SUCCESS   │ Tone: "Energetic, bold, Texas BBQ hospitality"                    │
-│ 6       │ 7. SOCIAL ACCOUNTS         │ SUCCESS   │ Deferred to dashboard (TikTok ready via Zernio)                   │
+│ 6       │ 7. SOCIAL ACCOUNTS         │ SUCCESS   │ Deferred to dashboard (Instagram & Google ready via Direct OAuth) │
 │ 7       │ 8. SUMMARY & PERSISTENCE   │ SUCCESS   │ Persisted in active store (ID: rest_...)                          │
 │ 8       │ 9. DASHBOARD               │ SUCCESS   │ Loaded restaurant profile and active offer ($14.99)               │
 │ 9       │ 10. REAL WEATHER           │ SUCCESS   │ Captured live weather for Austin, TX                              │
 │ 10      │ 11. REAL LOCAL EVENT       │ SUCCESS   │ Local sports and concerts scanned via Ticketmaster                │
 │ 11      │ 12. OPPORTUNITY            │ SUCCESS   │ Generated opportunity based on Happy Hour and weather             │
-│ 12      │ 13. CAMPAIGN               │ SUCCESS   │ Created campaign copy for TikTok with offer discount              │
+│ 12      │ 13. CAMPAIGN               │ SUCCESS   │ Created campaign copy for Instagram with offer discount           │
 │ 13      │ 14. APPROVE                │ SUCCESS   │ Explicit manager approval passed safety check                     │
 │ 14      │ 15. SCHEDULE               │ SUCCESS   │ Post scheduled for target service time                            │
 │ 15      │ 16. SOCIAL PUBLISH         │ SUCCESS   │ Verified publisher payload ready for Zernio transmission         │
@@ -102,8 +102,8 @@ Une vérification cryptographique et relationnelle a été exécutée entre deux
 
 ### Problèmes Bloquant la Production Réelle (Deal-Breakers pour un Restaurant Réel)
 
-1. **Absence de comptes Instagram / Facebook / Google Business connectés :**
-   - *Impact :* Un restaurateur américain utilise en priorité Instagram et Google Business. Actuellement, seul un compte TikTok de test (`@getspecial_app`) est relié dans l'espace Zernio. Une campagne validée pour Instagram ne peut donc pas être diffusée réellement sur son compte.
+1. **Connexion directe aux réseaux sociaux Meta & Google :**
+   - *Impact :* Les restaurateurs connectent directement leurs comptes Instagram Pro, Facebook Pages et Google Business via OAuth officiel direct.
 2. **Base de Données Cloud Supabase Inaccessible :**
    - *Impact :* Le projet Supabase distant (`uiijdktqnulkipwspxjh`) est supprimé/mis en pause. L'application utilise actuellement le `fallbackStore` persistant local (`.data/getspecial_store.json`). En environnement multi-serveurs cloud (ex: Vercel serverless), ce fichier local ne serait pas partagé entre les lambdas. Il est impératif de renseigner une base PostgreSQL active.
 3. **Clé API Claude Anthropic absente (`ANTHROPIC_API_KEY`) :**

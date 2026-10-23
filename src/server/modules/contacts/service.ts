@@ -7,7 +7,7 @@ export async function saveCustomerContact(params: SaveContactParams) {
     throw new Error(check.error);
   }
 
-  return (prisma.customerContact as any).create({
+  return ((prisma as any).customerContact).create({
     data: {
       restaurantId: params.restaurantId,
       offerId: params.offerId || null,
@@ -20,7 +20,7 @@ export async function saveCustomerContact(params: SaveContactParams) {
 }
 
 export async function exportContactsCsv(restaurantId: string): Promise<string> {
-  const contacts = await (prisma.customerContact as any).findMany({
+  const contacts = await ((prisma as any).customerContact).findMany({
     where: { restaurantId, unsubscribed: false },
     orderBy: { createdAt: 'desc' },
   });

@@ -18,7 +18,6 @@ class AuthClientService implements IAuthClientService {
     }
 
     try {
-      // Nettoyer d'anciens caches de démo
       localStorage.removeItem('getspecial_selected_restaurant');
       localStorage.removeItem('getspecial_restaurant_id');
       localStorage.removeItem('getspecial_onboarding_completed');
@@ -56,7 +55,14 @@ class AuthClientService implements IAuthClientService {
     if (!email || !email.includes('@')) {
       return {
         success: false,
-        error: 'Please enter a valid email address.',
+        error: 'Veuillez saisir une adresse email valide.',
+      };
+    }
+
+    if (!password) {
+      return {
+        success: false,
+        error: 'Le mot de passe est requis.',
       };
     }
 
@@ -64,7 +70,7 @@ class AuthClientService implements IAuthClientService {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: password || 'defaultPassword123' }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await res.json();
@@ -94,23 +100,15 @@ class AuthClientService implements IAuthClientService {
         return { success: true, user };
       }
 
-      // Si erreur de validation ou d'identifiants
       return {
         success: false,
         error: data.error || 'Identifiants invalides.',
       };
-    } catch {
-      // Fallback local résilient
-      const fallbackUser: AuthUser = {
-        id: `usr_${Date.now()}`,
-        email: email.toLowerCase().trim(),
-        name: email.split('@')[0],
+    } catch (err: any) {
+      return {
+        success: false,
+        error: err.message || 'Impossible de joindre le serveur.',
       };
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(this.storageKey, JSON.stringify(fallbackUser));
-        document.cookie = `getspecial_session=${fallbackUser.id}; path=/; max-age=2592000; SameSite=Lax`;
-      }
-      return { success: true, user: fallbackUser };
     }
   }
 
@@ -118,11 +116,17 @@ class AuthClientService implements IAuthClientService {
     if (!email || !email.includes('@')) {
       return {
         success: false,
-        error: 'Please enter a valid email address.',
+        error: 'Veuillez saisir une adresse email valide.',
       };
     }
 
-    // Réinitialisation complète de l'ancien restaurant de démo pour ce nouveau compte
+    if (!password || password.length < 6) {
+      return {
+        success: false,
+        error: 'Le mot de passe doit comporter au moins 6 caractères.',
+      };
+    }
+
     if (typeof window !== 'undefined') {
       localStorage.removeItem(this.storageKey);
       localStorage.removeItem('getspecial_selected_restaurant');
@@ -144,7 +148,7 @@ class AuthClientService implements IAuthClientService {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
-          password: password || 'Password123!',
+          password,
           name: name && name.trim() ? name.trim() : email.split('@')[0],
         }),
       });
@@ -170,22 +174,13 @@ class AuthClientService implements IAuthClientService {
 
       return {
         success: false,
-        error: data.error || 'Failed to create account.',
+        error: data.error || 'Impossible de créer le compte.',
       };
-    } catch {
-      const fallbackUser: AuthUser = {
-        id: `usr_reg_${Date.now()}`,
-        email: email.toLowerCase().trim(),
-        name: name || email.split('@')[0],
+    } catch (err: any) {
+      return {
+        success: false,
+        error: err.message || 'Impossible de joindre le serveur.',
       };
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(this.storageKey, JSON.stringify(fallbackUser));
-        if (name && name.trim()) {
-          localStorage.setItem('getspecial_new_restaurant_name', name.trim());
-        }
-        document.cookie = `getspecial_session=${fallbackUser.id}; path=/; max-age=2592000; SameSite=Lax`;
-      }
-      return { success: true, user: fallbackUser };
     }
   }
 

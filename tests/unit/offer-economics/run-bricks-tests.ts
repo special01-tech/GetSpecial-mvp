@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
-import { calculateOfferEconomics, calculateImpactMetrics } from '../domain.js';
-import { calculateCounterMetrics, canCancelRedemption } from '../../counter/domain.js';
-import { calculateServiceSlot, isSlotOffPeak } from '../../service-calendar/domain.js';
-import { calculateMedian, calculateBaselineCovers } from '../../closing/domain.js';
-import { evaluateMorningSummary } from '../../morning-summary/domain.js';
-import { hashPin, verifyPin, evaluatePinRateLimit } from '../../auth-pin/domain.js';
+import { calculateOfferEconomics, calculateImpactMetrics } from '../../../src/server/modules/offer-economics/domain.js';
+import { calculateCounterMetrics, canCancelRedemption } from '../../../src/server/modules/counter/domain.js';
+import { calculateServiceSlot, isSlotOffPeak } from '../../../src/server/modules/service-calendar/domain.js';
+import { calculateMedian, calculateBaselineCovers } from '../../../src/server/modules/closing/domain.js';
+import { evaluateMorningSummary } from '../../../src/server/modules/morning-summary/domain.js';
+import { hashPin, verifyPin, evaluatePinRateLimit } from '../../../src/server/modules/auth-pin/domain.js';
 
 async function runTests() {
   console.log('--- TEST RUNNER: DOMAIN BRICKS ---');

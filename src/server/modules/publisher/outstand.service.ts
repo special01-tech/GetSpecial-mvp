@@ -17,8 +17,9 @@ export class OutstandService {
    */
   async getConnectUrl(platform: 'facebook' | 'instagram', restaurantId: string): Promise<string> {
     if (!this.apiKey) {
-      // Mock d'URL locale pour développement sans clé Outstand
-      return `/api/social/mock-callback?platform=${platform}&restaurantId=${restaurantId}`;
+      throw new Error(
+        "Clé API Outstand non configurée (OUTSTAND_API_KEY). Veuillez configurer votre connecteur pour lier ce réseau."
+      );
     }
 
     const res = await fetch(`${this.baseUrl}/oauth/connect`, {
@@ -85,27 +86,28 @@ export class OutstandService {
     let outstandPostId: string | null = null;
     let lastError: string | null = null;
 
+    if (!this.apiKey) {
+      throw new Error(
+        "Clé API Outstand non configurée (OUTSTAND_API_KEY). Impossible d'effectuer une publication réelle sans connecteur actif."
+      );
+    }
+
     while (attempt < maxAttempts && !published) {
       attempt++;
       try {
-        if (!this.apiKey) {
-          // Simulation réussie en mode mock
-          outstandPostId = `mock_outstand_${Date.now()}`;
-          published = true;
-        } else {
-          const res = await fetch(`${this.baseUrl}/posts`, {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${this.apiKey}`,
-              'Content-Type': 'application/json',
-              'Idempotency-Key': sendIdempotencyKey,
-            },
-            body: JSON.stringify({
-              account_id: account.outstandAccountId,
-              text: post.text,
-              media_urls: post.imageUrl ? [post.imageUrl] : [],
-            }),
-          });
+        const res = await fetch(`${this.baseUrl}/posts`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+            'Idempotency-Key': sendIdempotencyKey,
+          },
+          body: JSON.stringify({
+            account_id: account.outstandAccountId,
+            text: post.text,
+            media_urls: post.imageUrl ? [post.imageUrl] : [],
+          }),
+        });
 
           if (!res.ok) {
             const errData = await res.text();
@@ -115,7 +117,6 @@ export class OutstandService {
           const resData = await res.json();
           outstandPostId = resData.id;
           published = true;
-        }
       } catch (err: any) {
         lastError = err.message || 'Erreur inconnue lors de la publication';
         console.warn(`[OUTSTAND_PUBLISH] Tentative ${attempt}/${maxAttempts} échouée :`, lastError);

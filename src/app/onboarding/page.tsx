@@ -156,6 +156,11 @@ export default function UnifiedOnboardingPage() {
   const [menuType, setMenuType] = useState<'none' | 'link' | 'file'>('none');
   const [menuUrl, setMenuUrl] = useState('');
   const [menuFileName, setMenuFileName] = useState('');
+  // Extraction IA du menu pendant l'onboarding
+  const [isExtractingMenu, setIsExtractingMenu] = useState(false);
+  const [menuExtractionNotice, setMenuExtractionNotice] = useState<string | null>(null);
+  const [extractedMenuDishes, setExtractedMenuDishes] = useState<any[]>([]);
+  const [extractedMenuOffers, setExtractedMenuOffers] = useState<any[]>([]);
 
   // Équipements & Paramètres Métier (Saisis par le restaurateur)
   const [hasTerrace, setHasTerrace] = useState(true);
@@ -172,10 +177,16 @@ export default function UnifiedOnboardingPage() {
 
   // Recherche Google Places & Établissement lié
   const [isSearchingGoogle, setIsSearchingGoogle] = useState(false);
+  const [isScrapingPlace, setIsScrapingPlace] = useState(false);
+  const [scrapingPlaceId, setScrapingPlaceId] = useState<string | null>(null);
+  const [scrapedNotice, setScrapedNotice] = useState<string | null>(null);
   const [googleResults, setGoogleResults] = useState<RestaurantSearchResult[]>([]);
   const [hasSearchedGoogle, setHasSearchedGoogle] = useState(false);
   const [selectedGooglePlace, setSelectedGooglePlace] = useState<RestaurantSearchResult | null>(null);
   const [showManualAddress, setShowManualAddress] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [website, setWebsite] = useState('');
+  const [openingHoursText, setOpeningHoursText] = useState('');
 
   // Suggestions d'adresses en direct (si saisie manuelle)
   const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
@@ -190,16 +201,101 @@ export default function UnifiedOnboardingPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [customColors, setCustomColors] = useState<string[]>(['#1B4332', '#FAEDCD']);
 
-  // --- SECTION 5 : RÉSEAUX SOCIAUX ---
+  // --- SECTION 5 : RÉSEAUX SOCIAUX (CONNEXION RÉELLE OAUTH) ---
   const [connectedPlatforms, setConnectedPlatforms] = useState<Record<string, boolean>>({
     instagram: false,
     facebook: false,
     google_business: false,
   });
+  const [connectedHandles, setConnectedHandles] = useState<Record<string, string>>({});
+  const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null);
+  const [socialNotice, setSocialNotice] = useState<string | null>(null);
+  const [socialError, setSocialError] = useState<string | null>(null);
 
   // Restaurer les infos locales ou initialiser
   useEffect(() => {
     try {
+      // 1. Restaurer le brouillon complet de l'onboarding si retour de redirection OAuth
+      const draftStr = localStorage.getItem('getspecial_onboarding_draft');
+      if (draftStr) {
+        try {
+          const d = JSON.parse(draftStr);
+          if (d.name) setName(d.name);
+          if (d.restaurantType) setRestaurantType(d.restaurantType);
+          if (d.customRestaurantTypeInput) setCustomRestaurantTypeInput(d.customRestaurantTypeInput);
+          if (d.address) setAddress(d.address);
+          if (d.city) setCity(d.city);
+          if (d.postalCode) setPostalCode(d.postalCode);
+          if (d.country) setCountry(d.country);
+          if (d.customCoords) setCustomCoords(d.customCoords);
+          if (d.detectedGpsInfo) setDetectedGpsInfo(d.detectedGpsInfo);
+          if (d.selectedGooglePlace) setSelectedGooglePlace(d.selectedGooglePlace);
+          if (d.hasTerrace !== undefined) setHasTerrace(d.hasTerrace);
+          if (d.hasDelivery !== undefined) setHasDelivery(d.hasDelivery);
+          if (d.capacityCovers) setCapacityCovers(d.capacityCovers);
+          if (d.averageTicket) setAverageTicket(d.averageTicket);
+          if (d.offPeakDays) setOffPeakDays(d.offPeakDays);
+          if (d.marketingGoal) setMarketingGoal(d.marketingGoal);
+          if (d.targetAudiences) setTargetAudiences(d.targetAudiences);
+          if (d.tone) setTone(d.tone);
+          if (d.logoPreview) setLogoPreview(d.logoPreview);
+          if (d.customColors) setCustomColors(d.customColors);
+          if (d.menuType) setMenuType(d.menuType);
+          if (d.menuUrl) setMenuUrl(d.menuUrl);
+          if (d.menuFileName) setMenuFileName(d.menuFileName);
+          if (d.connectedPlatforms) setConnectedPlatforms(d.connectedPlatforms);
+          if (d.connectedHandles) setConnectedHandles(d.connectedHandles);
+          if (d.phone) setPhone(d.phone);
+          if (d.website) setWebsite(d.website);
+          if (d.openingHoursText) setOpeningHoursText(d.openingHoursText);
+          if (d.scrapedNotice) setScrapedNotice(d.scrapedNotice);
+        } catch {}
+      }
+
+      // 2. Détection du retour d'autorisation OAuth dans l'URL (?connection=success ou ?connection=error)
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const connectionStatus = urlParams.get('connection');
+        const platform = urlParams.get('platform');
+        const username = urlParams.get('username');
+        const errorMsg = urlParams.get('message');
+        const stepParam = urlParams.get('step');
+
+        if (stepParam === '5' || connectionStatus) {
+          setCurrentStep(5);
+        }
+
+        if (connectionStatus === 'success' && platform) {
+          const displayPlatform = platform === 'google_business' ? 'Google Business' : platform.toUpperCase();
+          const accountHandle = username ? ` (${username})` : '';
+          setConnectedPlatforms((prev) => {
+            const next = { ...prev, [platform]: true };
+            try {
+              const draftStr = localStorage.getItem('getspecial_onboarding_draft');
+              if (draftStr) {
+                const draft = JSON.parse(draftStr);
+                draft.connectedPlatforms = next;
+                if (username) {
+                  draft.connectedHandles = { ...(draft.connectedHandles || {}), [platform]: username };
+                }
+                localStorage.setItem('getspecial_onboarding_draft', JSON.stringify(draft));
+              }
+            } catch {}
+            return next;
+          });
+          if (username) {
+            setConnectedHandles((prev) => ({ ...prev, [platform]: username }));
+          }
+          setSocialNotice(`🎉 Compte ${displayPlatform}${accountHandle} relié avec succès via OAuth Direct !`);
+          window.history.replaceState({}, '', '/onboarding?step=5');
+          setTimeout(() => setSocialNotice(null), 5000);
+        } else if (connectionStatus === 'error') {
+          setSocialError(`⚠️ Échec de connexion OAuth : ${errorMsg || 'Autorisation non accordée'}`);
+          window.history.replaceState({}, '', '/onboarding?step=5');
+          setTimeout(() => setSocialError(null), 6000);
+        }
+      }
+
       const authUserStr = localStorage.getItem('getspecial_auth_user');
       const savedRestName = localStorage.getItem('getspecial_new_restaurant_name');
       if (savedRestName) {
@@ -440,31 +536,89 @@ export default function UnifiedOnboardingPage() {
     }
   };
 
-  // Sélection d'un établissement Google Places (Magic Fill)
-  const handleSelectGooglePlace = (place: RestaurantSearchResult) => {
+  // Sélection d'un établissement Google Places (Magic Fill en 2 étapes)
+  const handleSelectGooglePlace = async (place: RestaurantSearchResult) => {
+    setIsScrapingPlace(true);
+    setScrapingPlaceId(place.id);
+    setErrorMsg(null);
+    setScrapedNotice(null);
+
+    // 1. Remplissage optimiste immédiat avec les données de base de l'occurrence
     setSelectedGooglePlace(place);
-    setName(place.name);
+    if (place.name) setName(place.name);
     if (place.city) setCity(place.city);
-    if (place.country) setCountry(place.country);
-    setAddress(place.address);
+    if (place.country) setCountry(place.country.toUpperCase());
+    if (place.address) setAddress(place.address);
     if (place.postalCode) setPostalCode(place.postalCode);
     if (place.latitude && place.longitude) {
       setCustomCoords({ lat: place.latitude, lon: place.longitude });
       setDetectedGpsInfo(`${place.city || city}, ${place.country || country}`);
     }
+    if (place.phone) setPhone(place.phone);
+    if (place.hasTerrace !== undefined) setHasTerrace(Boolean(place.hasTerrace));
+    if (place.hasDelivery !== undefined) setHasDelivery(Boolean(place.hasDelivery));
+    if (place.photoUrl && !place.photoUrl.includes('unsplash.com')) {
+      setLogoPreview(place.photoUrl);
+    }
 
-    // Détection automatique du badge de type d'établissement
-    const inferred = inferRestaurantTypeFromCategory(`${place.cuisineType || ''} ${place.name}`);
-    setRestaurantType(inferred);
+    const initialInferred = inferRestaurantTypeFromCategory(`${place.cuisineType || ''} ${place.name}`);
+    setRestaurantType(initialInferred);
 
+    // S'assurer que le bloc d'adresse modifiable reste visible et accessible à l'utilisateur
+    setShowManualAddress(true);
 
-    // Fermer la liste de résultats
-    setGoogleResults([]);
+    // 2. Scraping ciblé et approfondi de la fiche sélectionnée
+    try {
+      const scrapeRes = await restaurantSearchService.scrapePlace(place);
+      if (scrapeRes.success && scrapeRes.data) {
+        const d = scrapeRes.data;
+        if (d.name) setName(d.name);
+        if (d.city) setCity(d.city);
+        if (d.country) setCountry(d.country.toUpperCase());
+        if (d.address) setAddress(d.address);
+        if (d.postalCode) setPostalCode(d.postalCode);
+        if (d.latitude != null && d.longitude != null) {
+          setCustomCoords({ lat: Number(d.latitude), lon: Number(d.longitude) });
+          setDetectedGpsInfo(`${d.city || place.city || city}, ${d.country || place.country || country}`);
+        }
+        if (d.type || d.categories?.length) {
+          const catStr = [d.type, ...(d.categories || [])].filter(Boolean).join(' ');
+          setRestaurantType(inferRestaurantTypeFromCategory(catStr || d.name));
+        }
+        if (d.hasTerrace !== undefined) setHasTerrace(Boolean(d.hasTerrace));
+        if (d.hasDelivery !== undefined) setHasDelivery(Boolean(d.hasDelivery));
+        if (d.phone) setPhone(d.phone);
+        if (d.website) setWebsite(d.website);
+        if (d.openingHours) {
+          const oh = typeof d.openingHours === 'string' ? d.openingHours : d.openingHours.rawText || '';
+          setOpeningHoursText(oh);
+        }
+        if (d.photoUrl && !d.photoUrl.includes('unsplash.com')) {
+          setLogoPreview(d.photoUrl);
+        }
+
+        setSelectedGooglePlace((prev) => ({
+          ...(prev || place),
+          ...d,
+        }));
+
+        setScrapedNotice(
+          '✨ Profil Google Maps importé : adresse, coordonnées GPS, concept et équipements renseignés automatiquement.'
+        );
+      }
+    } catch (err) {
+      console.warn('[SELECT_GOOGLE_PLACE_SCRAPE_ERROR]', err);
+    } finally {
+      setIsScrapingPlace(false);
+      setScrapingPlaceId(null);
+      setGoogleResults([]); // Fermer la liste des résultats après sélection
+    }
   };
 
   // Réinitialiser la sélection pour chercher un autre établissement
   const handleClearSelectedPlace = () => {
     setSelectedGooglePlace(null);
+    setScrapedNotice(null);
     setGoogleResults([]);
     setHasSearchedGoogle(false);
   };
@@ -486,13 +640,149 @@ export default function UnifiedOnboardingPage() {
     }
   };
 
+  // Extraction IA du menu lors de l'upload dans l'onboarding
+  const extractMenuFile = async (file: File) => {
+    setMenuFileName(file.name);
+    setIsExtractingMenu(true);
+    setMenuExtractionNotice('Analyse IA du menu en cours...');
 
-  // Toggle connexion réseau social
-  const handleTogglePlatform = (platform: string) => {
-    setConnectedPlatforms((prev) => ({
-      ...prev,
-      [platform]: !prev[platform],
-    }));
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+      try {
+        const res = await fetch('/api/menu/extract', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sourceType: file.type.includes('pdf') ? 'pdf' : 'image',
+            fileName: file.name,
+            fileBase64: base64,
+            restaurantName: name.trim() || 'Restaurant',
+          }),
+        });
+        const json = await res.json();
+        if (json.success && json.data) {
+          const { dishes, extractedOffers } = json.data;
+          setExtractedMenuDishes(dishes || []);
+          setExtractedMenuOffers(extractedOffers || []);
+          setMenuExtractionNotice(
+            `✨ Menu analysé : ${dishes?.length || 0} plat(s) et ${extractedOffers?.length || 0} offre(s) détecté(s).`
+          );
+        } else {
+          setMenuExtractionNotice('Le menu a été ajouté. L\'analyse IA sera faite au démarrage.');
+        }
+      } catch {
+        setMenuExtractionNotice('Menu ajouté. L\'analyse se fera après la configuration.');
+      } finally {
+        setIsExtractingMenu(false);
+      }
+    };
+    reader.onerror = () => {
+      setMenuExtractionNotice('Erreur de lecture du fichier.');
+      setIsExtractingMenu(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const saveOnboardingDraft = () => {
+    if (typeof window === 'undefined') return;
+    const draft = {
+      name,
+      restaurantType,
+      customRestaurantTypeInput,
+      address,
+      city,
+      postalCode,
+      country,
+      customCoords,
+      detectedGpsInfo,
+      selectedGooglePlace,
+      hasTerrace,
+      hasDelivery,
+      capacityCovers,
+      averageTicket,
+      offPeakDays,
+      marketingGoal,
+      targetAudiences,
+      tone,
+      logoPreview,
+      customColors,
+      menuType,
+      menuUrl,
+      menuFileName,
+      connectedPlatforms,
+      connectedHandles,
+      phone,
+      website,
+      openingHoursText,
+      scrapedNotice,
+    };
+    localStorage.setItem('getspecial_onboarding_draft', JSON.stringify(draft));
+  };
+
+  // Vraie connexion / Déconnexion OAuth pour les réseaux sociaux
+  const handleTogglePlatform = async (platform: string) => {
+    setSocialError(null);
+    setSocialNotice(null);
+
+    const isConnected = Boolean(connectedPlatforms[platform]);
+
+    if (isConnected) {
+      // Déconnexion réelle
+      try {
+        const restId = localStorage.getItem('getspecial_restaurant_id') || 'rest_onboarding_temp';
+        await fetch('/api/social-connections', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ restaurantId: restId, platform }),
+        });
+      } catch {}
+
+      setConnectedPlatforms((prev) => {
+        const next = { ...prev, [platform]: false };
+        try {
+          const draftStr = localStorage.getItem('getspecial_onboarding_draft');
+          if (draftStr) {
+            const draft = JSON.parse(draftStr);
+            draft.connectedPlatforms = next;
+            if (draft.connectedHandles) {
+              delete draft.connectedHandles[platform];
+            }
+            localStorage.setItem('getspecial_onboarding_draft', JSON.stringify(draft));
+          }
+        } catch {}
+        return next;
+      });
+      setConnectedHandles((prev) => {
+        const next = { ...prev };
+        delete next[platform];
+        return next;
+      });
+      setSocialNotice(`Compte ${platform.toUpperCase()} dissocié.`);
+      setTimeout(() => setSocialNotice(null), 3500);
+    } else {
+      // Initier le flux OAuth Direct réel vers le fournisseur
+      setConnectingPlatform(platform);
+      saveOnboardingDraft();
+
+      try {
+        const restId = localStorage.getItem('getspecial_restaurant_id') || 'rest_onboarding_temp';
+        const res = await fetch(
+          `/api/social/connect?platform=${platform}&restaurantId=${restId}&returnUrl=${encodeURIComponent('/onboarding?step=5')}`
+        );
+        const json = await res.json();
+
+        if (res.ok && json.success && json.data?.url) {
+          // Redirection vers le fournisseur officiel (accounts.google.com ou facebook.com)
+          window.location.href = json.data.url;
+        } else {
+          throw new Error(json.error || json.message || `Impossible d’initialiser la connexion OAuth pour ${platform}.`);
+        }
+      } catch (err: any) {
+        setSocialError(err.message || 'Une erreur est survenue lors de la tentative de connexion.');
+        setConnectingPlatform(null);
+      }
+    }
   };
 
   // Passage à l'étape suivante avec validation minimale
@@ -553,18 +843,23 @@ export default function UnifiedOnboardingPage() {
       const structuredOpeningHours = {
         week: '11:30 - 14:30 • 18:30 - 22:30',
         weekend: '12:00 - 23:00',
-        rawText: selectedGooglePlace?.openingHours || '11:30 - 22:30 • Mar - Dim',
+        rawText: openingHoursText || (typeof selectedGooglePlace?.openingHours === 'string' ? selectedGooglePlace.openingHours : '') || '11:30 - 22:30 • Mar - Dim',
         offPeakSlots: ['14:00 - 15:30', '18:30 - 19:30'],
       };
 
-      const deducedSpecialties =
-        finalType.toLowerCase().includes('pizz')
-          ? ['Pizzas au feu de bois', 'Antipasti maison', 'Tiramisu traditionnel']
-          : finalType.toLowerCase().includes('burg')
-          ? ['Burgers gourmets', 'Frites fraîches', 'Sauces maison']
-          : finalType.toLowerCase().includes('cafe')
-          ? ['Brunch & Café de spécialité', 'Pâtisseries fraîches', 'Smoothies']
-          : ['Cuisine de saison', 'Plats du jour du chef', 'Desserts maison'];
+      // Spécialités : non indispensables, si non trouvées sur Google Maps, on n'invente rien
+      const restaurantSpecialties: string[] = (selectedGooglePlace as any)?.specialties || [];
+
+      const parsedCapacity = parseInt(capacityCovers, 10);
+      const parsedAverageTicket = parseFloat(averageTicket);
+
+      const socialAccountsPayload = Object.entries(connectedPlatforms)
+        .filter(([_, isConn]) => isConn)
+        .map(([plat]) => ({
+          platform: plat,
+          username: connectedHandles[plat] || undefined,
+          status: 'connected',
+        }));
 
       const response = await fetch('/api/restaurants', {
         method: 'POST',
@@ -573,24 +868,38 @@ export default function UnifiedOnboardingPage() {
           name: name.trim(),
           type: finalType,
           address: formattedAddress || `${name.trim()}, ${city.trim()}`,
+          city: city.trim() || undefined,
+          postalCode: postalCode ? postalCode.trim() : undefined,
+          googlePlaceId: (selectedGooglePlace as any)?.placeId || undefined,
           latitude: lat,
           longitude: lon,
           country: country.trim().toUpperCase() || 'FR',
           userId: parsedUser?.id || undefined,
+          phone: phone.trim() || undefined,
+          website: website.trim() || undefined,
           openingHours: structuredOpeningHours,
-          specialties: deducedSpecialties,
+          specialties: restaurantSpecialties,
           tone,
           hasTerrace,
           hasDelivery,
-          capacityCovers: parseInt(capacityCovers, 10) || 45,
+          capacityCovers: !isNaN(parsedCapacity) && parsedCapacity > 0 ? parsedCapacity : undefined,
           offPeakDays,
-          averageTicket: parseFloat(averageTicket) || 26,
+          averageTicket: !isNaN(parsedAverageTicket) && parsedAverageTicket > 0 ? parsedAverageTicket : undefined,
           targetAudience: targetAudiences,
           marketingGoal,
           logoUrl: logoPreview || undefined,
           photos: finalPhotos,
           brandColors: customColors.filter(Boolean),
           menuUrl: menuType === 'link' ? menuUrl : menuFileName ? `file://${menuFileName}` : undefined,
+          socialAccounts: socialAccountsPayload,
+          // Plats extraits du menu IA (si le restaurateur a uploadé son menu à l'étape 2)
+          dishes: extractedMenuDishes.length > 0
+            ? extractedMenuDishes.map((d: any) => ({
+                name: d.name,
+                description: d.description || '',
+                priceText: d.price || '',
+              }))
+            : undefined,
         }),
       });
 
@@ -599,6 +908,20 @@ export default function UnifiedOnboardingPage() {
         if (json.data?.id) {
           localStorage.setItem('getspecial_restaurant_id', json.data.id);
           localStorage.setItem('getspecial_selected_restaurant', JSON.stringify(json.data));
+        }
+        // Sauvegarder les offres extraites du menu pour la page Mon Resto / Offres
+        if (extractedMenuOffers.length > 0) {
+          const mappedOffers = extractedMenuOffers.map((o: any) => ({
+            id: `off_menu_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            name: o.name,
+            description: o.description || '',
+            discount: o.discount || '',
+            period: o.period || '',
+            image: '',
+            status: 'active' as const,
+            platforms: ['instagram', 'facebook', 'google_business'],
+          }));
+          localStorage.setItem('getspecial_restaurant_offers', JSON.stringify(mappedOffers));
         }
       }
 
@@ -756,7 +1079,7 @@ export default function UnifiedOnboardingPage() {
                   <button
                     type="button"
                     onClick={handleSearchGoogle}
-                    disabled={!name.trim() || isSearchingGoogle}
+                    disabled={!name.trim() || isSearchingGoogle || isScrapingPlace}
                     className={styles.googleSearchBtn}
                   >
                     {isSearchingGoogle ? (
@@ -772,7 +1095,7 @@ export default function UnifiedOnboardingPage() {
                     )}
                   </button>
 
-                  {/* Indicateur de chargement */}
+                  {/* Indicateur de recherche des occurrences */}
                   {isSearchingGoogle && (
                     <div className={styles.googleSearchLoading}>
                       <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
@@ -780,53 +1103,86 @@ export default function UnifiedOnboardingPage() {
                     </div>
                   )}
 
-                  {/* Liste des résultats type Google Maps */}
+                  {/* Bandeau pendant le scraping de la fiche validée */}
+                  {isScrapingPlace && (
+                    <div className={styles.scrapingIndicatorBanner}>
+                      <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} />
+                      <span>Récupération approfondie des données de l&apos;établissement (adresse, terrasse, services)...</span>
+                    </div>
+                  )}
+
+                  {/* Liste des résultats / candidats découverts */}
                   {googleResults.length > 0 && (
                     <div className={styles.googleResultsList}>
-                      {googleResults.map((place) => (
-                        <div
-                          key={place.id}
-                          className={styles.googleResultCard}
-                          onClick={() => handleSelectGooglePlace(place)}
-                        >
-                          {place.photoUrl && !place.photoUrl.includes('unsplash.com') ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={place.photoUrl} alt={place.name} className={styles.googleResultThumb} />
-                          ) : (
-                            <div className={styles.googleResultThumbPlaceholder}>
-                              <Store size={18} strokeWidth={1.75} />
-                            </div>
-                          )}
-                          <div className={styles.googleResultContent}>
-                            <div className={styles.googleResultHeader}>
-                              <span className={styles.googleResultName}>{place.name}</span>
-                              <span className={styles.googleResultRating}>
-                                <Star size={11} fill="#FF5A00" stroke="#FF5A00" />
-                                <span>{place.rating || '4.8'}</span>
-                                <span style={{ color: '#8A8A8A', fontWeight: 400 }}>({place.reviewsCount || 120})</span>
-                                {place.isOpenNow !== undefined && (
-                                  <span className={place.isOpenNow ? styles.openBadge : styles.closedBadge}>
-                                    {place.isOpenNow ? t('onboarding.unified.openBadge') : t('onboarding.unified.closedBadge')}
-                                  </span>
-                                )}
-                              </span>
-                            </div>
+                      {googleResults.map((place) => {
+                        const isThisScraping = isScrapingPlace && scrapingPlaceId === place.id;
+                        return (
+                          <div
+                            key={place.id}
+                            className={styles.googleResultCard}
+                            onClick={() => !isScrapingPlace && handleSelectGooglePlace(place)}
+                            style={{ cursor: isScrapingPlace ? 'wait' : 'pointer' }}
+                          >
+                            {place.photoUrl && !place.photoUrl.includes('unsplash.com') ? (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img src={place.photoUrl} alt={place.name} className={styles.googleResultThumb} />
+                            ) : (
+                              <div className={styles.googleResultThumbPlaceholder}>
+                                <Store size={18} strokeWidth={1.75} />
+                              </div>
+                            )}
+                            <div className={styles.googleResultContent}>
+                              <div className={styles.googleResultHeader}>
+                                <span className={styles.googleResultName}>{place.name}</span>
+                                <span className={styles.googleResultRating}>
+                                  <Star size={11} fill="#FF5A00" stroke="#FF5A00" />
+                                  <span>{place.rating || '4.8'}</span>
+                                  <span style={{ color: '#8A8A8A', fontWeight: 400 }}>({place.reviewsCount || 120})</span>
+                                  {place.isOpenNow !== undefined && (
+                                    <span className={place.isOpenNow ? styles.openBadge : styles.closedBadge}>
+                                      {place.isOpenNow ? t('onboarding.unified.openBadge') : t('onboarding.unified.closedBadge')}
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
                               <div className={styles.googleResultMeta}>
                                 <span className={styles.googleResultCategory}>{place.cuisineType || t('onboarding.unified.defaultCategory')}</span>
                               </div>
-                            <div className={styles.googleResultAddress}>
-                              <MapPin size={11} strokeWidth={1.75} />
-                              <span>{place.address}{place.city && place.city !== place.address ? `, ${place.city}` : ''}{place.postalCode ? ` ${place.postalCode}` : ''}</span>
-                            </div>
-                            {place.phone && (
-                              <div className={styles.googleResultPhone}>
-                                <Phone size={11} strokeWidth={1.75} />
-                                <span>{place.phone}</span>
+                              <div className={styles.googleResultAddress}>
+                                <MapPin size={11} strokeWidth={1.75} />
+                                <span>{place.address}{place.city && place.city !== place.address ? `, ${place.city}` : ''}{place.postalCode ? ` ${place.postalCode}` : ''}</span>
                               </div>
-                            )}
+                              {place.phone && (
+                                <div className={styles.googleResultPhone}>
+                                  <Phone size={11} strokeWidth={1.75} />
+                                  <span>{place.phone}</span>
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              className={styles.candidateSelectBtn}
+                              disabled={isScrapingPlace}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSelectGooglePlace(place);
+                              }}
+                            >
+                              {isThisScraping ? (
+                                <>
+                                  <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                                  <span>Importation...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Check size={12} strokeWidth={2.5} />
+                                  <span>Sélectionner</span>
+                                </>
+                              )}
+                            </button>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
 
@@ -888,9 +1244,12 @@ export default function UnifiedOnboardingPage() {
                       {t('onboarding.unified.notOnGoogle')}
                     </button>
                   ) : (
-                    <div style={{ marginTop: '4px', animation: 'fadeIn 0.2s ease' }}>
-                      <div className={styles.label} style={{ marginBottom: '4px' }}>
-                        <span>{t('onboarding.unified.manualAddressLabel')}</span>
+                    <div className={styles.editableAddressCard}>
+                      <div className={styles.editableAddressHeader}>
+                        <span className={styles.editableAddressTitle}>
+                          <MapPin size={15} strokeWidth={2} style={{ color: '#FF5A00' }} />
+                          <span>{t('onboarding.unified.manualAddressLabel')}</span>
+                        </span>
                         <button
                           type="button"
                           className={styles.manualAddressToggle}
@@ -899,6 +1258,7 @@ export default function UnifiedOnboardingPage() {
                           {t('onboarding.unified.hide')}
                         </button>
                       </div>
+
                       <div className={styles.inputWrapper}>
                         <MapPin size={16} strokeWidth={1.75} className={styles.inputIcon} />
                         <input
@@ -923,76 +1283,260 @@ export default function UnifiedOnboardingPage() {
                           {isLocating ? t('onboarding.unified.locating') : t('onboarding.unified.locate')}
                         </button>
                       </div>
+
+                      {addressSuggestions.length > 0 && (
+                        <div className={styles.addressSuggestionsList}>
+                          {addressSuggestions.map((sug, idx) => (
+                            <div
+                              key={idx}
+                              className={styles.addressSuggestionItem}
+                              onClick={() => handleSelectSuggestion(sug)}
+                            >
+                              <MapPin size={14} className={styles.addressSuggestionIcon} />
+                              <div>
+                                <div className={styles.addressSuggestionTitle}>{sug.title}</div>
+                                <div className={styles.addressSuggestionSub}>{sug.subtitle}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className={styles.formRow} style={{ marginTop: '2px' }}>
+                        <div style={{ flex: 1 }}>
+                          <label className={styles.label} style={{ fontSize: '0.74rem', marginBottom: '2px' }}>
+                            Code postal
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Ex. 75001"
+                            value={postalCode}
+                            onChange={(e) => setPostalCode(e.target.value)}
+                            className={styles.input}
+                            style={{ padding: '8px 10px', fontSize: '0.84rem' }}
+                          />
+                        </div>
+
+                        {customCoords && (
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                            <span className={styles.label} style={{ fontSize: '0.74rem', marginBottom: '2px' }}>
+                              Coordonnées GPS
+                            </span>
+                            <div style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              fontSize: '0.76rem',
+                              color: '#166534',
+                              background: '#f0fdf4',
+                              padding: '8px 10px',
+                              borderRadius: '8px',
+                              border: '1px solid #bbf7d0',
+                              fontWeight: 500,
+                            }}>
+                              <Navigation size={12} strokeWidth={2} />
+                              <span>{customCoords.lat.toFixed(4)}, {customCoords.lon.toFixed(4)}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </>
               ) : (
-                /* Carte d'établissement lié à Google Places */
-                <div className={styles.selectedPlaceCard}>
-                  <div className={styles.selectedPlaceLeft}>
-                    {selectedGooglePlace.photoUrl && !selectedGooglePlace.photoUrl.includes('unsplash.com') ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        src={selectedGooglePlace.photoUrl}
-                        alt={selectedGooglePlace.name}
-                        className={styles.selectedPlaceThumb}
-                      />
-                    ) : (
-                      <div className={styles.googleResultThumbPlaceholder} style={{ width: '40px', height: '40px' }}>
-                        <Store size={18} strokeWidth={1.75} />
-                      </div>
-                    )}
-                    <div className={styles.selectedPlaceInfo}>
-                      <div className={styles.selectedPlaceTitleRow}>
-                        <span className={styles.selectedPlaceName}>{selectedGooglePlace.name}</span>
-                        <span className={styles.selectedPlaceBadge}>
-                          {selectedGooglePlace.id.startsWith('google_') ? (
+                /* Carte d'établissement lié à Google Places + Champs toujours éditables */
+                <>
+                  <div className={styles.selectedPlaceCard}>
+                    <div className={styles.selectedPlaceLeft}>
+                      {selectedGooglePlace.photoUrl && !selectedGooglePlace.photoUrl.includes('unsplash.com') ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={selectedGooglePlace.photoUrl}
+                          alt={selectedGooglePlace.name}
+                          className={styles.selectedPlaceThumb}
+                        />
+                      ) : (
+                        <div className={styles.googleResultThumbPlaceholder} style={{ width: '40px', height: '40px' }}>
+                          <Store size={18} strokeWidth={1.75} />
+                        </div>
+                      )}
+                      <div className={styles.selectedPlaceInfo}>
+                        <div className={styles.selectedPlaceTitleRow}>
+                          <span className={styles.selectedPlaceName}>{selectedGooglePlace.name}</span>
+                          <span className={styles.selectedPlaceBadge}>
+                            {selectedGooglePlace.id.startsWith('google_') ? (
+                              <>
+                                <Check size={11} strokeWidth={2.5} /> {t('onboarding.unified.linkedToGoogle')}
+                              </>
+                            ) : selectedGooglePlace.id.startsWith('place_osm_') ? (
+                              <>
+                                <Check size={11} strokeWidth={2.5} /> Vérifié OpenStreetMap
+                              </>
+                            ) : (
+                              <>
+                                <Store size={11} strokeWidth={2.5} /> Fiche personnalisée
+                              </>
+                            )}
+                          </span>
+                        </div>
+                        <div className={styles.selectedPlaceSub}>
+                          {selectedGooglePlace.rating ? (
                             <>
-                              <Check size={11} strokeWidth={2.5} /> {t('onboarding.unified.linkedToGoogle')}
+                              <Star size={11} fill="#FF5A00" stroke="#FF5A00" />
+                              <span style={{ fontWeight: 600, color: '#E04F00' }}>{selectedGooglePlace.rating}</span>
+                              {selectedGooglePlace.reviewsCount ? (
+                                <span style={{ color: '#8A8A8A', fontWeight: 400 }}>({selectedGooglePlace.reviewsCount})</span>
+                              ) : null}
+                              <span>•</span>
                             </>
-                          ) : selectedGooglePlace.id.startsWith('place_osm_') ? (
+                          ) : null}
+                          <span>{selectedGooglePlace.cuisineType || t('onboarding.unified.defaultCategory')}</span>
+                          {selectedGooglePlace.address && (
                             <>
-                              <Check size={11} strokeWidth={2.5} /> Vérifié OpenStreetMap
-                            </>
-                          ) : (
-                            <>
-                              <Store size={11} strokeWidth={2.5} /> Fiche personnalisée
+                              <span>•</span>
+                              <MapPin size={11} strokeWidth={1.75} />
+                              <span>{selectedGooglePlace.address}</span>
                             </>
                           )}
-                        </span>
-                      </div>
-                      <div className={styles.selectedPlaceSub}>
-                        {selectedGooglePlace.rating ? (
-                          <>
-                            <Star size={11} fill="#FF5A00" stroke="#FF5A00" />
-                            <span style={{ fontWeight: 600, color: '#E04F00' }}>{selectedGooglePlace.rating}</span>
-                            {selectedGooglePlace.reviewsCount ? (
-                              <span style={{ color: '#8A8A8A', fontWeight: 400 }}>({selectedGooglePlace.reviewsCount})</span>
-                            ) : null}
-                            <span>•</span>
-                          </>
-                        ) : null}
-                        <span>{selectedGooglePlace.cuisineType || t('onboarding.unified.defaultCategory')}</span>
-                        {selectedGooglePlace.address && (
-                          <>
-                            <span>•</span>
-                            <MapPin size={11} strokeWidth={1.75} />
-                            <span>{selectedGooglePlace.address}</span>
-                          </>
-                        )}
+                        </div>
+
+                        {/* Badges des caractéristiques détectées automatiquement */}
+                        <div className={styles.selectedPlaceFeatures}>
+                          {hasTerrace && (
+                            <span className={styles.detectedFeatureTag}>
+                              <Sun size={10} strokeWidth={2} /> Terrasse détectée
+                            </span>
+                          )}
+                          {hasDelivery && (
+                            <span className={styles.detectedFeatureTag}>
+                              <Bike size={10} strokeWidth={2} /> Livraison détectée
+                            </span>
+                          )}
+                          {customCoords && (
+                            <span className={styles.detectedFeatureTag}>
+                              <Navigation size={10} strokeWidth={2} /> Coordonnées GPS vérifiées
+                            </span>
+                          )}
+                          {phone && (
+                            <span className={styles.detectedFeatureTag}>
+                              <Phone size={10} strokeWidth={2} /> {phone}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={handleClearSelectedPlace}
+                      className={styles.changePlaceBtn}
+                      title={t('onboarding.unified.changePlaceTitle')}
+                    >
+                      <Edit2 size={12} strokeWidth={2} />
+                      <span>{t('onboarding.unified.change')}</span>
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleClearSelectedPlace}
-                    className={styles.changePlaceBtn}
-                    title={t('onboarding.unified.changePlaceTitle')}
-                  >
-                    <Edit2 size={12} strokeWidth={2} />
-                    <span>{t('onboarding.unified.change')}</span>
-                  </button>
-                </div>
+
+                  {/* Bandeau d'information : les données sont pré-remplies et modifiables */}
+                  <div className={styles.scrapedNoticeBox}>
+                    <Sparkles size={16} strokeWidth={2} style={{ flexShrink: 0, marginTop: '2px', color: '#16a34a' }} />
+                    <div>
+                      <strong>Informations importées de Google Maps :</strong> vos coordonnées ont été remplies automatiquement ci-dessous. Vous pouvez les ajuster à tout moment.
+                    </div>
+                  </div>
+
+                  {/* Champs d'adresse et de coordonnées complètement visibles et éditables */}
+                  <div className={styles.editableAddressCard}>
+                    <div className={styles.editableAddressHeader}>
+                      <span className={styles.editableAddressTitle}>
+                        <MapPin size={15} strokeWidth={2} style={{ color: '#FF5A00' }} />
+                        <span>Adresse & localisation de l&apos;établissement</span>
+                      </span>
+                      <span className={styles.editableAddressBadge}>Modifiable</span>
+                    </div>
+
+                    <div className={styles.inputWrapper}>
+                      <MapPin size={16} strokeWidth={1.75} className={styles.inputIcon} />
+                      <input
+                        type="text"
+                        placeholder={t('onboarding.unified.addressPlaceholder')}
+                        value={address}
+                        onChange={handleAddressChange}
+                        className={styles.inputWithGps}
+                      />
+                      <button
+                        type="button"
+                        className={styles.inlineGpsBtn}
+                        onClick={handleDetectGps}
+                        disabled={isLocating}
+                        title={t('onboarding.unified.detectGpsTitle')}
+                      >
+                        {isLocating ? (
+                          <Loader2 size={11} strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }} />
+                        ) : (
+                          <Navigation size={11} strokeWidth={2} />
+                        )}
+                        {isLocating ? t('onboarding.unified.locating') : t('onboarding.unified.locate')}
+                      </button>
+                    </div>
+
+                    {addressSuggestions.length > 0 && (
+                      <div className={styles.addressSuggestionsList}>
+                        {addressSuggestions.map((sug, idx) => (
+                          <div
+                            key={idx}
+                            className={styles.addressSuggestionItem}
+                            onClick={() => handleSelectSuggestion(sug)}
+                          >
+                            <MapPin size={14} className={styles.addressSuggestionIcon} />
+                            <div>
+                              <div className={styles.addressSuggestionTitle}>{sug.title}</div>
+                              <div className={styles.addressSuggestionSub}>{sug.subtitle}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className={styles.formRow} style={{ marginTop: '2px' }}>
+                      <div style={{ flex: 1 }}>
+                        <label className={styles.label} style={{ fontSize: '0.74rem', marginBottom: '2px' }}>
+                          Code postal
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Ex. 75001 ou BP..."
+                          value={postalCode}
+                          onChange={(e) => setPostalCode(e.target.value)}
+                          className={styles.input}
+                          style={{ padding: '8px 10px', fontSize: '0.84rem' }}
+                        />
+                      </div>
+
+                      {customCoords && (
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                          <span className={styles.label} style={{ fontSize: '0.74rem', marginBottom: '2px' }}>
+                            Position GPS
+                          </span>
+                          <div style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            fontSize: '0.76rem',
+                            color: '#166534',
+                            background: '#f0fdf4',
+                            padding: '8px 10px',
+                            borderRadius: '8px',
+                            border: '1px solid #bbf7d0',
+                            fontWeight: 500,
+                          }}>
+                            <Navigation size={12} strokeWidth={2} />
+                            <span>{customCoords.lat.toFixed(4)}, {customCoords.lon.toFixed(4)}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
               )}
             </div>
 
@@ -1119,23 +1663,44 @@ export default function UnifiedOnboardingPage() {
               )}
 
               {menuType === 'file' && (
-                <label className={styles.dropzone} style={{ marginTop: '4px', padding: '8px 12px' }}>
-                  <input
-                    type="file"
-                    accept="image/*,application/pdf"
-                    style={{ display: 'none' }}
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) setMenuFileName(f.name);
-                    }}
-                  />
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <FileText size={16} strokeWidth={1.75} style={{ color: '#FF5A00' }} />
-                    <span className={styles.dropzoneTitle}>
-                      {menuFileName ? t('onboarding.unified.menuFileSelected', { file: menuFileName }) : t('onboarding.unified.menuFileCta')}
-                    </span>
-                  </div>
-                </label>
+                <div style={{ marginTop: '4px' }}>
+                  <label className={styles.dropzone} style={{ padding: '8px 12px', cursor: isExtractingMenu ? 'wait' : 'pointer' }}>
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      style={{ display: 'none' }}
+                      disabled={isExtractingMenu}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) extractMenuFile(f);
+                      }}
+                    />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {isExtractingMenu ? (
+                        <Loader2 size={16} style={{ color: '#FF5A00', animation: 'spin 1s linear infinite' }} />
+                      ) : (
+                        <FileText size={16} strokeWidth={1.75} style={{ color: '#FF5A00' }} />
+                      )}
+                      <span className={styles.dropzoneTitle}>
+                        {menuFileName ? t('onboarding.unified.menuFileSelected', { file: menuFileName }) : t('onboarding.unified.menuFileCta')}
+                      </span>
+                    </div>
+                  </label>
+                  {menuExtractionNotice && (
+                    <div style={{
+                      marginTop: '6px',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      fontSize: '0.82rem',
+                      fontWeight: 500,
+                      background: menuExtractionNotice.startsWith('✨') ? '#f0fdf4' : '#fff7ed',
+                      color: menuExtractionNotice.startsWith('✨') ? '#166534' : '#92400e',
+                      border: menuExtractionNotice.startsWith('✨') ? '1px solid #bbf7d0' : '1px solid #fde68a',
+                    }}>
+                      {menuExtractionNotice}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
@@ -1577,6 +2142,43 @@ export default function UnifiedOnboardingPage() {
               </p>
             </div>
 
+            {/* Messages de statut OAuth Direct (Succès vert ou Erreur rouge) */}
+            {socialNotice && (
+              <div style={{
+                marginBottom: 20,
+                padding: '12px 16px',
+                borderRadius: 10,
+                backgroundColor: '#ECFDF5',
+                border: '1px solid #A7F3D0',
+                color: '#065F46',
+                fontSize: '0.88rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+              }}>
+                <CheckCircle2 size={18} color="#059669" />
+                <span>{socialNotice}</span>
+              </div>
+            )}
+
+            {socialError && (
+              <div style={{
+                marginBottom: 20,
+                padding: '12px 16px',
+                borderRadius: 10,
+                backgroundColor: '#FEF2F2',
+                border: '1px solid #FECACA',
+                color: '#991B1B',
+                fontSize: '0.88rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+              }}>
+                <AlertCircle size={18} color="#DC2626" />
+                <span>{socialError}</span>
+              </div>
+            )}
+
             {/* Cartes réseaux sociaux */}
             <div className={styles.socialCardsGrid}>
               {/* Instagram */}
@@ -1589,13 +2191,19 @@ export default function UnifiedOnboardingPage() {
                   </span>
                   <div>
                     <div className={styles.socialCardName}>Instagram</div>
-                    <div className={styles.socialCardDesc}>{t('onboarding.unified.instaDesc')}</div>
+                    <div className={styles.socialCardDesc}>
+                      {connectedHandles.instagram
+                        ? `Connecté en tant que ${connectedHandles.instagram}`
+                        : t('onboarding.unified.instaDesc')}
+                    </div>
                   </div>
                 </div>
                 {connectedPlatforms.instagram ? (
                   <div className={styles.socialConnectedRow}>
                     <CheckCircle2 size={14} strokeWidth={1.75} style={{ color: '#16A34A' }} />
-                    <span className={styles.socialConnectedLabel}>{t('onboarding.unified.accountLinked')}</span>
+                    <span className={styles.socialConnectedLabel}>
+                      {connectedHandles.instagram || t('onboarding.unified.accountLinked')}
+                    </span>
                     <button
                       type="button"
                       className={styles.socialDisconnectBtn}
@@ -1608,9 +2216,17 @@ export default function UnifiedOnboardingPage() {
                   <button
                     type="button"
                     className={styles.socialConnectBtn}
+                    disabled={connectingPlatform === 'instagram'}
                     onClick={() => handleTogglePlatform('instagram')}
                   >
-                    {t('onboarding.unified.connectPlatform', { platform: 'Instagram' })}
+                    {connectingPlatform === 'instagram' ? (
+                      <>
+                        <Loader2 size={14} className={styles.spinIcon} />
+                        <span>Redirection OAuth...</span>
+                      </>
+                    ) : (
+                      t('onboarding.unified.connectPlatform', { platform: 'Instagram' })
+                    )}
                   </button>
                 )}
               </div>
@@ -1625,13 +2241,19 @@ export default function UnifiedOnboardingPage() {
                   </span>
                   <div>
                     <div className={styles.socialCardName}>Facebook</div>
-                    <div className={styles.socialCardDesc}>{t('onboarding.unified.fbDesc')}</div>
+                    <div className={styles.socialCardDesc}>
+                      {connectedHandles.facebook
+                        ? `Page connectée : ${connectedHandles.facebook}`
+                        : t('onboarding.unified.fbDesc')}
+                    </div>
                   </div>
                 </div>
                 {connectedPlatforms.facebook ? (
                   <div className={styles.socialConnectedRow}>
                     <CheckCircle2 size={14} strokeWidth={1.75} style={{ color: '#16A34A' }} />
-                    <span className={styles.socialConnectedLabel}>{t('onboarding.unified.accountLinked')}</span>
+                    <span className={styles.socialConnectedLabel}>
+                      {connectedHandles.facebook || t('onboarding.unified.accountLinked')}
+                    </span>
                     <button
                       type="button"
                       className={styles.socialDisconnectBtn}
@@ -1644,9 +2266,17 @@ export default function UnifiedOnboardingPage() {
                   <button
                     type="button"
                     className={styles.socialConnectBtn}
+                    disabled={connectingPlatform === 'facebook'}
                     onClick={() => handleTogglePlatform('facebook')}
                   >
-                    {t('onboarding.unified.connectPlatform', { platform: 'Facebook' })}
+                    {connectingPlatform === 'facebook' ? (
+                      <>
+                        <Loader2 size={14} className={styles.spinIcon} />
+                        <span>Redirection OAuth...</span>
+                      </>
+                    ) : (
+                      t('onboarding.unified.connectPlatform', { platform: 'Facebook' })
+                    )}
                   </button>
                 )}
               </div>
@@ -1664,13 +2294,19 @@ export default function UnifiedOnboardingPage() {
                   </span>
                   <div>
                     <div className={styles.socialCardName}>Google Business</div>
-                    <div className={styles.socialCardDesc}>{t('onboarding.unified.googleDesc')}</div>
+                    <div className={styles.socialCardDesc}>
+                      {connectedHandles.google_business
+                        ? `Fiche vérifiée : ${connectedHandles.google_business}`
+                        : t('onboarding.unified.googleDesc')}
+                    </div>
                   </div>
                 </div>
                 {connectedPlatforms.google_business ? (
                   <div className={styles.socialConnectedRow}>
                     <CheckCircle2 size={14} strokeWidth={1.75} style={{ color: '#16A34A' }} />
-                    <span className={styles.socialConnectedLabel}>{t('onboarding.unified.accountLinked')}</span>
+                    <span className={styles.socialConnectedLabel}>
+                      {connectedHandles.google_business || t('onboarding.unified.accountLinked')}
+                    </span>
                     <button
                       type="button"
                       className={styles.socialDisconnectBtn}
@@ -1683,9 +2319,17 @@ export default function UnifiedOnboardingPage() {
                   <button
                     type="button"
                     className={styles.socialConnectBtn}
+                    disabled={connectingPlatform === 'google_business'}
                     onClick={() => handleTogglePlatform('google_business')}
                   >
-                    {t('onboarding.unified.connectPlatform', { platform: 'Google' })}
+                    {connectingPlatform === 'google_business' ? (
+                      <>
+                        <Loader2 size={14} className={styles.spinIcon} />
+                        <span>Redirection OAuth...</span>
+                      </>
+                    ) : (
+                      t('onboarding.unified.connectPlatform', { platform: 'Google' })
+                    )}
                   </button>
                 )}
               </div>

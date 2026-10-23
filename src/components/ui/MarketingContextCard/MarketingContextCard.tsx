@@ -10,8 +10,12 @@ import {
   Trophy,
   Music,
   Zap,
+  ExternalLink,
+  Calendar,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { LocalEventData } from '@/services/today/today.data';
+import EventPreferencesModal from '@/components/ui/EventPreferencesModal/EventPreferencesModal';
 import { useLanguage } from '@/i18n';
 import styles from './MarketingContextCard.module.css';
 
@@ -19,16 +23,21 @@ interface MarketingContextCardProps {
   events: LocalEventData[];
   loading?: boolean;
   onActionClick?: (event: LocalEventData) => void;
+  onPreferencesUpdated?: () => void;
+  restaurantId?: string;
 }
 
 export default function MarketingContextCard({
   events,
   loading = false,
   onActionClick,
+  onPreferencesUpdated,
+  restaurantId,
 }: MarketingContextCardProps) {
   const { t } = useLanguage();
   const [activeIndex, setActiveIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [isPrefModalOpen, setIsPrefModalOpen] = useState(false);
 
   const eventList = events && events.length > 0 ? events : [];
   const currentEvent = eventList[activeIndex] || eventList[0];
@@ -54,34 +63,75 @@ export default function MarketingContextCard({
 
   const getEventCategoryInfo = (ev: LocalEventData) => {
     const titleLower = (ev.title || '').toLowerCase();
-    const category = ev.category || '';
-    if (category === 'concert' || titleLower.includes('concert') || titleLower.includes('jazz')) {
+    const category = (ev.category || '').toLowerCase();
+
+    // 1. Célébrations et Fêtes (Calendarific / National)
+    if (titleLower.includes('halloween')) {
       return {
-        label: 'Concert & Live',
-        badgeBg: 'rgba(126, 34, 206, 0.9)',
+        label: 'Fête & Célébration',
+        badgeBg: 'rgba(234, 88, 12, 0.95)',
+        badgeColor: '#FFFFFF',
+        icon: <Calendar size={12} color="#FFFFFF" />,
+        defaultImage: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=1200&q=80',
+        advice: 'Soirée festive : proposez un cocktail signature d’Halloween, des tapas à partager et une ambiance thématique.',
+      };
+    }
+
+    if (category === 'holiday' || titleLower.includes('fête') || titleLower.includes('journée') || titleLower.includes('célébration') || titleLower.includes('toussaint') || titleLower.includes('noël')) {
+      return {
+        label: 'Fête & Célébration',
+        badgeBg: 'rgba(234, 88, 12, 0.95)',
+        badgeColor: '#FFFFFF',
+        icon: <Calendar size={12} color="#FFFFFF" />,
+        defaultImage: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1200&q=80',
+        advice: 'Occasion festive : mettez en avant un menu spécial, un plat signature ou une offre à partager.',
+      };
+    }
+
+    // 2. Concerts et Musique Live (Ticketmaster)
+    if (category === 'concert' || category === 'music' || titleLower.includes('concert') || titleLower.includes('tour') || titleLower.includes('live') || titleLower.includes('festival') || titleLower.includes('jazz')) {
+      return {
+        label: 'Concert & Spectacle',
+        badgeBg: 'rgba(126, 34, 206, 0.95)',
         badgeColor: '#FFFFFF',
         icon: <Music size={12} color="#FFFFFF" />,
-        defaultImage: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80',
-        advice: 'Ambiance festive : mettez en avant vos cocktails signatures et planches à partager.',
+        defaultImage: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=1200&q=80',
+        advice: 'Public avant/après concert : formule repas rapide ou planches & cocktails avant 20h.',
       };
     }
-    if (category === 'culture' || titleLower.includes('afterwork') || titleLower.includes('mixer')) {
+
+    // 3. Sport & Match (Ticketmaster)
+    if (category === 'sports' || category === 'sport' || titleLower.includes('match') || titleLower.includes('tournoi') || titleLower.includes('vs') || titleLower.includes('cup') || titleLower.includes('foot') || titleLower.includes('rugby') || titleLower.includes('tennis') || titleLower.includes('open') || titleLower.includes('basketball') || titleLower.includes('nba')) {
       return {
-        label: 'Afterwork & Pro',
-        badgeBg: 'rgba(3, 105, 161, 0.9)',
+        label: 'Sport & Match',
+        badgeBg: 'rgba(217, 119, 6, 0.95)',
+        badgeColor: '#FFFFFF',
+        icon: <Trophy size={12} color="#FFFFFF" />,
+        defaultImage: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=1200&q=80',
+        advice: 'Supporters et fans attendus : diffusez le match et proposez une offre spéciale burgers & bières.',
+      };
+    }
+
+    // 4. Arts, Théâtre & Comédie (Ticketmaster)
+    if (category === 'arts' || category === 'theatre' || category === 'theatre & comedy' || titleLower.includes('théâtre') || titleLower.includes('spectacle') || titleLower.includes('comédie') || titleLower.includes('stand-up') || titleLower.includes('museum') || titleLower.includes('exposition')) {
+      return {
+        label: 'Arts & Théâtre',
+        badgeBg: 'rgba(3, 105, 161, 0.95)',
         badgeColor: '#FFFFFF',
         icon: <Sparkles size={12} color="#FFFFFF" />,
-        defaultImage: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80',
-        advice: 'Clientèle d’entreprises : formule Happy Hour bière & tapas idéale dès 18h30.',
+        defaultImage: 'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?auto=format&fit=crop&w=1200&q=80',
+        advice: 'Sortie culturelle : formule dîner d’après-spectacle ou apéritif dînatoire.',
       };
     }
+
+    // 5. Défaut / Culturel
     return {
-      label: 'Match du jour',
-      badgeBg: 'rgba(217, 119, 6, 0.9)',
+      label: 'Événement local',
+      badgeBg: 'rgba(79, 70, 229, 0.95)',
       badgeColor: '#FFFFFF',
-      icon: <Trophy size={12} color="#FFFFFF" />,
-      defaultImage: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=600&q=80',
-      advice: 'Supporters attendus : diffusez le match et proposez une offre spéciale burgers & bières.',
+      icon: <Sparkles size={12} color="#FFFFFF" />,
+      defaultImage: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80',
+      advice: 'Affluence locale attendue : captez le flux de passants avec votre formule du moment.',
     };
   };
 
@@ -99,33 +149,62 @@ export default function MarketingContextCard({
     return (
       <div className={styles.card} style={{ minHeight: 240, padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 16 }}>
         <Sparkles size={28} color="#FF5C00" style={{ marginBottom: 12 }} />
-        <h4 style={{ margin: '0 0 6px 0', fontSize: 15, fontWeight: 600, color: '#111827' }}>Aucun événement de quartier aujourd&apos;hui</h4>
-        <p style={{ margin: '0 0 16px 0', fontSize: 13, color: '#6B7280', maxWidth: 280 }}>
-          Vous organisez une soirée ou un concert ? Ajoutez votre propre événement pour booster vos opportunités.
+        <h4 style={{ margin: '0 0 6px 0', fontSize: 15, fontWeight: 600, color: '#111827' }}>Aucun événement correspondant à vos critères</h4>
+        <p style={{ margin: '0 0 16px 0', fontSize: 13, color: '#6B7280', maxWidth: 300 }}>
+          Ajustez vos préférences ou élargissez le rayon géographique pour capter de nouveaux événements locaux.
         </p>
-        <a
-          href="/dashboard/restaurant/events"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '8px 14px',
-            borderRadius: 8,
-            backgroundColor: '#FFF7ED',
-            color: '#FF5C00',
-            fontSize: 13,
-            fontWeight: 600,
-            textDecoration: 'none',
-            border: '1px solid #FED7AA',
-          }}
-        >
-          + Ajouter un événement
-        </a>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <button
+            type="button"
+            onClick={() => setIsPrefModalOpen(true)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '8px 14px',
+              borderRadius: 8,
+              backgroundColor: '#FF5C00',
+              color: '#FFFFFF',
+              fontSize: 13,
+              fontWeight: 600,
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            <SlidersHorizontal size={14} />
+            Modifier mes filtres
+          </button>
+          <a
+            href="/dashboard/restaurant/events"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '8px 14px',
+              borderRadius: 8,
+              backgroundColor: '#FFF7ED',
+              color: '#FF5C00',
+              fontSize: 13,
+              fontWeight: 600,
+              textDecoration: 'none',
+              border: '1px solid #FED7AA',
+            }}
+          >
+            + Événement restaurant
+          </a>
+        </div>
+        <EventPreferencesModal
+          isOpen={isPrefModalOpen}
+          onClose={() => setIsPrefModalOpen(false)}
+          onPreferencesUpdated={() => onPreferencesUpdated && onPreferencesUpdated()}
+          restaurantId={restaurantId}
+        />
       </div>
     );
   }
 
   const catInfo = getEventCategoryInfo(currentEvent);
+  // Vraie image Ticketmaster en priorité, puis fallback catégoriel HD
   const eventImg = currentEvent.imageUrl || catInfo.defaultImage;
 
   return (
@@ -134,7 +213,7 @@ export default function MarketingContextCard({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Bannière visuelle haute avec image et contrôles flottants */}
+      {/* Bannière visuelle haute avec image réelle et contrôles flottants */}
       <div className={styles.bannerWrapper}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -144,39 +223,70 @@ export default function MarketingContextCard({
         />
         <div className={styles.bannerGradient} />
 
-        {/* Contrôles supérieurs sur l'image : Badge catégorie & Flèches de navigation */}
+        {/* Contrôles supérieurs sur l'image : Badge catégorie & Flèches de navigation & Bouton Réglages */}
         <div className={styles.bannerTopControls}>
-          <span
-            className={styles.tagBadge}
-            style={{
-              backgroundColor: catInfo.badgeBg,
-              color: catInfo.badgeColor,
-            }}
-          >
-            {catInfo.icon}
-            {catInfo.label}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span
+              className={styles.tagBadge}
+              style={{
+                backgroundColor: catInfo.badgeBg,
+                color: catInfo.badgeColor,
+              }}
+            >
+              {catInfo.icon}
+              {catInfo.label}
+            </span>
 
-          {eventList.length > 1 && (
-            <div className={styles.navControls}>
-              <button
-                type="button"
-                onClick={handlePrev}
-                className={styles.navBtn}
-                aria-label="Signal précédent"
+            {currentEvent.source && (
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  padding: '3px 7px',
+                  borderRadius: 12,
+                  backgroundColor: 'rgba(0, 0, 0, 0.55)',
+                  color: '#FFFFFF',
+                  backdropFilter: 'blur(4px)',
+                  letterSpacing: '0.02em',
+                }}
               >
-                <ChevronLeft size={15} />
-              </button>
-              <button
-                type="button"
-                onClick={handleNext}
-                className={styles.navBtn}
-                aria-label="Signal suivant"
-              >
-                <ChevronRight size={15} />
-              </button>
-            </div>
-          )}
+                {currentEvent.source}
+              </span>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button
+              type="button"
+              onClick={() => setIsPrefModalOpen(true)}
+              className={styles.settingsBtn}
+              title="Personnaliser les types d'événements et le rayon"
+              aria-label="Filtres d'événements"
+            >
+              <SlidersHorizontal size={14} />
+            </button>
+
+            {eventList.length > 1 && (
+              <div className={styles.navControls}>
+                <button
+                  type="button"
+                  onClick={handlePrev}
+                  className={styles.navBtn}
+                  aria-label="Signal précédent"
+                >
+                  <ChevronLeft size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className={styles.navBtn}
+                  aria-label="Signal suivant"
+                >
+                  <ChevronRight size={15} />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Titre sur le bas de la bannière visuelle */}
@@ -197,6 +307,29 @@ export default function MarketingContextCard({
             <MapPin size={13} className={styles.metaIcon} />
             {currentEvent.distance} {currentEvent.venue ? `• ${currentEvent.venue}` : ''}
           </span>
+          {currentEvent.url && (
+            <a
+              href={currentEvent.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                marginLeft: 'auto',
+                color: '#FF5C00',
+                textDecoration: 'none',
+                fontWeight: 600,
+                fontSize: 12,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 3,
+                cursor: 'pointer',
+              }}
+              title="Consulter l'événement sur Ticketmaster"
+            >
+              <span>Détails</span>
+              <ExternalLink size={12} />
+            </a>
+          )}
         </div>
 
         {/* Conseil / Opportunité IA mis en valeur */}
@@ -232,6 +365,14 @@ export default function MarketingContextCard({
           </div>
         )}
       </div>
+
+      {/* Modale de réglages des préférences d'événements */}
+      <EventPreferencesModal
+        isOpen={isPrefModalOpen}
+        onClose={() => setIsPrefModalOpen(false)}
+        onPreferencesUpdated={() => onPreferencesUpdated && onPreferencesUpdated()}
+        restaurantId={restaurantId}
+      />
     </div>
   );
 }

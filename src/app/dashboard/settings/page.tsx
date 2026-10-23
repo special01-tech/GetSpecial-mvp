@@ -14,10 +14,12 @@ import {
   Check,
   User,
   ShieldCheck,
+  Smartphone,
 } from 'lucide-react';
 import { authClientService } from '@/services/auth/auth.client.service';
 import LanguageToggle from '@/components/ui/LanguageToggle';
 import RestaurantAccountCard from '@/components/ui/RestaurantAccountCard/RestaurantAccountCard';
+import PwaSettingsCard from '@/components/pwa/PwaSettingsCard';
 import {
   ConnectedAccountData,
   INITIAL_CONNECTED_ACCOUNTS,
@@ -88,7 +90,7 @@ export default function SettingsPage() {
       setIsPaused(paused);
 
       const stored = localStorage.getItem('getspecial_selected_restaurant');
-      let currentRestId = 'rest_demo_austin_1';
+      let currentRestId = 'current';
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed.name) setRestaurantName(parsed.name);
@@ -142,7 +144,31 @@ export default function SettingsPage() {
         })
         .catch(() => {});
 
-      // 4. Rafraîchissement en direct avec la table Supabase social_accounts
+      // 4. Synchronisation des paramètres du restaurant depuis l'API de profil
+      fetch(`/api/restaurants/${currentRestId}/profile`)
+        .then((r) => r.json())
+        .then((json) => {
+          if (json.success && json.data) {
+            const r = json.data;
+            if (r.id) {
+              localStorage.setItem('getspecial_restaurant_id', r.id);
+            }
+            if (r.name) setRestaurantName(r.name);
+            if (r.isPaused !== undefined) {
+              setIsPaused(Boolean(r.isPaused));
+              localStorage.setItem('getspecial_restaurant_paused', String(r.isPaused));
+            }
+            if (r.profile?.maxPostsPerDay !== undefined && r.profile.maxPostsPerDay !== null) {
+              setMaxPostsPerDay(String(r.profile.maxPostsPerDay));
+            }
+            if (r.profile?.autoApprove !== undefined && r.profile.autoApprove !== null) {
+              setAutoApprove(Boolean(r.profile.autoApprove));
+            }
+          }
+        })
+        .catch(() => {});
+
+      // 5. Rafraîchissement en direct avec la table Supabase social_accounts
       refreshAccountsFromApi(currentRestId);
     } catch {
       // Ignorer
@@ -159,7 +185,7 @@ export default function SettingsPage() {
       setLoadingId(account.id);
       setChannelError(null);
       const restaurantId =
-        localStorage.getItem('getspecial_restaurant_id') || 'rest_demo_austin_1';
+        localStorage.getItem('getspecial_restaurant_id') || '';
 
       try {
         const res = await fetch(
@@ -188,7 +214,7 @@ export default function SettingsPage() {
     setConfirmAccount(null);
 
     const restaurantId =
-      localStorage.getItem('getspecial_restaurant_id') || 'rest_demo_austin_1';
+      localStorage.getItem('getspecial_restaurant_id') || '';
 
     try {
       await fetch('/api/social-connections', {
@@ -228,12 +254,17 @@ export default function SettingsPage() {
     setIsPaused(newState);
     if (typeof window !== 'undefined') {
       localStorage.setItem('getspecial_restaurant_paused', String(newState));
-      const restaurantId = localStorage.getItem('getspecial_restaurant_id') || 'rest-demo-1';
+      const restaurantId = localStorage.getItem('getspecial_restaurant_id') || 'current';
       try {
         await fetch('/api/restaurants/pause', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ restaurantId, isPaused: newState }),
+        });
+        await fetch(`/api/restaurants/${restaurantId}/profile`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isPaused: newState }),
         });
       } catch (err) {
         console.warn('Could not sync pause state:', err);
@@ -245,6 +276,49 @@ export default function SettingsPage() {
         : t('settings.pauseOff')
     );
     setTimeout(() => setNotice(null), 4000);
+  };
+
+  const handleMaxPostsChange = async (val: string) => {
+    setMaxPostsPerDay(val);
+    const restaurantId =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('getspecial_restaurant_id') || 'current'
+        : 'current';
+    try {
+      await fetch(`/api/restaurants/${restaurantId}/profile`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ maxPostsPerDay: Number(val) }),
+      });
+    } catch (err) {
+      console.warn('Could not persist maxPostsPerDay:', err);
+    }
+    setNotice(t('settings.frequency.saved', { count: val }));
+    setTimeout(() => setNotice(null), 3000);
+  };
+
+  const handleAutoApproveToggle = async () => {
+    const next = !autoApprove;
+    setAutoApprove(next);
+    const restaurantId =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('getspecial_restaurant_id') || 'current'
+        : 'current';
+    try {
+      await fetch(`/api/restaurants/${restaurantId}/profile`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ autoApprove: next }),
+      });
+    } catch (err) {
+      console.warn('Could not persist autoApprove:', err);
+    }
+    setNotice(
+      next
+        ? t('settings.autoApprove.noticeEnabled')
+        : t('settings.autoApprove.noticeDisabled')
+    );
+    setTimeout(() => setNotice(null), 3000);
   };
 
   const handleLogout = async () => {
@@ -435,11 +509,7 @@ export default function SettingsPage() {
           </div>
           <select
             value={maxPostsPerDay}
-            onChange={(e) => {
-              setMaxPostsPerDay(e.target.value);
-              setNotice(t('settings.frequency.saved', { count: e.target.value }));
-              setTimeout(() => setNotice(null), 3000);
-            }}
+            onChange={(e) => handleMaxPostsChange(e.target.value)}
             className={styles.select}
           >
             <option value="1">1 post / jour (Recommandé)</option>
@@ -464,16 +534,7 @@ export default function SettingsPage() {
           </div>
           <button
             type="button"
-            onClick={() => {
-              const next = !autoApprove;
-              setAutoApprove(next);
-              setNotice(
-                next
-                  ? t('settings.autoApprove.noticeEnabled')
-                  : t('settings.autoApprove.noticeDisabled')
-              );
-              setTimeout(() => setNotice(null), 3000);
-            }}
+            onClick={handleAutoApproveToggle}
             className={autoApprove ? styles.switchOn : styles.switchOff}
             aria-pressed={autoApprove}
             aria-label={t('settings.autoApprove.label')}
@@ -522,6 +583,20 @@ export default function SettingsPage() {
           </div>
           <LanguageToggle />
         </div>
+      </section>
+
+      {/* Application Mobile & PWA */}
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <Smartphone className={styles.sectionIcon} size={22} />
+          <div>
+            <h2 className={styles.sectionTitle}>Application Mobile (PWA)</h2>
+            <div style={{ fontSize: '0.84rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
+              Installez GetSpecial sur votre smartphone ou tablette pour un accès direct depuis l’écran d’accueil.
+            </div>
+          </div>
+        </div>
+        <PwaSettingsCard />
       </section>
 
       {/* Déconnexion */}

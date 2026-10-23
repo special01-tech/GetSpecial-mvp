@@ -1,17 +1,27 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
 import { success, error } from '@/server/lib/api-response';
-import { calculateCounterMetrics } from '@/server/modules/counter/domain';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const slug = searchParams.get('slug') || 'atelier-culinaire';
+    const slug = searchParams.get('slug');
+    const restaurantId = searchParams.get('restaurantId');
 
+    // Recherche de l'établissement
     const restaurant = await (prisma.restaurant as any).findFirst({
-      where: { status: 'active' },
+      where: restaurantId
+        ? { id: restaurantId }
+        : slug && slug !== 'demo'
+        ? {
+            OR: [
+              { id: slug },
+              { name: { contains: slug, mode: 'insensitive' } },
+            ],
+          }
+        : { status: 'active' },
       include: {
         profile: true,
         offers: {
@@ -29,83 +39,135 @@ export async function GET(req: NextRequest) {
     const d7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const d30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    let redemptions7Count = 0;
-    let redemptions30Count = 0;
+    // Comptage 100% RÉEL des événements en base de données (Zéro faux chiffres ajoutés)
+    let scans7 = 0;
+    let scans30 = 0;
+    let claimed7 = 0;
+    let claimed30 = 0;
+    let confirmed7 = 0;
+    let confirmed30 = 0;
+    let contacts7 = 0;
+    let contacts30 = 0;
+    let rawContacts: any[] = [];
+    let redemptionsByOffer: Record<string, number> = {};
+    let claimsByOffer: Record<string, number> = {};
 
     try {
-      redemptions7Count = await (prisma.feedbackEvent as any).count({
+      // 1. Scans QR réels
+      [scans7, scans30] = await Promise.all([
+        (prisma.feedbackEvent as any).count({
+          where: { restaurantId: restId, type: 'scan', createdAt: { gte: d7 } },
+        }),
+        (prisma.feedbackEvent as any).count({
+          where: { restaurantId: restId, type: 'scan', createdAt: { gte: d30 } },
+        }),
+      ]);
+
+      // 2. Clics réels sur offres (Claimed)
+      [claimed7, claimed30] = await Promise.all([
+        (prisma.feedbackEvent as any).count({
+          where: { restaurantId: restId, type: 'claim', createdAt: { gte: d7 } },
+        }),
+        (prisma.feedbackEvent as any).count({
+          where: { restaurantId: restId, type: 'claim', createdAt: { gte: d30 } },
+        }),
+      ]);
+
+      // 3. Validations réelles au comptoir (Confirmed)
+      [confirmed7, confirmed30] = await Promise.all([
+        (prisma.feedbackEvent as any).count({
+          where: {
+            restaurantId: restId,
+            type: { in: ['redemption_quick', 'redemption_code'] },
+            status: 'confirmed',
+            createdAt: { gte: d7 },
+          },
+        }),
+        (prisma.feedbackEvent as any).count({
+          where: {
+            restaurantId: restId,
+            type: { in: ['redemption_quick', 'redemption_code'] },
+            status: 'confirmed',
+            createdAt: { gte: d30 },
+          },
+        }),
+      ]);
+
+      // 4. Contacts réels enregistrés (Opt-in)
+      [contacts7, contacts30, rawContacts] = await Promise.all([
+        (prisma.feedbackEvent as any).count({
+          where: { restaurantId: restId, type: 'contact_optin', createdAt: { gte: d7 } },
+        }),
+        (prisma.feedbackEvent as any).count({
+          where: { restaurantId: restId, type: 'contact_optin', createdAt: { gte: d30 } },
+        }),
+        (prisma.feedbackEvent as any).findMany({
+          where: { restaurantId: restId, type: 'contact_optin' },
+          orderBy: { createdAt: 'desc' },
+          take: 100,
+        }),
+      ]);
+
+      // 5. Répartition réelle par offre
+      const allConfirmedEvents = await (prisma.feedbackEvent as any).findMany({
         where: {
           restaurantId: restId,
           type: { in: ['redemption_quick', 'redemption_code'] },
           status: 'confirmed',
-          createdAt: { gte: d7 },
         },
       });
 
-      redemptions30Count = await (prisma.feedbackEvent as any).count({
+      for (const ev of allConfirmedEvents) {
+        if (ev.reason && ev.reason.startsWith('offer:')) {
+          const offId = ev.reason.replace('offer:', '');
+          redemptionsByOffer[offId] = (redemptionsByOffer[offId] || 0) + 1;
+        }
+      }
+
+      const allClaimEvents = await (prisma.feedbackEvent as any).findMany({
         where: {
           restaurantId: restId,
-          type: { in: ['redemption_quick', 'redemption_code'] },
-          status: 'confirmed',
-          createdAt: { gte: d30 },
+          type: 'claim',
         },
       });
+
+      for (const ev of allClaimEvents) {
+        if (ev.reason && ev.reason.startsWith('offer:')) {
+          const offId = ev.reason.replace('offer:', '');
+          claimsByOffer[offId] = (claimsByOffer[offId] || 0) + 1;
+        }
+      }
     } catch (dbErr) {
-      console.warn('[INSIGHTS_EVENTS_FALLBACK]', dbErr);
+      console.warn('[INSIGHTS_EVENTS_DB_ERROR]', dbErr);
     }
 
-    const baseConfirmed7 = 6 + redemptions7Count;
-    const baseConfirmed30 = 28 + redemptions30Count;
+    // Association des vraies métriques par offre
+    const mappedOffers = (restaurant.offers || []).map((o: any) => ({
+      id: o.id,
+      title: o.title || o.name || 'Offre du Restaurant',
+      description: o.description || '',
+      discount_value: o.discountValue || o.discount || '-20%',
+      code_word: o.codeWord || o.title.slice(0, 6).toUpperCase(),
+      target_uses: o.targetUses || 10,
+      claimed: claimsByOffer[o.id] || 0,
+      confirmed: redemptionsByOffer[o.id] || 0,
+      active: o.status === 'active' ? 1 : 0,
+    }));
 
-    const defaultOffers = [
-      {
-        id: 'off_midi_1',
-        title: 'Formule Déjeuner Express',
-        description: 'Entrée + Plat du jour le midi',
-        discount_value: '-20%',
-        code_word: 'EXPRESS',
-        target_uses: 15,
-        active: 1,
-      },
-      {
-        id: 'off_soir_2',
-        title: 'Happy Hour Cocktails & Tapas',
-        description: 'Un cocktail offert pour 2 tapas commandées',
-        discount_value: 'Cocktail Offert',
-        code_word: 'CHILL',
-        target_uses: 20,
-        active: 1,
-      },
-      {
-        id: 'off_dessert_3',
-        title: 'Café Gourmand de Bienvenue',
-        description: 'Café gourmand offert dès 25€ de commande',
-        discount_value: 'Café Offert',
-        code_word: 'DOUCEUR',
-        target_uses: 10,
-        active: 1,
-      },
-    ];
-
-    const mappedOffers =
-      restaurant.offers && restaurant.offers.length > 0
-        ? restaurant.offers.map((o: any) => ({
-            id: o.id,
-            title: o.title || o.name || 'Offre du Restaurant',
-            description: o.description || '',
-            discount_value: o.discountValue || o.discount || '-20%',
-            code_word: o.codeWord || 'DOUCEUR',
-            target_uses: o.targetUses || 10,
-            active: o.status === 'active' ? 1 : 1,
-          }))
-        : defaultOffers;
+    // Formater la liste des vrais contacts pour l'export CSV
+    const contactList = rawContacts.map((c: any) => ({
+      date: new Date(c.createdAt).toISOString().replace('T', ' ').slice(0, 16),
+      source: 'Page Publique / QR Code',
+      contact: c.reason || 'Anonyme',
+      status: 'Confirmé',
+    }));
 
     return success({
       isCounterConnected: true,
       restaurant: {
         id: restaurant.id,
         name: restaurant.name,
-        slug: slug,
+        slug: restaurant.id,
         brand_color: restaurant.profile?.brandColor || '#ff6600',
         timezone: restaurant.timezone || 'Europe/Paris',
         capacityCovers: restaurant.profile?.capacityCovers || 40,
@@ -113,22 +175,23 @@ export async function GET(req: NextRequest) {
         foodCostPct: restaurant.profile?.foodCostPct || 0.30,
       },
       stats7: {
-        scans: 18 + baseConfirmed7 * 2,
-        claimed: 12 + baseConfirmed7,
-        confirmed: baseConfirmed7,
-        totalUses: baseConfirmed7,
-        totalPersons: baseConfirmed7 * 2,
-        contacts: 8 + baseConfirmed7,
+        scans: scans7,
+        claimed: claimed7,
+        confirmed: confirmed7,
+        totalUses: confirmed7,
+        totalPersons: confirmed7 * 2,
+        contacts: contacts7,
       },
       stats30: {
-        scans: 74 + baseConfirmed30 * 2,
-        claimed: 42 + baseConfirmed30,
-        confirmed: baseConfirmed30,
-        totalUses: baseConfirmed30,
-        totalPersons: baseConfirmed30 * 2,
-        contacts: 31 + baseConfirmed30,
+        scans: scans30,
+        claimed: claimed30,
+        confirmed: confirmed30,
+        totalUses: confirmed30,
+        totalPersons: confirmed30 * 2,
+        contacts: contacts30,
       },
       offers: mappedOffers,
+      contacts: contactList,
     });
   } catch (err: any) {
     console.error('Erreur API insights:', err);

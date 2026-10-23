@@ -43,7 +43,7 @@ export const restaurant = {
       cafe: 'Café',
       fastFood: 'Fast Food',
     },
-    toneLabel: 'AI brand tone',
+    toneLabel: 'Communication tone',
     colorsLabel: 'Brand colors',
     servicesTitle: 'Services & Amenities',
     servicesDescription:

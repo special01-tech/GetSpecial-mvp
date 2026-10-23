@@ -1,28 +1,409 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { prisma } from '@/server/db/prisma.client';
 import { logAudit } from '@/server/lib/audit';
-import { getCountryConfig } from '@/server/lib/country-config';
-import fs from 'fs';
-import path from 'path';
+import { buildCreativeMemory } from './engine/creative-memory';
+import { generateCreativeDNA } from './engine/strategist.engine';
+import { generateArtDirectionAndCopy } from './engine/art-director.engine';
+import { generatePostImage } from './engine/openrouter-image';
+import { updateBrandLearning } from './engine/brand-learning';
+import {
+  AspectRatio,
+  CampaignType,
+  GenerationMode,
+  GenerationResult,
+  FoodProfile,
+  AdvertisingConcept,
+  CreativeDNA,
+} from './engine/types';
 
 export class ContentGeneratorService {
-  private anthropic: Anthropic | null = null;
-  private openRouterKey: string;
-  private openRouterBaseUrl: string;
+  /**
+   * Pipeline IA unifié à 3 cerveaux avec mémoire créative et régénération guidée
+   */
+  async generateOrRegeneratePost(params: {
+    restaurantId: string;
+    mode?: GenerationMode;
+    postId?: string;
+    offer: string;
+    details?: string;
+    campaignType?: CampaignType;
+    aspectRatio?: AspectRatio;
+    style?: string;
+    platform?: string;
+    referenceImages?: string[];
+    userFeedback?: string;
+    opportunityId?: string;
+    codeWord?: string;
+    weatherSummary?: string;
+  }): Promise<GenerationResult> {
+    const {
+      restaurantId,
+      mode = 'generate',
+      postId,
+      offer,
+      details = '',
+      campaignType = 'promotion',
+      aspectRatio = '4:5',
+      style,
+      platform = 'instagram',
+      referenceImages = [],
+      userFeedback,
+      opportunityId,
+      codeWord,
+      weatherSummary,
+    } = params;
 
-  constructor() {
-    if (process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY.startsWith('sk-ant-')) {
-      this.anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    // 1. Récupération du restaurant
+    let restaurant = await (prisma as any).restaurant.findUnique({
+      where: { id: restaurantId },
+      include: { profile: true },
+    });
+
+    if (!restaurant) {
+      restaurant = await (prisma as any).restaurant.findFirst({
+        where: { status: 'active' },
+        orderBy: { createdAt: 'desc' },
+        include: { profile: true },
+      });
     }
-    this.openRouterKey = (process.env.OPENROUTER_API_KEY || '').replace(/^["']|["']$/g, '').trim();
-    this.openRouterBaseUrl = process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1';
+
+    if (!restaurant) {
+      throw new Error(`Établissement introuvable (${restaurantId}).`);
+    }
+
+    // 2. Récupérer les 10 derniers posts pour la mémoire créative anti-répétition
+    let recentPosts: any[] = [];
+    try {
+      recentPosts = await (prisma as any).post.findMany({
+        where: { restaurantId: restaurant.id },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      });
+    } catch {
+      recentPosts = [];
+    }
+
+    const creativeMemory = buildCreativeMemory(recentPosts, restaurant.profile || {});
+
+    // 3. Si mode régénération, extraire le previousFoodProfile du post existant
+    let existingPost: any = null;
+    let previousFoodProfile: FoodProfile | null = null;
+
+    if (postId) {
+      try {
+        existingPost = await (prisma as any).post.findUnique({
+          where: { id: postId },
+        });
+        if (existingPost?.generationPayload?.food_profile) {
+          previousFoodProfile = existingPost.generationPayload.food_profile;
+        }
+      } catch {}
+    }
+
+    // Enrichir l'offre avec le mot-code si opportunité
+    let enrichedOffer = offer;
+    if (codeWord && !enrichedOffer.includes(codeWord)) {
+      enrichedOffer += ` (Code secret comptoir : ${codeWord})`;
+    }
+
+    // =========================================================================
+    // CERVEAU 1 : STRATÈGE CRÉATIF (GPT-4o-mini)
+    // =========================================================================
+    let strategistResult: {
+      food_profile: FoodProfile;
+      advertising_concept: AdvertisingConcept;
+      creative_dna: CreativeDNA;
+    };
+
+    try {
+      strategistResult = await generateCreativeDNA({
+        restaurant,
+        offer: enrichedOffer,
+        details,
+        campaignType,
+        style,
+        platform,
+        creativeMemory,
+        previousFoodProfile: mode === 'regenerate_different' ? previousFoodProfile : undefined,
+        userFeedback,
+        weatherSummary,
+      });
+    } catch (stratErr: any) {
+      console.warn('[STRATEGIST_FALLBACK]', stratErr?.message);
+      // Fallback déterministe
+      strategistResult = {
+        food_profile: {
+          meal_category: 'plat',
+          cuisine: restaurant.type || 'Bistrot',
+          hero_product: offer,
+          authenticity_notes: ['Fait maison', 'Produits frais'],
+        },
+        advertising_concept: {
+          poster_family: 'Editorial',
+          camera_angle: 'tilted_45deg',
+          lighting_family: 'natural_window',
+          main_message: offer,
+          visual_hook: 'Présentation gourmande et fraîche',
+          main_hero: 'food',
+        },
+        creative_dna: {
+          brand_personality: restaurant.profile?.tone || 'Chaleureux',
+          visual_world: 'Bistrot moderne et accueillant',
+          photography_style: 'Lumière naturelle et textures gourmandes',
+          food_scale: 'medium shot aéré',
+        },
+      };
+    }
+
+    // Régénération : verrouillage programmatique de l'identité du plat même si le modèle dérive
+    if (mode === 'regenerate_different' && previousFoodProfile?.hero_product) {
+      strategistResult.food_profile = {
+        ...strategistResult.food_profile,
+        hero_product: previousFoodProfile.hero_product,
+        cuisine: previousFoodProfile.cuisine || strategistResult.food_profile?.cuisine,
+        serving_style: previousFoodProfile.serving_style || strategistResult.food_profile?.serving_style,
+      };
+    }
+
+    // =========================================================================
+    // CERVEAU 2 : DIRECTEUR ARTISTIQUE & COPYWRITER (Claude 3.5 Sonnet / Haiku)
+    // =========================================================================
+    let copyResult;
+    try {
+      copyResult = await generateArtDirectionAndCopy({
+        restaurant,
+        offer: enrichedOffer,
+        details,
+        aspectRatio,
+        style,
+        platform,
+        foodProfile: strategistResult.food_profile,
+        advertisingConcept: strategistResult.advertising_concept,
+        creativeDNA: strategistResult.creative_dna,
+      });
+    } catch (artErr: any) {
+      console.warn('[ART_DIRECTOR_FALLBACK]', artErr?.message);
+      const cleanRestTag = '#' + restaurant.name.replace(/[^a-zA-Z0-9]/g, '');
+      const defaultHeadline = offer
+        .replace(/['’‘`]/g, '')
+        .trim()
+        .split(/\s+/)
+        .slice(0, 4)
+        .join(' ')
+        .toUpperCase();
+      copyResult = {
+        creative_concept: 'Mise en avant gourmande du plat',
+        dominant_emotion: 'Désir',
+        artistic_direction: 'Photographie naturelle de restaurant',
+        headline: defaultHeadline,
+        instagram_caption: `✨ Découvrez notre création du jour : ${offer} !\n\n${details || 'Préparé avec passion par notre équipe.'}\n\n📍 ${restaurant.name}, ${restaurant.address || 'centre-ville'}\n👉 Rendez-vous au restaurant pour vous régaler !\n\n${cleanRestTag} #restaurant #bonneadresse #faitmaison`,
+        facebook_caption: `Envie d'un moment gourmand chez ${restaurant.name} ? 🍽️\n\nAujourd'hui, profitez de notre spécialité : ${offer}.\n${details ? `\n${details}\n` : ''}\nPrenez place dans notre salle chaleureuse ou contactez-nous pour réserver. À très vite !\n\n${cleanRestTag} #restaurant #convivialite #foodlover`,
+        hashtags: [cleanRestTag, '#restaurant', '#foodie', '#bonneadresse'],
+        cta: `Rendez-vous chez ${restaurant.name}`,
+        poster_prompt: `Commercial high-end food photography of ${offer}, appetizing presentation, warm natural bistro lighting, 8k professional promo flyer layout, negative space for text, aspect ratio ${aspectRatio}.`,
+      };
+    }
+
+    // Normalisation stricte du headline (≤ 4 mots MAJUSCULES) et des hashtags (3 à 5 max)
+    copyResult.headline = String(copyResult.headline || offer)
+      .replace(/['’‘`"]/g, '')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 4)
+      .join(' ')
+      .toUpperCase();
+
+    if (Array.isArray(copyResult.hashtags)) {
+      copyResult.hashtags = copyResult.hashtags
+        .map((h: string) => '#' + String(h).replace(/^#+/, '').trim())
+        .filter((h: string) => h.length > 1)
+        .slice(0, 5);
+    }
+
+    // =========================================================================
+    // CERVEAU 3 : GÉNÉRATEUR VISUEL (GPT-Image-2 via OpenRouter)
+    // =========================================================================
+    let imageUrl = '';
+    try {
+      const imgRes = await generatePostImage(copyResult.poster_prompt, {
+        aspectRatio,
+        referenceImages,
+        logoUrl: restaurant.profile?.logoUrl || null,
+        restaurantName: restaurant.name,
+      });
+      imageUrl = imgRes.imageUrl;
+    } catch (imgErr: any) {
+      console.warn('[IMAGE_GENERATOR_ERROR]', imgErr?.message);
+      // Fallback vers photo existante du plat ou du restaurant
+      const dishCandidates = (restaurant.profile as any)?.customRules?.dishes;
+      const matchedDish = Array.isArray(dishCandidates)
+        ? dishCandidates.find(
+            (d: any) =>
+              d.photoUrl &&
+              (offer.toLowerCase().includes(d.name.toLowerCase()) ||
+                d.name.toLowerCase().includes(offer.toLowerCase()))
+          )
+        : null;
+
+      if (matchedDish?.photoUrl) {
+        imageUrl = matchedDish.photoUrl;
+      } else if (restaurant.profile?.photos && restaurant.profile.photos.length > 0) {
+        imageUrl = restaurant.profile.photos[0];
+      }
+    }
+
+    // 4. Persistance en base de données
+    const generationPayload = {
+      food_profile: strategistResult.food_profile,
+      advertising_concept: strategistResult.advertising_concept,
+      creative_dna: strategistResult.creative_dna,
+      poster_prompt: copyResult.poster_prompt,
+      headline: copyResult.headline,
+      cta: copyResult.cta,
+      creative_concept: copyResult.creative_concept,
+      artistic_direction: copyResult.artistic_direction,
+      aspect_ratio: aspectRatio,
+      campaign_type: campaignType,
+    };
+
+    let post: any;
+    if (postId && existingPost) {
+      post = await (prisma as any).post.update({
+        where: { id: postId },
+        data: {
+          platform,
+          text: copyResult.instagram_caption,
+          headline: copyResult.headline,
+          instagramCaption: copyResult.instagram_caption,
+          facebookCaption: copyResult.facebook_caption,
+          hashtags: copyResult.hashtags,
+          imageUrl: imageUrl || existingPost.imageUrl,
+          aspectRatio,
+          campaignType,
+          referenceImages,
+          generationPayload,
+          status: 'ready',
+        },
+      });
+    } else {
+      post = await (prisma as any).post.create({
+        data: {
+          restaurantId: restaurant.id,
+          opportunityId: opportunityId || null,
+          platform,
+          status: 'ready',
+          origin: 'generated',
+          text: copyResult.instagram_caption,
+          headline: copyResult.headline,
+          instagramCaption: copyResult.instagram_caption,
+          facebookCaption: copyResult.facebook_caption,
+          hashtags: copyResult.hashtags,
+          imageUrl,
+          aspectRatio,
+          campaignType,
+          referenceImages,
+          generationPayload,
+          verifiedFacts: [offer, details, restaurant.name].filter(Boolean),
+        },
+      });
+    }
+
+    await logAudit({
+      restaurantId: restaurant.id,
+      action: mode === 'regenerate_different' ? 'post.regenerated' : 'post.generated_3_brains',
+      entityType: 'post',
+      entityId: post.id,
+      details: {
+        campaignType,
+        aspectRatio,
+        mode,
+        hasReferences: referenceImages.length > 0,
+      },
+    });
+
+    return {
+      post,
+      generatedData: {
+        id: post.id,
+        headline: copyResult.headline,
+        instagramCaption: copyResult.instagram_caption,
+        facebookCaption: copyResult.facebook_caption,
+        caption: copyResult.instagram_caption,
+        hashtags: copyResult.hashtags,
+        imageUrl,
+        aspectRatio,
+        campaignType,
+        posterPrompt: copyResult.poster_prompt,
+        foodProfile: strategistResult.food_profile,
+        advertisingConcept: strategistResult.advertising_concept,
+        creativeDNA: strategistResult.creative_dna,
+      },
+    };
   }
 
   /**
-   * Chaîne de production IA en 3 étapes connectées :
-   * 1. GPT-4o-mini : Rédige le post (légende réseaux sociaux, mot-code oral, ton et public cible)
-   * 2. Claude (Claude 3.5 Sonnet / Haiku) : Rédige le prompt d'image photoréaliste (Brand DNA, plat, composition)
-   * 3. GPT-Image-2 (OpenRouter Images) : Génère l'image haute définition
+   * Création directe d'un post avec upload utilisateur (Workflow B : 0 crédit IA, carrousel ou vidéo)
+   */
+  async createDirectUploadPost(params: {
+    restaurantId: string;
+    caption: string;
+    mediaUrls: string[];
+    mediaType?: 'image' | 'carousel' | 'video';
+    aspectRatio?: AspectRatio;
+    platform?: string;
+    scheduledAt?: Date;
+  }) {
+    const {
+      restaurantId,
+      caption,
+      mediaUrls,
+      mediaType = mediaUrls.length > 1 ? 'carousel' : 'image',
+      aspectRatio = '4:5',
+      platform = 'instagram',
+      scheduledAt,
+    } = params;
+
+    // Extraction automatique des hashtags du texte (#hashtag)
+    const hashtagRegex = /#([a-zA-Z0-9_\u00C0-\u017F]+)/g;
+    const matches = caption.match(hashtagRegex) || [];
+    const hashtags = Array.from(new Set(matches));
+
+    const post = await (prisma as any).post.create({
+      data: {
+        restaurantId,
+        platform,
+        status: scheduledAt ? 'scheduled' : 'pending_approval',
+        origin: 'user_upload',
+        text: caption,
+        instagramCaption: caption,
+        facebookCaption: caption,
+        hashtags,
+        imageUrl: mediaUrls[0] || null,
+        mediaUrls,
+        mediaType,
+        aspectRatio,
+        scheduledAt: scheduledAt || null,
+        verifiedFacts: [caption.slice(0, 50)],
+      },
+    });
+
+    await logAudit({
+      restaurantId,
+      action: 'post.direct_upload',
+      entityType: 'post',
+      entityId: post.id,
+      details: {
+        mediaType,
+        mediaCount: mediaUrls.length,
+        hasSchedule: Boolean(scheduledAt),
+      },
+    });
+
+    return post;
+  }
+
+  /**
+   * Méthode appelée depuis les opportunités automatiques du Dashboard
    */
   async generatePostForOpportunity(
     opportunityId: string,
@@ -30,451 +411,208 @@ export class ContentGeneratorService {
     platform: 'instagram' | 'facebook' | 'google_business' = 'instagram',
     opportunityPayload?: any
   ) {
-    const key = (this.openRouterKey || process.env.OPENROUTER_API_KEY || '').replace(/^["']|["']$/g, '').trim();
-    const baseUrl = this.openRouterBaseUrl || process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1';
+    const oppTitle = opportunityPayload?.title || 'Offre Spéciale du Jour';
+    const oppDesc = opportunityPayload?.description || opportunityPayload?.signalOrigin || 'Formule exclusive préparée pour ce midi.';
+    const codeWord = opportunityPayload?.codeWord || 'SPECIAL';
 
-    // 1. Recherche de l'opportunité et du restaurant en base avec timeout sécurisé
-    const withDbTimeout = <T>(promise: Promise<T>, ms = 2000, fallback: T): Promise<T> => {
-      return Promise.race([
-        promise.catch(() => fallback),
-        new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
-      ]);
-    };
+    const result = await this.generateOrRegeneratePost({
+      restaurantId,
+      opportunityId,
+      offer: oppTitle,
+      details: oppDesc,
+      codeWord,
+      campaignType: 'promotion',
+      aspectRatio: '4:5',
+    });
 
-    let opp = await withDbTimeout(
-      (prisma as any).opportunity.findUnique({
-        where: { id: opportunityId },
-        include: {
-          restaurant: { include: { profile: true } },
-        },
-      }),
-      2000,
-      null
-    );
-
-    let restaurant = opp?.restaurant;
-
-    if (!restaurant && restaurantId) {
-      restaurant = await withDbTimeout(
-        (prisma as any).restaurant.findUnique({
-          where: { id: restaurantId },
-          include: { profile: true },
-        }),
-        2000,
-        null
-      );
-    }
-
-    if (!restaurant) {
-      restaurant = await withDbTimeout(
-        (prisma as any).restaurant.findFirst({
-          orderBy: { createdAt: 'desc' },
-          include: { profile: true },
-        }),
-        2000,
-        null
-      );
-    }
-
-    // Profil de restaurant contextualisé par défaut si non persisté
-    if (!restaurant) {
-      restaurant = {
-        id: restaurantId || 'rest_active',
-        name: opportunityPayload?.restaurantName || 'Chez Chiro',
-        address: 'Paris, France',
-        city: 'Paris',
-        country: 'FR',
-        type: 'Bistrot & Gastronomie',
-        profile: {
-          tone: 'Chaleureux, authentique et accueillant',
-          colors: ['#ff5a00', '#111827', '#f3f4f6'],
-          customRules: {
-            targetAudience: ['Clientèle locale', 'Habitués du quartier', 'Amateurs de cuisine du terroir']
-          }
-        }
-      };
-    }
-
-    // Si opportunité non trouvée en base, construction avec le payload reçu
-    const oppTitle = opportunityPayload?.title || opp?.title || 'Offre Spéciale du Jour';
-    const oppDesc = opportunityPayload?.description || opp?.description || opportunityPayload?.signalOrigin || 'Formule exclusive préparée pour ce midi.';
-    const factsList = Array.isArray(opportunityPayload?.factsCited)
-      ? opportunityPayload.factsCited
-      : Array.isArray(opportunityPayload?.verifiedFacts)
-      ? opportunityPayload.verifiedFacts
-      : Array.isArray(opp?.factsCited)
-      ? opp.factsCited
-      : [opportunityPayload?.signalOrigin || 'Action alignée sur les signaux du jour.'];
-
-    const codeWord = (
-      opportunityPayload?.codeWord ||
-      opportunityPayload?.offer?.codeWord ||
-      opp?.offerDetails?.codeWord ||
-      opp?.codeWord ||
-      'SPECIAL'
-    ).toString().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10) || 'SPECIAL';
-
-    const offerLabel =
-      opportunityPayload?.offer?.label ||
-      opp?.offerDetails?.label ||
-      oppTitle;
-    const offerDetails =
-      opportunityPayload?.offer?.details ||
-      opp?.offerDetails?.details ||
-      oppDesc;
-
-    if (!opp) {
-      try {
-        opp = await (prisma as any).opportunity.create({
-          data: {
-            id: opportunityId,
-            restaurantId: restaurant.id,
-            title: oppTitle,
-            description: oppDesc,
-            urgency: 'high',
-            relevanceScore: 0.85,
-            factsCited: factsList,
-            status: 'pending',
-          },
-          include: {
-            restaurant: { include: { profile: true } },
-          },
-        });
-      } catch {
-        opp = {
-          id: opportunityId,
-          restaurantId: restaurant.id,
-          title: oppTitle,
-          description: oppDesc,
-          factsCited: factsList,
-          codeWord,
-          offerDetails: {
-            label: offerLabel,
-            details: offerDetails,
-            codeWord,
-          },
-          restaurant,
-        };
-      }
-    }
-
-    const profile = restaurant?.profile || {};
-    const customRules = (profile.customRules as Record<string, any>) || {};
-    const targetAudience = Array.isArray(customRules.targetAudience)
-      ? customRules.targetAudience.join(', ')
-      : 'Clientèle locale et actifs du quartier';
-    const brandTone = profile.tone || profile.toneOfVoice || 'Chaleureux, authentique et accueillant';
-    const colorPalette = profile.colors || ['#ff5a00', '#111827', '#f3f4f6'];
-
-    // =========================================================================
-    // ÉTAPE 1 : GPT-4O-MINI RÉDIGE LA LÉGENDE DU POST
-    // =========================================================================
-    let postText = '';
-    const cleanName = (restaurant.name || 'Restaurant').replace(/[^a-zA-Z0-9]/g, '');
-
-    if (key) {
-      try {
-        const miniSystemPrompt = `Tu es le rédacteur réseaux sociaux expert de GetSpecial pour les restaurants indépendants.
-Ton objectif est de rédiger un post court, percutant et ultra-gourmand pour ${platform}, adapté au public cible et au ton de marque de l'établissement.
-
-RÈGLES D'OR :
-1. Respecte le ton demandé : ${brandTone}.
-2. Adresse-toi au public cible : ${targetAudience}.
-3. Mets en avant l'offre : "${offerLabel}" (${offerDetails}).
-4. Intègre impérativement le mot-code oral au comptoir : "${codeWord}". Le client doit prononcer ce mot au serveur pour profiter de l'avantage.
-5. Inclus des émojis pertinents, un appel à l'action direct et 3 à 4 hashtags locaux pertinents.
-6. Ne mentionne aucun jargon technique. Rédaction directe prête à publier.`;
-
-        const miniUserPrompt = `Voici le restaurant et l'opportunité :
-- Restaurant : ${restaurant.name} à ${restaurant.city || restaurant.address || 'France'}
-- Opportunité / Événement : ${oppTitle} (${oppDesc})
-- Formule / Plat promu : ${offerLabel} (${offerDetails})
-- Mot-code comptoir : ${codeWord}
-- Faits vérifiés : ${factsList.join(' • ')}
-
-Rédige le texte complet pour ${platform} en français naturel.`;
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000);
-
-        const gptMiniRes = await fetch(`${baseUrl}/chat/completions`, {
-          method: 'POST',
-          signal: controller.signal,
-          headers: {
-            Authorization: `Bearer ${key}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://getspecial.dev',
-          },
-          body: JSON.stringify({
-            model: 'openai/gpt-4o-mini',
-            temperature: 0.7,
-            messages: [
-              { role: 'system', content: miniSystemPrompt },
-              { role: 'user', content: miniUserPrompt },
-            ],
-          }),
-        }).finally(() => clearTimeout(timeoutId));
-
-        if (gptMiniRes.ok) {
-          const gptMiniData = await gptMiniRes.json();
-          const generatedCaption = gptMiniData.choices?.[0]?.message?.content?.trim();
-          if (generatedCaption) {
-            postText = generatedCaption;
-          }
-        }
-      } catch (miniErr: any) {
-        console.warn('[GPT4O_MINI_CAPTION_ERROR]', miniErr.message);
-      }
-    }
-
-    // Fallback texte soigné en français
-    if (!postText) {
-      postText = `✨ ${oppTitle} chez ${restaurant.name} !\n\nProfitez de notre offre spéciale : ${offerLabel} (${offerDetails}).\n\n👉 Dites simplement le code "${codeWord}" à notre équipe au comptoir pour en profiter !\n\n📍 ${restaurant.name}, ${restaurant.address || restaurant.city || ''}\n#${cleanName} #restaurant #gastronomie #bonplan`;
-    }
-
-    // =========================================================================
-    // ÉTAPE 2 : CLAUDE (OPENROUTER) DIRECTEUR ARTISTIQUE : AFFICHE PUBLICITAIRE RESTAURANT
-    // =========================================================================
-    let visualPrompt = '';
-    const artDirectionPrompt = `High-end commercial restaurant advertising poster for Instagram and Facebook featuring delicious ${offerLabel}, ${offerDetails}. The composition is styled as an authentic ${restaurant.type || 'warm French bistro'} promotional campaign poster with elegant chalkboard and slate banner layout, warm ambient candlelight, decorative culinary herbs, appetizing presentation, 8k resolution, professional food promo flyer artwork, no distorted letters.`;
-
-    if (key) {
-      try {
-        const claudeSystemPrompt = `You are an elite graphic designer and advertising creative director specializing in restaurant marketing posters and social media promotional flyers.
-Your mission is to write an image generation prompt in English for an EYE-CATCHING RESTAURANT ADVERTISING POSTER / SOCIAL MEDIA PROMO FLYER.
-
-CRITICAL DIRECTIVES:
-1. THIS IS AN ADVERTISING POSTER / PROMO GRAPHIC FLYER, NOT A SIMPLE PHOTO OF A DISH.
-2. The visual must look like a high-end commercial restaurant campaign poster designed for Instagram & Facebook.
-3. Central focal point: The featured culinary specialty ("${offerLabel}") presented with stunning styling, appetizing textures, soft steam, rich colors, and delicious presentation.
-4. Poster composition & layout: Integrate sleek restaurant promotional poster aesthetics—warm ambient dining atmosphere, slate or chalkboard textured menu framing, elegant subtle decorative culinary herbs, warm festive bistro bokeh lights, and stylish advertising flyer balance.
-5. Brand atmosphere: ${brandTone}, color accents matching ${Array.isArray(colorPalette) ? colorPalette.join(', ') : '#ff5a00'}.
-6. Aspect ratio: 1:1 square.
-7. Output ONLY the raw descriptive prompt in English (2-3 rich, evocative sentences). No title, no quotes, no markdown, no commentary.`;
-
-        const claudeUserPrompt = `Create an advertising poster image prompt for:
-- Restaurant: ${restaurant.name} (${restaurant.type || 'Bistrot & Gastronomie'})
-- City: ${restaurant.city || restaurant.address || 'France'}
-- Promoted Offer / Dish: ${offerLabel} (${offerDetails})
-- Code Word: ${codeWord}
-- Occasion / Signal: ${oppTitle} (${oppDesc})
-- Target audience: ${targetAudience}`;
-
-        const claudeModels = [
-          'anthropic/claude-haiku-4.5',
-          'anthropic/claude-3.5-sonnet:beta',
-          'openai/gpt-4o-mini',
-        ];
-
-        for (const cMod of claudeModels) {
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-            const claudeRes = await fetch(`${baseUrl}/chat/completions`, {
-              method: 'POST',
-              signal: controller.signal,
-              headers: {
-                Authorization: `Bearer ${key}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': 'https://getspecial.dev',
-                'X-Title': 'GetSpecial Poster Art Director',
-              },
-              body: JSON.stringify({
-                model: cMod,
-                temperature: 0.6,
-                messages: [
-                  { role: 'system', content: claudeSystemPrompt },
-                  { role: 'user', content: claudeUserPrompt },
-                ],
-              }),
-            }).finally(() => clearTimeout(timeoutId));
-
-            if (claudeRes.ok) {
-              const claudeData = await claudeRes.json();
-              const p = claudeData.choices?.[0]?.message?.content?.trim();
-              if (p && !p.startsWith('{') && p.length > 30) {
-                // Nettoyer les éventuels préfixes markdown
-                visualPrompt = p.replace(/^#+.*?\n+/g, '').replace(/^"|"$/g, '').trim();
-                break;
-              }
-            }
-          } catch (cErr: any) {
-            console.warn(`[CLAUDE_${cMod}_ERROR]`, cErr.message);
-          }
-        }
-      } catch (promptErr: any) {
-        console.warn('[IMAGE_PROMPT_GEN_ERROR]', promptErr.message);
-      }
-    }
-
-    if (!visualPrompt) {
-      visualPrompt = artDirectionPrompt;
-    }
-
-    // =========================================================================
-    // ÉTAPE 3 : GPT-IMAGE-2 GÉNÈRE L'IMAGE HAUTE DÉFINITION
-    // =========================================================================
-    let imageUrl: string | null = null;
-    const imageModelToUse = process.env.IMAGE_MODEL || 'openai/gpt-image-2';
-
-    if (key) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 25000);
-
-        const imgRes = await fetch(`${baseUrl}/images`, {
-          method: 'POST',
-          signal: controller.signal,
-          headers: {
-            Authorization: `Bearer ${key}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: imageModelToUse,
-            prompt: visualPrompt,
-          }),
-        }).finally(() => clearTimeout(timeoutId));
-
-        if (imgRes.ok) {
-          const imgData = await imgRes.json();
-          const firstImg = imgData.data?.[0];
-          if (firstImg?.url) {
-            imageUrl = firstImg.url;
-          } else if (firstImg?.b64_json) {
-            const uploadsDir = path.join(process.cwd(), 'public', 'generated');
-            if (!fs.existsSync(uploadsDir)) {
-              fs.mkdirSync(uploadsDir, { recursive: true });
-            }
-            const cleanId = String(opportunityId).replace(/[^a-zA-Z0-9_-]/g, '_');
-            const fileName = `post-${cleanId}-${Date.now()}.png`;
-            const filePath = path.join(uploadsDir, fileName);
-            fs.writeFileSync(filePath, Buffer.from(firstImg.b64_json, 'base64'));
-            imageUrl = `/generated/${fileName}`;
-          }
-        } else {
-          const errText = await imgRes.text();
-          console.warn('[GPT_IMAGE_2_HTTP_ERROR]', imgRes.status, errText);
-        }
-      } catch (imgErr: any) {
-        console.warn('[GPT_IMAGE_2_ERROR]', imgErr.message);
-      }
-    }
-
-    // Fallback photographique contextuel gastronomique
-    if (!imageUrl) {
-      const factsStr = (oppTitle + ' ' + oppDesc + ' ' + offerLabel + ' ' + (restaurant.type || '')).toLowerCase();
-      if (factsStr.includes('soleil') || factsStr.includes('terrasse') || factsStr.includes('salade') || factsStr.includes('patio')) {
-        imageUrl = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80';
-      } else if (factsStr.includes('burger') || factsStr.includes('match') || factsStr.includes('sport') || factsStr.includes('pinte')) {
-        imageUrl = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80';
-      } else if (factsStr.includes('viande') || factsStr.includes('steak') || factsStr.includes('grill') || factsStr.includes('chiro')) {
-        imageUrl = 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80';
-      } else if (factsStr.includes('fête') || factsStr.includes('soir') || factsStr.includes('vin') || factsStr.includes('cocktail')) {
-        imageUrl = 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=800&q=80';
-      } else {
-        imageUrl = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80';
-      }
-    }
-
-    // Sauvegarde en base de données Supabase / Prisma avec résilience totale
-    let post;
-    try {
-      post = await withDbTimeout(
-        (prisma as any).post.create({
-          data: {
-            restaurantId: restaurant.id,
-            opportunityId: opp?.id === opportunityId ? opp.id : null,
-            platform,
-            text: postText,
-            imageUrl,
-            status: 'pending_approval',
-            verifiedFacts: factsList,
-          },
-        }),
-        2500,
-        null
-      );
-    } catch {
-      post = null;
-    }
-
-    if (!post) {
-      try {
-        post = await withDbTimeout(
-          (prisma as any).post.create({
-            data: {
-              restaurantId: restaurant.id,
-              platform,
-              text: postText,
-              imageUrl,
-              status: 'pending_approval',
-              verifiedFacts: factsList,
-            },
-          }),
-          2500,
-          null
-        );
-      } catch {
-        post = null;
-      }
-    }
-
-    if (!post) {
-      post = {
-          id: `post_${Date.now()}`,
-          restaurantId: restaurant.id,
-          opportunityId,
-          platform,
-          text: postText,
-          imageUrl,
-          status: 'pending_approval',
-          verifiedFacts: factsList,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-    }
-
-    try {
-      await logAudit({
-        restaurantId: restaurant.id,
-        action: 'post.generated_multi_model',
-        entityType: 'post',
-        entityId: post.id,
-        details: {
-          platform,
-          opportunityId,
-          captionModel: 'openai/gpt-4o-mini',
-          promptModel: 'openai/gpt-4o-mini',
-          imageModel: imageModelToUse,
-        },
-      });
-    } catch {
-      // Non bloquant
-    }
-
-    return post;
+    // Rendre le post prêt
+    return result.post;
   }
 
   /**
-   * Modification du texte du post par le gérant
+   * Mise à jour d'un post par le gérant
    */
-  async updatePost(postId: string, restaurantId: string, text: string) {
+  async updatePost(
+    postId: string,
+    restaurantId: string,
+    text?: string,
+    imageUrl?: string,
+    platform?: string,
+    extraFields?: {
+      headline?: string;
+      instagramCaption?: string;
+      facebookCaption?: string;
+      hashtags?: string[];
+      rating?: number;
+    }
+  ) {
+    const data: Record<string, any> = {};
+    if (text !== undefined) data.text = text;
+    if (imageUrl !== undefined) data.imageUrl = imageUrl;
+    if (platform !== undefined) data.platform = platform;
+    if (extraFields?.headline !== undefined) data.headline = extraFields.headline;
+    if (extraFields?.instagramCaption !== undefined) data.instagramCaption = extraFields.instagramCaption;
+    if (extraFields?.facebookCaption !== undefined) data.facebookCaption = extraFields.facebookCaption;
+    if (extraFields?.hashtags !== undefined) data.hashtags = extraFields.hashtags;
+
     const updated = await (prisma as any).post.update({
       where: { id: postId, restaurantId },
-      data: { text },
+      data,
     });
+
+    if (extraFields?.rating) {
+      await updateBrandLearning(restaurantId, updated);
+    }
 
     await logAudit({
       restaurantId,
-      action: 'post.update_text',
+      action: 'post.update',
       entityType: 'post',
       entityId: postId,
+      details: data,
     });
 
     return updated;
   }
+
+  /**
+   * Wrapper de compatibilité pour l'ancienne route /api/posts/generate-image
+   */
+  async generateAiImage(params: {
+    title: string;
+    description?: string;
+    style?: string;
+    restaurantName?: string;
+    platform?: string;
+    discountValue?: string;
+  }): Promise<{ imageUrl: string; visualPrompt: string }> {
+    const prompt = `Commercial advertising poster photograph of ${params.title}, appetizing presentation, natural restaurant lighting, high resolution.`;
+    const res = await generatePostImage(prompt, {
+      aspectRatio: '4:5',
+      restaurantName: params.restaurantName,
+    });
+    return {
+      imageUrl: res.imageUrl,
+      visualPrompt: prompt,
+    };
+  }
+
+  /**
+   * Génération / Réécriture de légende via le Cerveau 2 (Art Director & Copywriter)
+   * avec fallback dynamique à 4 angles créatifs
+   */
+  async generateCopywriting(input: {
+    restaurantId?: string;
+    restaurantName: string;
+    address?: string;
+    city?: string;
+    sourceType?: 'offer' | 'event' | 'custom';
+    title: string;
+    description?: string;
+    discountValue?: string;
+    platform?: 'instagram' | 'facebook' | 'google_business';
+    style?: 'gourmet' | 'festive' | 'chic' | 'deal';
+    tone?: string;
+    angleIndex?: number;
+  }): Promise<{
+    caption: string;
+    instagramCaption?: string;
+    facebookCaption?: string;
+    hook: string;
+    cta: string;
+    hashtags: string[];
+    isAiGenerated: boolean;
+    modelUsed: string;
+  }> {
+    const angleDirections = [
+      'Sensations gustatives, savoir-faire artisanal et fraîcheur des produits',
+      'Convivialité, partage et ambiance chaleureuse en salle',
+      'Offre exclusive irrésistible et appel à l’action direct',
+      'Le mot du Chef et inspiration du marché du jour',
+    ];
+    const chosenAngle =
+      typeof input.angleIndex === 'number'
+        ? Math.abs(input.angleIndex) % angleDirections.length
+        : Math.floor(Math.random() * angleDirections.length);
+
+    try {
+      const copyOut = await generateArtDirectionAndCopy({
+        restaurant: {
+          name: input.restaurantName,
+          address: input.address || '',
+          city: input.city || '',
+          profile: { tone: input.tone || 'Chaleureux et gourmand' },
+        },
+        offer: input.discountValue ? `${input.title} (${input.discountValue})` : input.title,
+        details: input.description || '',
+        aspectRatio: '4:5',
+        foodProfile: {
+          hero_product: input.title,
+          cuisine: 'Bistrot & Gastronomie',
+        },
+        advertisingConcept: {
+          poster_family: input.style === 'chic' ? 'Luxury' : input.style === 'festive' ? 'Lifestyle' : 'Editorial',
+          main_message: input.title,
+          emotion_goal: angleDirections[chosenAngle],
+        },
+        creativeDNA: {
+          brand_personality: input.tone || 'Chaleureux et gourmand',
+          creative_direction: `Angle éditorial imposé : ${angleDirections[chosenAngle]}`,
+        },
+      });
+
+      const selectedCaption =
+        input.platform === 'facebook'
+          ? copyOut.facebook_caption || copyOut.instagram_caption
+          : copyOut.instagram_caption;
+
+      return {
+        caption: selectedCaption,
+        instagramCaption: copyOut.instagram_caption,
+        facebookCaption: copyOut.facebook_caption,
+        hook: copyOut.headline || input.title,
+        cta: copyOut.cta || `Rendez-vous chez ${input.restaurantName}`,
+        hashtags: copyOut.hashtags || [],
+        isAiGenerated: true,
+        modelUsed: process.env.OPENROUTER_TEXT_MODEL || process.env.OPENROUTER_MODEL || 'google/gemini-3.8-flash',
+      };
+    } catch {
+      const cleanRestTag = '#' + input.restaurantName.replace(/[^a-zA-Z0-9]/g, '');
+      const cleanTitle = input.title.trim();
+      const details = input.description?.trim() ? `\n\n${input.description.trim()}` : '';
+      const discountLine = input.discountValue?.trim() ? `\n\nAvantage exclusif : ${input.discountValue.trim()}` : '';
+
+      const hooks = [
+        `À la carte : ${cleanTitle}`,
+        `Envie d'une pause gourmande chez ${input.restaurantName} ?`,
+        `Formule du moment : ${cleanTitle}`,
+        `La création du jour par le Chef : ${cleanTitle}`,
+      ];
+      const bodies = [
+        `Des ingrédients soigneusement sélectionnés, une cuisson maîtrisée et toute la passion de notre brigade réunis dans votre assiette.${details}${discountLine}`,
+        `Prenez place dans notre salle chaleureuse et découvrez notre spécialité : ${cleanTitle}.${details}${discountLine}`,
+        `Faites voyager vos papilles aujourd'hui avec notre coup de cœur du moment.${details}${discountLine}`,
+        `Inspiré par le marché du matin, notre chef a imaginé cette recette gourmande et généreuse.${details}${discountLine}`,
+      ];
+
+      const hook = hooks[chosenAngle];
+      const cta = `Rendez-vous chez ${input.restaurantName}${input.address ? ` (${input.address})` : ''}.`;
+      const hashtags = [cleanRestTag, '#restaurant', '#foodie', '#bonneadresse', '#faitmaison'];
+      const caption = `${hook}\n\n${bodies[chosenAngle]}\n\n${cta}\n\n${hashtags.join(' ')}`;
+
+      return {
+        caption,
+        instagramCaption: caption,
+        facebookCaption: caption,
+        hook,
+        cta,
+        hashtags,
+        isAiGenerated: false,
+        modelUsed: 'deterministic-4-angles',
+      };
+    }
+  }
+
 }
 
 export const contentGeneratorService = new ContentGeneratorService();
-

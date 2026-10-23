@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
 import { success, error } from '@/server/lib/api-response';
 import { verifyPin, evaluatePinRateLimit } from '@/server/modules/auth-pin/domain';
+import { signSessionToken } from '@/server/lib/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,32 +34,46 @@ export async function POST(
 
     let restaurant: any = null;
     try {
-      restaurant = await (prisma.restaurant as any).findFirst({
-        where: { status: 'active' },
+      restaurant = await (prisma.restaurant as any).findUnique({
+        where: { id: slug },
         include: { profile: true },
       });
+      if (!restaurant) {
+        restaurant = await (prisma.restaurant as any).findFirst({
+          where: { status: 'active' },
+          include: { profile: true },
+        });
+      }
     } catch {
       // Fallback si BD injoignable
     }
 
+    if (!restaurant) {
+      return error('Restaurant introuvable.', 404);
+    }
+
     const storedHash = restaurant?.profile?.staffPinHash;
 
-    // PIN 1234 par défaut ou vérification du hash configuré
-    const isValid = (pin === '1234') || (storedHash ? verifyPin(pin, storedHash) : false);
+    // Si un hash PIN a été configuré, on l'exige strictement ; sinon PIN 1234 par défaut
+    const isValid = storedHash ? verifyPin(pin, storedHash) : pin === '1234';
 
     if (!isValid) {
-      // Incrémenter le compteur d'échecs
       const currentFailures = (rateRecord?.failureCount || 0) + 1;
       staffRateLimitMap.set(rateKey, { failureCount: currentFailures, lastFailedAt: new Date() });
-      return error('Code PIN incorrect (Code par défaut : 1234).', 401);
+      return error('Code PIN incorrect.', 401);
     }
 
     // Réinitialiser les tentatives en cas de succès
     staffRateLimitMap.delete(rateKey);
 
     const res = success({ message: 'Authentification Staff réussie' });
-    // Déposer cookie de session httpOnly
-    res.cookies.set('gs_staff_session', `staff_${restaurant.id}_${Date.now()}`, {
+    const staffToken = signSessionToken({
+      userId: `staff_${restaurant.id}`,
+      email: `staff@${restaurant.id}.local`,
+      maxAgeSec: 12 * 60 * 60,
+    });
+
+    res.cookies.set('gs_staff_session', staffToken, {
       httpOnly: true,
       sameSite: 'lax',
       path: '/',

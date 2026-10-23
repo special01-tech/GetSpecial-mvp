@@ -60,7 +60,7 @@ export default function RulesPage() {
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
-  // Charger depuis le localStorage au montage
+  // Charger depuis le localStorage et l'API au montage
   useEffect(() => {
     try {
       const stored = localStorage.getItem('getspecial_assistant_rules');
@@ -70,6 +70,30 @@ export default function RulesPage() {
     } catch {
       // Ignorer
     }
+
+    // Charger les préférences d'événements du restaurant depuis l'API
+    fetch('/api/restaurant/preferences/events')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data?.preferences) {
+          const prefs = data.data.preferences;
+          setRules((prev) => ({
+            ...prev,
+            topics: {
+              ...prev.topics,
+              sport: prefs.categories?.sport ?? prev.topics.sport,
+              concerts: prefs.categories?.concert ?? prev.topics.concerts,
+              holidays: prefs.categories?.holiday ?? prev.topics.holidays,
+            },
+            excludedTopics: prefs.excludedKeywords && prefs.excludedKeywords.length > 0
+              ? Array.from(new Set([...prev.excludedTopics, ...prefs.excludedKeywords]))
+              : prev.excludedTopics,
+          }));
+        }
+      })
+      .catch((err) => {
+        console.warn('[RULES_PAGE] Erreur chargement préférences événements :', err);
+      });
   }, []);
 
   const saveRules = (updated: AssistantRulesData, message?: string) => {
@@ -79,6 +103,21 @@ export default function RulesPage() {
       // Si la pause globale change, synchroniser avec la pause restaurant générale
       localStorage.setItem('getspecial_restaurant_paused', String(updated.globalPause));
     }
+
+    // Synchronisation en tâche de fond avec l'API
+    fetch('/api/restaurant/preferences/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        categories: {
+          sport: updated.topics.sport,
+          concert: updated.topics.concerts,
+          holiday: updated.topics.holidays,
+        },
+        excludedKeywords: updated.excludedTopics,
+      }),
+    }).catch(() => {});
+
     if (message) {
       setNotice(message);
       setTimeout(() => setNotice(null), 3500);

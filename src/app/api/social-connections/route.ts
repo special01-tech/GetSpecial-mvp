@@ -6,7 +6,11 @@ import { directOAuthService, SupportedSocialPlatform } from '@/server/modules/so
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const restaurantId = searchParams.get('restaurantId') || 'rest_demo_austin_1';
+    const restaurantId = searchParams.get('restaurantId');
+
+    if (!restaurantId) {
+      return error('Paramètre restaurantId requis.', 400);
+    }
 
     const accounts = await (prisma as any).socialAccount.findMany({
       where: { restaurantId },

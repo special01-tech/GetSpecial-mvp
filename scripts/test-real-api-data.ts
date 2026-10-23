@@ -2,7 +2,7 @@
  * scripts/test-real-api-data.ts
  *
  * Script de validation stricte : vérifie que 100% des données proviennent
- * de vraies API externes (OpenStreetMap, OpenWeatherMap, Ticketmaster, Zernio/TikTok, Calendarific)
+ * de vraies API externes (OpenStreetMap, OpenWeatherMap, Ticketmaster, Zernio, Calendarific)
  * et qu'aucune donnée statique ou fictive n'est servie.
  */
 
@@ -67,7 +67,7 @@ async function testRealApiData() {
     console.error('   ❌ Erreur:', err.message);
   }
 
-  // 3. ANALYTICS RÉELLES EN DIRECT (Zernio Unified API / TikTok)
+  // 3. ANALYTICS RÉELLES EN DIRECT (Zernio Unified API)
   total++;
   try {
     console.log('\n3. TEST API ANALYTICS EN DIRECT (/api/analytics)...');
@@ -81,10 +81,10 @@ async function testRealApiData() {
       console.log(`   ✅ Portée réelle (reach): ${overview.totalReach}`);
       console.log(`   ✅ Likes réels: ${overview.totalLikes}`);
       console.log(`   ✅ Taux d'engagement calculé: ${overview.engagementRate}%`);
-      console.log(`   ✅ Posts réels récupérés via TikTok API: ${posts.length} vidéos`);
+      console.log(`   ✅ Posts réels récupérés via Social API: ${posts.length} publications`);
       if (posts.length > 0) {
         console.log(`      - Exemple post #1: "${posts[0].content.slice(0, 50)}..."`);
-        console.log(`      - URL TikTok officielle: ${posts[0].url}`);
+        console.log(`      - URL officielle: ${posts[0].url}`);
         console.log(`      - CDN Vidéo Thumbnail: ${posts[0].thumbnailUrl.slice(0, 40)}...`);
       }
       passed++;

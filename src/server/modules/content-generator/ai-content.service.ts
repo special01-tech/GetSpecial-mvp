@@ -1,5 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
-
 export interface AiCampaignInput {
   restaurant: {
     id: string;
@@ -48,21 +46,23 @@ export interface AiCampaignOutput {
   mediaPrompt: string;
   platform: string;
   isAiGenerated: boolean;
-  provider: 'anthropic-claude' | 'deterministic-fallback';
+  provider: 'openrouter-claude' | 'anthropic-claude' | 'deterministic-fallback';
 }
 
 export class AiContentService {
-  private anthropic: Anthropic | null = null;
+  private readonly apiKey: string | undefined;
+  private readonly baseUrl: string;
+  private readonly model: string;
 
   constructor() {
-    if (process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY.startsWith('sk-ant-')) {
-      this.anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-    }
+    this.apiKey = (process.env.OPENROUTER_API_KEY || '').replace(/^["']|["']$/g, '').trim();
+    this.baseUrl = process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1';
+    this.model = process.env.OPENROUTER_TEXT_MODEL || 'anthropic/claude-3.5-sonnet';
   }
 
   /**
-   * Génère une campagne adaptée pour un restaurant américain
-   * Utilise Claude 3.5 Sonnet si la clé API est fournie, ou un fallback déterministe certifié sans hallucination.
+   * Génère une campagne adaptée pour un restaurant
+   * Utilise Claude 3.5 Sonnet via OpenRouter si la clé API est fournie, ou un fallback déterministe certifié sans hallucination.
    */
   async generateCampaign(input: AiCampaignInput): Promise<AiCampaignOutput> {
     const { restaurant, brandProfile, offer, opportunity, event, weather, platform, date, time } = input;
@@ -76,7 +76,7 @@ export class AiContentService {
     // Fallback déterministe certifié
     const fallbackResult: AiCampaignOutput = this.buildDeterministicCampaign(input);
 
-    if (!this.anthropic) {
+    if (!this.apiKey || this.apiKey.includes('...')) {
       return fallbackResult;
     }
 
@@ -101,13 +101,37 @@ CRITICAL RULES:
    - Google Business: Direct, informative, business hours and offer highlight.
 3. Return STRICT JSON with keys: headline, caption, hashtags (array of strings), callToAction, recommendedPublishTime, mediaPrompt.`;
 
-      const response = await this.anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 800,
-        messages: [{ role: 'user', content: prompt }],
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://getspecial.app',
+          'X-Title': 'GetSpecial Campaign Generator',
+        },
+        signal: AbortSignal.timeout(35000),
+        body: JSON.stringify({
+          model: this.model,
+          temperature: 0.4,
+          max_tokens: 2000,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an elite marketing copywriter. You ALWAYS respond with strict valid JSON only, without any markdown formatting.',
+            },
+            { role: 'user', content: prompt },
+          ],
+        }),
       });
 
-      const text = response.content[0]?.type === 'text' ? response.content[0].text : '';
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        console.warn(`[AI_CONTENT_SERVICE] OpenRouter error (${response.status}): ${errorText.slice(0, 200)}`);
+        return fallbackResult;
+      }
+
+      const json = await response.json();
+      const text = json.choices?.[0]?.message?.content || '';
       const cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(cleaned);
 
@@ -120,10 +144,10 @@ CRITICAL RULES:
         mediaPrompt: parsed.mediaPrompt || fallbackResult.mediaPrompt,
         platform,
         isAiGenerated: true,
-        provider: 'anthropic-claude',
+        provider: 'openrouter-claude',
       };
     } catch (err) {
-      console.warn('[AI_CONTENT_SERVICE] Claude API unavailable or returned invalid JSON. Engaging deterministic fallback:', err);
+      console.warn('[AI_CONTENT_SERVICE] OpenRouter Claude API unavailable or returned invalid JSON. Engaging deterministic fallback:', err);
       return fallbackResult;
     }
   }

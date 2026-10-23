@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
+import { setAuthCookies } from '@/server/lib/session';
 
 async function exchangeSupabaseCode(supabaseUrl: string, anonKey: string, code: string) {
   try {
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
   // 1. FLUX PKCE (Code présent dans l'URL)
   if (code) {
     try {
-      const { user: authUser, error: exchangeError } = await exchangeSupabaseCode(
+      const { user: authUser, session: authSession, error: exchangeError } = await exchangeSupabaseCode(
         supabaseUrl,
         supabaseAnonKey,
         code
@@ -126,27 +127,15 @@ export async function GET(request: NextRequest) {
       const destination = existingRestaurant ? '/dashboard' : '/onboarding';
       const response = NextResponse.redirect(new URL(destination, request.url));
 
-      // Cookies de session
-      response.cookies.set('getspecial_session', dbUser.id, {
-        path: '/',
-        maxAge: 30 * 24 * 60 * 60,
-        sameSite: 'lax',
-        httpOnly: false,
-      });
-
-      if (existingRestaurant) {
-        response.cookies.set('getspecial_restaurant_id', existingRestaurant.id, {
-          path: '/',
-          maxAge: 30 * 24 * 60 * 60,
-          sameSite: 'lax',
-          httpOnly: false,
-        });
-      } else {
-        response.cookies.set('getspecial_restaurant_id', '', {
-          path: '/',
-          maxAge: 0,
-        });
-      }
+      // Cookies de session signés HMAC + Supabase
+      setAuthCookies(
+        response,
+        { id: dbUser.id, email: dbUser.email },
+        {
+          restaurantId: existingRestaurant?.id || null,
+          supabaseAccessToken: authSession?.access_token || null,
+        }
+      );
 
       return response;
     } catch (err: any) {
@@ -226,7 +215,8 @@ export async function GET(request: NextRequest) {
               id: user.id,
               email: user.email,
               name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0],
-              avatarUrl: user.user_metadata?.avatar_url || user.user_metadata?.picture || null
+              avatarUrl: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+              accessToken: session?.access_token || null
             })
           });
 

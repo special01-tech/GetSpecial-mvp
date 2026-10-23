@@ -1,0 +1,101 @@
+.cardRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--color-border, #E2E8F0);
+  gap: 1rem;
+}
+
+.cardRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0.25rem;
+}
+
+.rowLabel {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text-main, #0F172A);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rowDescription {
+  font-size: 0.82rem;
+  color: var(--color-text-muted, #64748B);
+  margin-top: 3px;
+  line-height: 1.4;
+  max-width: 520px;
+}
+
+.badgeInstalled {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.installActionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FF5A00;
+  color: #FFFFFF;
+  border: none;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 9px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(255, 90, 0, 0.25);
+}
+
+.installActionBtn:hover {
+  background: #EA580C;
+  transform: translateY(-1px);
+}
+
+.guideBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-bg-app, #F8FAFC);
+  border: 1px solid var(--color-border, #CBD5E1);
+  color: var(--color-text-main, #334155);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.guideBtn:hover {
+  background: #FFF2EB;
+  border-color: #FFD4C2;
+  color: #FF5A00;
+}
+
+@media (max-width: 640px) {
+  .cardRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .installActionBtn,
+  .guideBtn {
+    width: 100%;
+    justify-content: center;
+  }
+}

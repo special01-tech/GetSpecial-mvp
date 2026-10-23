@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
 import { success, error } from '@/server/lib/api-response';
+import { verifyRestaurantOwnership } from '@/server/lib/auth-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -296,11 +297,11 @@ export async function GET(req: NextRequest) {
       },
       {
         id: 'ai_copilot',
-        name: 'Moteur IA Claude 3.5 Sonnet / LLM',
+        name: 'Moteur IA Claude 3.5 Sonnet / OpenRouter LLM',
         category: 'Intelligence Artificielle',
-        isLive: Boolean(process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY.includes('...')),
-        details: process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY.includes('...')
-          ? 'Clé API active. Génération dynamique et contextualisée.'
+        isLive: Boolean(process.env.OPENROUTER_API_KEY && !process.env.OPENROUTER_API_KEY.includes('...') && process.env.OPENROUTER_API_KEY.trim().length > 15),
+        details: process.env.OPENROUTER_API_KEY && !process.env.OPENROUTER_API_KEY.includes('...') && process.env.OPENROUTER_API_KEY.trim().length > 15
+          ? 'Clé OpenRouter active (Claude 3.5 Sonnet & DeepSeek). Génération dynamique et contextualisée.'
           : 'Repli déterministe certifié actif (Ground-truth sans hallucinations).',
       },
       {
@@ -368,6 +369,11 @@ export async function POST(req: NextRequest) {
 
     if (!restaurantId) {
       return error('restaurantId est requis', 400);
+    }
+
+    const access = await verifyRestaurantOwnership(req, restaurantId, { allowFallbackInDev: true });
+    if (!access.allowed) {
+      return error(access.error || 'Accès refusé', access.status);
     }
 
     if (action === 'add_dish') {

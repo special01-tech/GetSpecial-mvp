@@ -46,7 +46,7 @@ export class OpportunityEngineService {
         executionReport: {
           timestamp,
           restaurantId,
-          modelUsed: process.env.OPENROUTER_MODEL || 'anthropic/claude-3.7-sonnet',
+          modelUsed: process.env.OPENROUTER_MODEL || 'google/gemini-3.8-flash',
           isMock: false,
           signalsConsumed: {
             weatherAvailable: dossier.weather.available,
@@ -63,7 +63,7 @@ export class OpportunityEngineService {
     }
 
     // 3. Réflexion IA sous guardrails stricts (OpenRouter / Fallback déterministe)
-    const { output, isMock, mockReason } = await this.openRouterClient.evaluateDossier(dossier);
+    const { output, isMock, mockReason, modelUsed } = await this.openRouterClient.evaluateDossier(dossier);
 
     if (!output.hasOpportunity || output.opportunities.length === 0) {
       await logAudit({
@@ -78,7 +78,7 @@ export class OpportunityEngineService {
         executionReport: {
           timestamp,
           restaurantId,
-          modelUsed: isMock ? 'deterministic-local-fallback' : (process.env.OPENROUTER_MODEL || 'anthropic/claude-3.7-sonnet'),
+          modelUsed: isMock ? 'deterministic-local-fallback' : (modelUsed || process.env.OPENROUTER_MODEL || 'google/gemini-3.8-flash'),
           isMock,
           mockReason,
           signalsConsumed: {
@@ -108,14 +108,27 @@ export class OpportunityEngineService {
       const importance = opp.importance || 'HIGH';
       const impactScore = opp.impactScore || (importance === 'HIGH' ? 90 : importance === 'MEDIUM' ? 78 : 65);
 
+      const todayDateKey = new Date().toISOString().slice(0, 10);
+      const timeSlot = dossier.currentDay.timeOfDay || 'lunch';
+
+      // Trouver le signal source correspondant si disponible
+      let matchedSignalId: string | null = null;
+      if (opp.category === 'LOCAL_EVENT' && dossier.events.length > 0) {
+        matchedSignalId = dossier.events[0].id;
+      }
+
       const created = await (prisma as any).opportunity.create({
         data: {
           restaurantId,
+          signalId: matchedSignalId,
           title: opp.title,
           description: opp.description,
           urgency: opp.urgency,
           recommendedTone: dossier.restaurant.tone,
           relevanceScore: impactScore / 100,
+          forDate: todayDateKey,
+          timeSlot,
+          source: isMock ? 'deterministic' : 'ai',
           factsCited: {
             facts: formattedFacts,
             importance,
@@ -145,7 +158,7 @@ export class OpportunityEngineService {
     const report: ExecutionReport = {
       timestamp,
       restaurantId,
-      modelUsed: isMock ? 'deterministic-local-fallback' : (process.env.OPENROUTER_MODEL || 'anthropic/claude-3.7-sonnet'),
+      modelUsed: isMock ? 'deterministic-local-fallback' : (modelUsed || process.env.OPENROUTER_MODEL || 'google/gemini-3.8-flash'),
       isMock,
       mockReason,
       signalsConsumed: {

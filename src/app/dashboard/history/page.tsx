@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   History,
   CheckCircle2,
@@ -9,8 +10,10 @@ import {
   Share2,
   Globe,
   AlertCircle,
-  ExternalLink,
-  Filter
+  Sparkles,
+  ArrowRight,
+  Flame,
+  Zap,
 } from 'lucide-react';
 import styles from './history.module.css';
 
@@ -37,8 +40,9 @@ interface PublicationItem {
 }
 
 export default function HistoryPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'proposals' | 'publications'>('proposals');
-  const [proposalFilter, setProposalFilter] = useState<'all' | 'confirmed' | 'rejected'>('all');
+  const [proposalFilter, setProposalFilter] = useState<'all' | 'pending' | 'confirmed' | 'rejected'>('all');
   const [loading, setLoading] = useState(true);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [publications, setPublications] = useState<PublicationItem[]>([]);
@@ -60,6 +64,15 @@ export default function HistoryPage() {
     if (proposalFilter === 'all') return true;
     return p.status === proposalFilter;
   });
+
+  const handleCreateInStudio = (title: string, description: string) => {
+    const params = new URLSearchParams({
+      type: 'custom',
+      title,
+      desc: description,
+    });
+    router.push(`/dashboard/create?${params.toString()}`);
+  };
 
   const getPlatformIcon = (platform: string) => {
     switch (platform.toLowerCase()) {
@@ -86,32 +99,32 @@ export default function HistoryPage() {
     <div className={styles.container}>
       <header className={styles.header}>
         <div className={styles.headerTitleRow}>
-          <div className={styles.iconCircle}>
-            <History size={24} color="#ff6600" />
+          <div className={styles.iconCircle} aria-hidden="true">
+            <History size={22} color="#ff5a00" strokeWidth={2.2} />
           </div>
-          <div>
-            <h1 className={styles.title}>Historique d'Activité</h1>
+          <div className={styles.headerTitleGroup}>
+            <h1 className={styles.title}>Historique d&apos;Activité</h1>
             <p className={styles.subtitle}>
-              Consultez les propositions validées ou rejetées par le gérant et l'historique des publications sur vos réseaux.
+              Suivez les opportunités détectées et vos publications diffusées.
             </p>
           </div>
         </div>
 
-        {/* 2 Onglets Principaux */}
-        <nav className={styles.navTabs}>
+        {/* 2 Onglets Principaux (Segmented control tactile) */}
+        <nav className={styles.navTabs} aria-label="Catégories d'historique">
           <button
             type="button"
             onClick={() => setActiveTab('proposals')}
             className={`${styles.tabBtn} ${activeTab === 'proposals' ? styles.tabActive : ''}`}
           >
-            Propositions Gérant ({proposals.length})
+            Propositions ({proposals.length})
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('publications')}
             className={`${styles.tabBtn} ${activeTab === 'publications' ? styles.tabActive : ''}`}
           >
-            Publications Diffusées ({publications.length})
+            Diffusées ({publications.length})
           </button>
         </nav>
       </header>
@@ -119,16 +132,13 @@ export default function HistoryPage() {
       {loading ? (
         <div className={styles.loadingState}>
           <div className={styles.spinner} />
-          <p>Chargement de l'historique en direct...</p>
+          <p>Chargement de l&apos;historique en direct...</p>
         </div>
       ) : activeTab === 'proposals' ? (
         /* SOUS-SECTION 1 : HISTORIQUE DES PROPOSITIONS GÉRANT */
         <section className={styles.section}>
-          {/* Sous-filtre pour les propositions */}
+          {/* Ruban tactile de filtres horizontaux */}
           <div className={styles.subFilterBar}>
-            <span className={styles.filterLabel}>
-              <Filter size={14} /> Filtrer les décisions :
-            </span>
             <div className={styles.pillGroup}>
               <button
                 type="button"
@@ -139,35 +149,45 @@ export default function HistoryPage() {
               </button>
               <button
                 type="button"
+                onClick={() => setProposalFilter('pending')}
+                className={`${styles.pillBtn} ${proposalFilter === 'pending' ? styles.pillActive : ''}`}
+              >
+                <Clock size={13} />
+                <span>En attente ({proposals.filter((p) => p.status === 'pending').length})</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setProposalFilter('confirmed')}
                 className={`${styles.pillBtn} ${proposalFilter === 'confirmed' ? styles.pillActive : ''}`}
               >
-                <CheckCircle2 size={14} color="#15803d" />
-                Confirmées ({proposals.filter((p) => p.status === 'confirmed').length})
+                <CheckCircle2 size={13} color="#15803d" />
+                <span>Confirmées ({proposals.filter((p) => p.status === 'confirmed').length})</span>
               </button>
               <button
                 type="button"
                 onClick={() => setProposalFilter('rejected')}
                 className={`${styles.pillBtn} ${proposalFilter === 'rejected' ? styles.pillActive : ''}`}
               >
-                <XCircle size={14} color="#b91c1c" />
-                Infirmées / Rejetées ({proposals.filter((p) => p.status === 'rejected').length})
+                <XCircle size={13} color="#b91c1c" />
+                <span>Rejetées ({proposals.filter((p) => p.status === 'rejected').length})</span>
               </button>
             </div>
           </div>
 
           {filteredProposals.length === 0 ? (
             <div className={styles.emptyState}>
-              <Clock size={40} color="#94a3b8" />
+              <Clock size={36} color="#94a3b8" />
               <h3>Aucune proposition dans cette catégorie</h3>
-              <p>Les prochaines opportunités générées s'afficheront ici au fil des services.</p>
+              <p>Les prochaines opportunités générées s&apos;afficheront ici au fil de vos services.</p>
             </div>
           ) : (
             <div className={styles.list}>
               {filteredProposals.map((item) => (
                 <div key={item.id} className={styles.card}>
-                  <div className={styles.cardHeader}>
-                    <div>
+                  {/* Ligne 1 : Date & Statut alignés proprement */}
+                  <div className={styles.cardTopRow}>
+                    <div className={styles.cardDateWrap}>
+                      <Clock size={12} className={styles.cardClockIcon} />
                       <span className={styles.dateBadge}>
                         {new Date(item.createdAt).toLocaleDateString('fr-FR', {
                           day: 'numeric',
@@ -176,37 +196,76 @@ export default function HistoryPage() {
                           minute: '2-digit',
                         })}
                       </span>
-                      <h3 className={styles.cardTitle}>{item.title}</h3>
                     </div>
 
                     {item.status === 'confirmed' ? (
                       <span className={`${styles.statusBadge} ${styles.badgeConfirmed}`}>
-                        <CheckCircle2 size={16} /> Confirmé par le gérant
+                        <CheckCircle2 size={13} />
+                        <span>Confirmée</span>
                       </span>
                     ) : item.status === 'rejected' ? (
                       <span className={`${styles.statusBadge} ${styles.badgeRejected}`}>
-                        <XCircle size={16} /> Infirmé / Non retenu
+                        <XCircle size={13} />
+                        <span>Non retenue</span>
                       </span>
                     ) : (
                       <span className={`${styles.statusBadge} ${styles.badgePending}`}>
-                        <Clock size={16} /> En attente de décision
+                        <span className={styles.pendingDot} />
+                        <span>En attente</span>
                       </span>
                     )}
                   </div>
 
+                  {/* Ligne 2 : Titre pleine largeur (sans coupure de mot) */}
+                  <h3 className={styles.cardTitle}>{item.title}</h3>
+
+                  {/* Ligne 3 : Description aérée */}
                   <p className={styles.cardDesc}>{item.description}</p>
 
+                  {/* Motif de rejet éventuel */}
                   {item.rejectionReason && (
                     <div className={styles.rejectionBox}>
-                      <AlertCircle size={16} />
+                      <AlertCircle size={14} />
                       <span><strong>Motif :</strong> {item.rejectionReason}</span>
                     </div>
                   )}
 
+                  {/* Ligne 4 : Badges contextuels & Bouton Action direct vers le Studio */}
                   <div className={styles.cardFooter}>
-                    <span className={styles.cardMeta}>
-                      Urgence : <strong>{item.urgency}</strong> | Contenus générés : {item.postsCount}
-                    </span>
+                    <div className={styles.metaBadgesRow}>
+                      {item.urgency === 'high' ? (
+                        <span className={styles.urgentBadge}>
+                          <Flame size={12} />
+                          <span>Priorité Haute</span>
+                        </span>
+                      ) : (
+                        <span className={styles.normalBadge}>
+                          <Zap size={12} />
+                          <span>Opportunité</span>
+                        </span>
+                      )}
+
+                      {item.postsCount > 0 ? (
+                        <span className={styles.postsCountBadge}>
+                          <Sparkles size={11} />
+                          <span>{item.postsCount} post{item.postsCount > 1 ? 's' : ''} généré{item.postsCount > 1 ? 's' : ''}</span>
+                        </span>
+                      ) : (
+                        <span className={styles.noPostsBadge}>
+                          <span>0 contenu</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleCreateInStudio(item.title, item.description)}
+                      className={styles.createInStudioBtn}
+                      title="Générer directement l'affiche et la légende dans le Studio"
+                    >
+                      <span>Créer dans le Studio</span>
+                      <ArrowRight size={14} />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -218,24 +277,31 @@ export default function HistoryPage() {
         <section className={styles.section}>
           {publications.length === 0 ? (
             <div className={styles.emptyState}>
-              <Share2 size={40} color="#94a3b8" />
-              <h3>Aucune publication enregistrée pour l'instant</h3>
-              <p>Dès qu'un post est validé et diffusé sur vos réseaux, il sera archivé avec son canal ici.</p>
+              <Share2 size={36} color="#94a3b8" />
+              <h3>Aucune publication enregistrée pour l&apos;instant</h3>
+              <p>Dès qu&apos;un post est validé et diffusé sur vos réseaux, il sera archivé avec son canal ici.</p>
+              <button
+                type="button"
+                onClick={() => router.push('/dashboard/create')}
+                className={styles.emptyStateActionBtn}
+              >
+                <Sparkles size={15} />
+                <span>Créer un premier post dans le Studio</span>
+              </button>
             </div>
           ) : (
             <div className={styles.list}>
               {publications.map((pub) => (
                 <div key={pub.id} className={styles.card}>
-                  <div className={styles.cardHeader}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div className={styles.channelBadge}>
-                        {getPlatformIcon(pub.platform)}
-                        <span style={{ textTransform: 'capitalize', fontWeight: 700 }}>
-                          {pub.platform}
-                        </span>
-                      </div>
+                  <div className={styles.cardTopRow}>
+                    <div className={styles.channelBadge}>
+                      {getPlatformIcon(pub.platform)}
+                      <span className={styles.pubPlatformName}>
+                        {pub.platform === 'google_business' ? 'Google' : pub.platform}
+                      </span>
+                      <span className={styles.cardDateSeparator}>•</span>
                       <span className={styles.dateBadge}>
-                        Diffusé le {new Date(pub.publishedAt).toLocaleDateString('fr-FR', {
+                        {new Date(pub.publishedAt).toLocaleDateString('fr-FR', {
                           day: 'numeric',
                           month: 'short',
                           hour: '2-digit',
@@ -254,17 +320,18 @@ export default function HistoryPage() {
                       }`}
                     >
                       {pub.status === 'published'
-                        ? 'Publié en ligne'
+                        ? 'En ligne'
                         : pub.status === 'failed'
-                        ? 'Échec de publication'
-                        : 'En cours d\'envoi'}
+                        ? 'Échec'
+                        : 'En cours'}
                     </span>
                   </div>
 
                   <div className={styles.pubBody}>
                     {pub.imageUrl && (
                       <div className={styles.pubThumb}>
-                        <img src={pub.imageUrl} alt="Visuel publié" />
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={pub.imageUrl} alt={pub.postTitle || 'Visuel publié'} />
                       </div>
                     )}
                     <div className={styles.pubContent}>
@@ -275,10 +342,21 @@ export default function HistoryPage() {
 
                   {pub.lastError && (
                     <div className={styles.rejectionBox}>
-                      <AlertCircle size={16} />
+                      <AlertCircle size={14} />
                       <span><strong>Erreur réseau :</strong> {pub.lastError}</span>
                     </div>
                   )}
+
+                  <div className={styles.cardFooter}>
+                    <button
+                      type="button"
+                      onClick={() => handleCreateInStudio(pub.postTitle, pub.postText)}
+                      className={styles.createInStudioBtn}
+                    >
+                      <span>Décliner une nouvelle version</span>
+                      <ArrowRight size={14} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

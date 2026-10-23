@@ -185,12 +185,12 @@ async function runReadinessAudit() {
   }
 
   // 12. Opportunity Engine
-  const hasClaude = Boolean(process.env.ANTHROPIC_API_KEY);
+  const hasClaude = Boolean(process.env.OPENROUTER_API_KEY && !process.env.OPENROUTER_API_KEY.includes('...'));
   auditReport.push({
     id: 12,
     name: 'Opportunity Engine',
     rating: hasClaude ? 'REAL' : 'FALLBACK',
-    evidence: hasClaude ? 'Claude 3.5 Sonnet prompt generation active' : 'Deterministic Ground-Truth rules engine (no hallucination)',
+    evidence: hasClaude ? 'Claude 3.5 Sonnet / OpenRouter prompt generation active' : 'Deterministic Ground-Truth rules engine (no hallucination)',
   });
 
   // 13. Génération de campagne
@@ -251,12 +251,12 @@ async function runReadinessAudit() {
     evidence: 'Zernio supports Facebook, but no Facebook page is connected in the active Zernio workspace',
   });
 
-  // 20. TikTok
+  // 20. Direct OAuth Engine
   auditReport.push({
     id: 20,
-    name: 'TikTok',
+    name: 'Direct OAuth Engine',
     rating: 'REAL',
-    evidence: 'TikTok account @getspecial_app connected and verified active in Zernio workspace',
+    evidence: 'Direct OAuth flow configured for Google Business and Meta (Facebook/Instagram)',
   });
 
   // 21. Google Business

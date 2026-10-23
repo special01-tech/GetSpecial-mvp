@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
 import { success, error } from '@/server/lib/api-response';
-import Anthropic from '@anthropic-ai/sdk';
 import { weatherCollector } from '@/server/modules/signal-collector/weather.collector';
 
 export async function POST(req: NextRequest) {
@@ -59,10 +58,13 @@ export async function POST(req: NextRequest) {
     let replyText = '';
     let campaignSuggestion: any = null;
 
-    // 3. Si clé Anthropic disponible, appeler Claude avec le Ground Truth restaurant
-    if (process.env.ANTHROPIC_API_KEY) {
+    // 3. Appel OpenRouter (Claude 3.5 Sonnet) avec le Ground Truth restaurant
+    const openrouterKey = (process.env.OPENROUTER_API_KEY || '').replace(/^["']|["']$/g, '').trim();
+    if (openrouterKey && !openrouterKey.includes('...')) {
       try {
-        const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+        const baseUrl = process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1';
+        const model = process.env.OPENROUTER_TEXT_MODEL || 'anthropic/claude-3.5-sonnet';
+
         const systemPrompt = `You are GetSpecial, an expert smart marketing AI assistant for US restaurants.
 Restaurant context:
 - Name: ${restName}
@@ -78,22 +80,41 @@ Guidelines:
 - Mention specific times in 12-hour format (e.g. 5:30 PM).
 - Focus on practical revenue generation: Happy Hour, dinner rush, patio seating, local sports, or delivery.`;
 
-        const response = await anthropic.messages.create({
-          model: 'claude-3-5-sonnet-20241022',
-          max_tokens: 500,
-          system: systemPrompt,
-          messages: [
-            ...history.slice(-4).map((h: any) => ({
-              role: h.sender === 'user' ? 'user' : 'assistant',
-              content: h.text,
-            })),
-            { role: 'user', content: message },
-          ],
+        const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+          { role: 'system', content: systemPrompt },
+          ...history.slice(-4).map((h: any) => ({
+            role: (h.sender === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+            content: h.text,
+          })),
+          { role: 'user', content: message },
+        ];
+
+        const response = await fetch(`${baseUrl}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${openrouterKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://getspecial.app',
+            'X-Title': 'GetSpecial Assistant',
+          },
+          signal: AbortSignal.timeout(30000),
+          body: JSON.stringify({
+            model,
+            max_tokens: 600,
+            temperature: 0.5,
+            messages,
+          }),
         });
 
-        replyText = response.content[0]?.type === 'text' ? response.content[0].text : '';
+        if (response.ok) {
+          const json = await response.json();
+          replyText = json.choices?.[0]?.message?.content || '';
+        } else {
+          const errText = await response.text().catch(() => '');
+          console.warn(`[CHAT_OPENROUTER_ERROR] HTTP ${response.status}: ${errText.slice(0, 200)}`);
+        }
       } catch (llmErr) {
-        console.warn('[CHAT_LLM_ERROR] Claude API call failed, falling back to smart synthesizer:', llmErr);
+        console.warn('[CHAT_LLM_ERROR] OpenRouter API call failed, falling back to smart synthesizer:', llmErr);
       }
     }
 

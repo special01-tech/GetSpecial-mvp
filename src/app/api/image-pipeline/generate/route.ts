@@ -1,7 +1,10 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
 import { success, error } from '@/server/lib/api-response';
 import { z } from 'zod';
+import { checkRateLimit } from '@/server/lib/rate-limit';
 import { RESTAURANTS, GoldenRestaurant } from '@/server/modules/image-pipeline/golden/restaurants';
 import {
   ImageJob,
@@ -85,6 +88,10 @@ function resolveBrandDNA(restaurant: any): BrandDNA {
 
 export async function POST(req: NextRequest) {
   try {
+    const rate = checkRateLimit(req, 'image-pipeline:generate', 10, 60 * 1000);
+    if (!rate.allowed) {
+      return error(`Limite atteinte. Réessayez dans ${rate.retryAfterSec}s.`, 429);
+    }
     const body = await req.json();
     const validated = GeneratePosterSchema.safeParse(body);
 
@@ -173,15 +180,24 @@ export async function POST(req: NextRequest) {
           const chosen = selectInspirations(job, inspirations);
           const top = chosen.positives[0];
 
-          let posterUrl = '/ai-pipeline-assets/inspirations/hh-01.jpg';
+          let relativePath = 'happy_hour/hh-01.jpg';
           if (top) {
-            // Mapping vers le fichier physique
             const filename = (top as any).filename || (top.id.startsWith('hh') ? `happy_hour/${top.id}.jpg` : `${top.id}.jpg`);
-            posterUrl = `/ai-pipeline-assets/inspirations/${filename}`;
+            relativePath = filename;
+          }
+
+          const localFilePath = join(process.cwd(), 'public', 'ai-pipeline-assets', 'inspirations', relativePath);
+          let buffer = Buffer.from([]);
+          if (existsSync(localFilePath)) {
+            try {
+              buffer = readFileSync(localFilePath);
+            } catch (readErr) {
+              console.warn('[IMAGE_PIPELINE_FALLBACK_READ_ERROR]', readErr);
+            }
           }
 
           return {
-            data: Buffer.from([]),
+            data: buffer,
             mime: 'image/jpeg',
             model: 'getspecial-da-engine',
             costUsd: 0,

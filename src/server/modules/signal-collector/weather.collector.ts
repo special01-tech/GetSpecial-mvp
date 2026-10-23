@@ -91,12 +91,23 @@ export class WeatherCollector {
       }
 
       signals.push({
+        externalId: 'owm_' + (item.dt || Date.now()),
         type: 'weather',
         source: 'openweathermap',
         intensity,
         timestamp: item.dt_txt || new Date().toISOString(),
         title,
         summary,
+        data: {
+          title,
+          summary,
+          temperature: temp,
+          tempUnit: config.tempUnit,
+          isRain,
+          isSunny: isSun,
+          condition: weatherDesc,
+          raw: item,
+        },
         rawPayload: { ...item, country: config.code, unit: config.tempUnit },
       });
     }

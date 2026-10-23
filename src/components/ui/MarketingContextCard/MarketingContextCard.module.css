@@ -76,25 +76,51 @@
 }
 
 .navBtn {
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.45);
   background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .navBtn:hover {
   background: rgba(255, 255, 255, 0.95);
   color: #111827;
   border-color: #FFFFFF;
-  transform: scale(1.08);
+  transform: scale(1.06);
+}
+
+.settingsBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.settingsBtn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  color: #FF5C00;
+  border-color: #FFFFFF;
+  transform: scale(1.06);
 }
 
 /* Banner Title on bottom */
@@ -205,6 +231,7 @@
 }
 
 .dot {
+  position: relative;
   width: 7px;
   height: 7px;
   border-radius: 999px;
@@ -213,6 +240,17 @@
   cursor: pointer;
   padding: 0;
   transition: all 0.25s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dot::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
 }
 
 .dot:hover {

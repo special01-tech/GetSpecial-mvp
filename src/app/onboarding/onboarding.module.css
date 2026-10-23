@@ -1271,6 +1271,27 @@
   gap: 4px;
 }
 
+.selectedPlaceFeatures {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.detectedFeatureTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #065f46;
+  background: #d1fae5;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  border: 1px solid #a7f3d0;
+}
+
 .changePlaceBtn {
   display: inline-flex;
   align-items: center;
@@ -1292,6 +1313,146 @@
   background: var(--gs-orange-soft);
   border-color: var(--gs-orange-dark);
   color: var(--gs-orange-dark);
+}
+
+.candidateSelectBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--gs-orange);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.candidateSelectBtn:hover:not(:disabled) {
+  background: var(--gs-orange-dark);
+  transform: translateY(-1px);
+}
+
+.candidateSelectBtn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.scrapingIndicatorBanner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255, 90, 0, 0.08);
+  border: 1.5px solid var(--gs-orange-ring);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gs-orange-dark);
+  animation: fadeIn 0.2s ease;
+  margin-top: 8px;
+}
+
+.scrapedNoticeBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  color: #166534;
+  animation: fadeIn 0.2s ease;
+  margin-top: 6px;
+}
+
+.scrapedNoticeBox strong {
+  font-weight: 700;
+  color: #14532d;
+}
+
+.editableAddressCard {
+  background: var(--gs-surface-2);
+  border: 1.5px solid var(--gs-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: fadeIn 0.2s ease;
+  margin-top: 6px;
+}
+
+.editableAddressHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.editableAddressTitle {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--gs-cream);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.editableAddressBadge {
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--gs-warm-grey);
+  background: var(--gs-surface-3);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.addressSuggestionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--gs-surface-3);
+  border: 1px solid var(--gs-border-strong);
+  border-radius: 8px;
+  padding: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+  animation: fadeIn 0.15s ease;
+}
+
+.addressSuggestionItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.addressSuggestionItem:hover {
+  background: var(--gs-orange-soft);
+}
+
+.addressSuggestionIcon {
+  color: var(--gs-orange-dark);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.addressSuggestionTitle {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--gs-cream);
+}
+
+.addressSuggestionSub {
+  font-size: 0.7rem;
+  color: var(--gs-warm-grey);
 }
 
 .manualAddressToggle {

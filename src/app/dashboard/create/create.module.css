@@ -75,7 +75,97 @@
   animation: slideDown 0.2s ease-out;
 }
 
-/* Layout 2 colonnes équilibrées — Les deux cartes tiennent sur l'écran */
+/* ========================================================= */
+/* STEPPER MOBILE (Wizard 3 étapes : Contenu > Style > Rendu)*/
+/* ========================================================= */
+.mobileStepper {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 8px 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.stepItem {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  font-family: inherit;
+  color: #6B7280;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+}
+
+.stepItem:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.stepCircle {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.74rem;
+  font-weight: 700;
+  background-color: #F3F4F6;
+  color: #6B7280;
+  border: 1.5px solid #E5E7EB;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.stepLabel {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #6B7280;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+}
+
+.stepItemActive .stepCircle {
+  background-color: #FF5A00;
+  color: #FFFFFF;
+  border-color: #FF5A00;
+  box-shadow: 0 2px 6px rgba(255, 90, 0, 0.3);
+}
+
+.stepItemActive .stepLabel {
+  color: #111827;
+  font-weight: 700;
+}
+
+.stepItemDone .stepCircle {
+  background-color: #10B981;
+  color: #FFFFFF;
+  border-color: #10B981;
+}
+
+.stepConnector {
+  flex: 1;
+  height: 2px;
+  background-color: #E5E7EB;
+  margin: 0 6px;
+  border-radius: 2px;
+  transition: background-color 0.2s ease;
+}
+
+.stepConnectorActive {
+  background-color: #FF5A00;
+}
+
+/* Grille principale */
 .studioGrid {
   display: grid;
   grid-template-columns: 1fr;
@@ -83,20 +173,78 @@
   align-items: start;
 }
 
+@keyframes fadeInStep {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========================================================= */
+/* RÈGLES DESKTOP (>= 900px) : Vue Studio 2 Colonnes Stable */
+/* ========================================================= */
 @media (min-width: 900px) {
   .studioGrid {
     grid-template-columns: 1fr 1fr;
     align-items: stretch;
   }
+
+  .mobileStepper {
+    display: none !important;
+  }
+
+  .mobileStepBadge {
+    display: none !important;
+  }
+
+  .mobileStepNav,
+  .mobileStepNavDouble {
+    display: none !important;
+  }
+
+  .previewTopBarMobile {
+    display: none !important;
+  }
+
+  .mobileStartBtn {
+    display: none !important;
+  }
+
+  .stepSection1,
+  .stepSection2 {
+    display: flex !important;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  .card {
+    display: flex !important;
+  }
+
+  .previewSection {
+    display: flex !important;
+  }
+
+  .desktopCardFooter {
+    display: flex !important;
+  }
 }
 
-@media (max-width: 768px) {
+/* ========================================================= */
+/* RÈGLES SMARTPHONE (< 900px) : Wizard par étapes intuitif */
+/* ========================================================= */
+@media (max-width: 899px) {
   .screenWrapper {
     padding: 0 4px;
   }
 
   .container {
-    gap: 0.75rem;
+    gap: 0.65rem;
   }
 
   .headerTop {
@@ -111,6 +259,64 @@
 
   .pageTitle {
     font-size: 1.15rem;
+  }
+
+  .mobileStepper {
+    display: flex;
+  }
+
+  .mobileStepBadge {
+    display: inline-flex;
+  }
+
+  .desktopCardFooter {
+    display: none !important;
+  }
+
+  .stepSection1,
+  .stepSection2,
+  .previewSection {
+    animation: fadeInStep 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* ÉTAPE 1 : Contenu actif */
+  .studioGrid[data-mobile-step="1"] .stepSection1 {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  .studioGrid[data-mobile-step="1"] .stepSection2 {
+    display: none !important;
+  }
+
+  .studioGrid[data-mobile-step="1"] .previewSection {
+    display: none !important;
+  }
+
+  /* ÉTAPE 2 : Style & Canal actif */
+  .studioGrid[data-mobile-step="2"] .stepSection1 {
+    display: none !important;
+  }
+
+  .studioGrid[data-mobile-step="2"] .stepSection2 {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  .studioGrid[data-mobile-step="2"] .previewSection {
+    display: none !important;
+  }
+
+  /* ÉTAPE 3 : Résultat & Action actif */
+  .studioGrid[data-mobile-step="3"] .card {
+    display: none !important;
+  }
+
+  .studioGrid[data-mobile-step="3"] .previewSection {
+    display: flex !important;
+    flex-direction: column;
   }
 
   .typeSelector {
@@ -128,8 +334,8 @@
   }
 
   .styleCard {
-    padding: 7px 8px;
-    font-size: 0.75rem;
+    padding: 8px 10px;
+    font-size: 0.76rem;
   }
 
   .finalActionsBar {
@@ -141,7 +347,8 @@
   .scheduleBtn {
     width: 100%;
     justify-content: center;
-    padding: 11px 14px;
+    padding: 12px 14px;
+    font-size: 0.88rem;
   }
 }
 
@@ -165,6 +372,17 @@
   padding: 0.65rem 1.15rem;
   border-bottom: 1px solid #F3F4F6;
   flex-shrink: 0;
+}
+
+.mobileStepBadge {
+  display: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #FF5A00;
+  background-color: #FFF4ED;
+  border: 1px solid #FFE4D6;
+  padding: 3px 9px;
+  border-radius: 12px;
 }
 
 .cardTitle {
@@ -236,7 +454,9 @@
   color: #4B5563;
 }
 
-.select, .input, .textarea {
+.select,
+.input,
+.textarea {
   width: 100%;
   padding: 6px 10px;
   border-radius: 8px;
@@ -249,10 +469,53 @@
   box-sizing: border-box;
 }
 
-.select:focus, .input:focus, .textarea:focus {
+.select:focus,
+.input:focus,
+.textarea:focus {
   outline: none;
   border-color: #FF5A00;
   box-shadow: 0 0 0 3px rgba(255, 90, 0, 0.12);
+}
+
+/* Suggestions de plats en ruban tactile fluide */
+.dishSuggestionsScroll {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 0 8px 0;
+  margin-bottom: 6px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.dishSuggestionsScroll::-webkit-scrollbar {
+  display: none;
+}
+
+.dishChip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 16px;
+  background-color: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  color: #374151;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.dishChip:hover,
+.dishChip:active {
+  background-color: #FFF4ED;
+  border-color: #FF5A00;
+  color: #FF5A00;
+  transform: translateY(-1px);
 }
 
 .textarea {
@@ -318,8 +581,94 @@
   color: #FF5A00;
 }
 
-/* Pied de carte Formulaire : Bouton Générer fixe */
-.cardFooter {
+/* Boutons de navigation par étape Mobile */
+.mobileStepNav {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #F3F4F6;
+  display: flex;
+}
+
+.mobileNextBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background-color: #FF5A00;
+  color: #FFFFFF;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  font-family: inherit;
+  box-shadow: 0 2px 8px rgba(255, 90, 0, 0.25);
+}
+
+.mobileNextBtn:active {
+  transform: scale(0.98);
+}
+
+.mobileStepNavDouble {
+  display: flex;
+  gap: 10px;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #F3F4F6;
+}
+
+.mobileBackBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 14px;
+  background-color: #F3F4F6;
+  color: #374151;
+  font-size: 0.86rem;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid #E5E7EB;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.mobileBackBtn:active {
+  background-color: #E5E7EB;
+}
+
+.mobileGenerateBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background-color: #FF5A00;
+  color: #FFFFFF;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  font-family: inherit;
+  box-shadow: 0 2px 8px rgba(255, 90, 0, 0.25);
+}
+
+.mobileGenerateBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Pied de carte Formulaire : Bouton Générer fixe Desktop */
+.cardFooter,
+.desktopCardFooter {
   padding: 0.65rem 1.15rem;
   border-top: 1px solid #F3F4F6;
   background-color: #FFFFFF;
@@ -361,6 +710,153 @@
   flex-direction: column;
 }
 
+/* Carte de chargement IA immersive */
+.generatingStateCard {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 14px;
+  padding: 3rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 440px;
+  gap: 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  animation: fadeInStep 0.25s ease-out;
+}
+
+.generatingIconPulse {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #FF5A00 0%, #FF8A00 100%);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(255, 90, 0, 0.35);
+  animation: pulseGlow 1.8s infinite ease-in-out;
+}
+
+@keyframes pulseGlow {
+  0% {
+    transform: scale(0.96);
+    box-shadow: 0 4px 12px rgba(255, 90, 0, 0.25);
+  }
+
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 6px 22px rgba(255, 90, 0, 0.45);
+  }
+
+  100% {
+    transform: scale(0.96);
+    box-shadow: 0 4px 12px rgba(255, 90, 0, 0.25);
+  }
+}
+
+.generatingTitle {
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.generatingSubtitle {
+  font-size: 0.86rem;
+  color: #6B7280;
+  max-width: 360px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.generatingProgressBar {
+  width: 100%;
+  max-width: 260px;
+  height: 6px;
+  background-color: #F3F4F6;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.generatingProgressFill {
+  height: 100%;
+  width: 45%;
+  background: linear-gradient(90deg, #FF5A00, #FFA048);
+  border-radius: 6px;
+  animation: progressMoving 1.5s infinite ease-in-out;
+}
+
+@keyframes progressMoving {
+  0% {
+    transform: translateX(-100%);
+    width: 30%;
+  }
+
+  50% {
+    width: 60%;
+  }
+
+  100% {
+    transform: translateX(300%);
+    width: 30%;
+  }
+}
+
+.generatingHint {
+  font-size: 0.74rem;
+  color: #9CA3AF;
+  font-weight: 600;
+}
+
+/* Barre supérieure mobile au résultat */
+.previewTopBarMobile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1.15rem;
+  background-color: #F9FAFB;
+  border-bottom: 1px solid #F3F4F6;
+  gap: 8px;
+}
+
+.modifyPromptBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  background-color: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  border-radius: 7px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.modifyPromptBtn:hover {
+  border-color: #FF5A00;
+  color: #FF5A00;
+}
+
+.previewSuccessBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #059669;
+  background-color: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+
 .mockupCard {
   background-color: #FFFFFF;
   border: 1px solid #E5E7EB;
@@ -384,6 +880,27 @@
   text-align: center;
   min-height: 480px;
   gap: 14px;
+}
+
+.mobileStartBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px;
+  background-color: #FF5A00;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+  font-family: inherit;
+  transition: background 0.15s ease;
+}
+
+.mobileStartBtn:hover {
+  background-color: #E04F00;
 }
 
 .emptyStudioIconCircle {
@@ -1029,16 +1546,104 @@
 }
 
 @keyframes spinLoader {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* État : Image indisponible */
+.imageUnavailableFrame {
+  width: 100%;
+  height: 290px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+  flex-shrink: 0;
+}
+
+.imageUnavailableContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  max-width: 290px;
+}
+
+.imageUnavailableIconWrapper {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #94A3B8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.imageUnavailableText {
+  color: #F8FAFC;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.retryImageBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #FF5A00;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(255, 90, 0, 0.25);
+}
+
+.retryImageBtn:hover:not(:disabled) {
+  background-color: #E04F00;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 90, 0, 0.35);
+}
+
+.retryImageBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }

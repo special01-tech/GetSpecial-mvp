@@ -126,6 +126,8 @@ class LocalFallbackStore {
       create: async ({ data, include }: any) => {
         const id = data.id || `rest_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
         const profileData = data.profile?.create;
+        const offersData = data.offers?.create;
+        const socialData = data.socialAccounts?.create;
         const rest = {
           id,
           createdAt: new Date(),
@@ -136,22 +138,64 @@ class LocalFallbackStore {
           ...data,
         };
         delete rest.profile;
+        delete rest.offers;
+        delete rest.socialAccounts;
         this.data.restaurants.push(rest);
 
         if (profileData) {
           const prof = {
             id: `prof_${id}`,
             restaurantId: id,
-            tone: profileData.tone || 'friendly',
+            tone: profileData.tone || 'chaleureux',
             hasTerrace: !!profileData.hasTerrace,
+            hasDelivery: !!profileData.hasDelivery,
+            capacityCovers: profileData.capacityCovers || null,
+            averageTicket: profileData.averageTicket || null,
+            currency: profileData.currency || 'EUR',
+            baselineCovers: profileData.baselineCovers || 15,
+            foodCostPct: profileData.foodCostPct || null,
+            drinkCostPct: profileData.drinkCostPct || null,
+            maxDiscountPct: profileData.maxDiscountPct || null,
             offPeakDays: profileData.offPeakDays || [],
             constraints: profileData.constraints || [],
+            targetAudience: profileData.targetAudience || [],
+            marketingGoal: profileData.marketingGoal || null,
+            logoUrl: profileData.logoUrl || null,
+            photos: profileData.photos || [],
+            brandColors: profileData.brandColors || [],
+            menuUrl: profileData.menuUrl || null,
+            maxPostsPerDay: profileData.maxPostsPerDay || 1,
+            autoApprove: !!profileData.autoApprove,
             customRules: profileData.customRules || {},
             status: 'active',
             createdAt: new Date(),
             updatedAt: new Date(),
           };
           this.data.restaurantProfiles.push(prof);
+        }
+
+        if (offersData) {
+          this.data.offers.push({
+            id: `offer_${id}`,
+            restaurantId: id,
+            status: 'active',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            ...offersData,
+          });
+        }
+
+        if (Array.isArray(socialData)) {
+          for (const s of socialData) {
+            this.data.socialAccounts.push({
+              id: `sa_${id}_${s.platform}`,
+              restaurantId: id,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              status: 'connected',
+              ...s,
+            });
+          }
         }
 
         this.persist();
@@ -187,6 +231,19 @@ class LocalFallbackStore {
         this.data.restaurantProfiles.push(item);
         this.persist();
         return item;
+      },
+      update: async ({ where, data }: any) => {
+        const idx = this.data.restaurantProfiles.findIndex(
+          (p) => p.restaurantId === where.restaurantId || p.id === where.id
+        );
+        if (idx === -1) throw new Error('Profil restaurant introuvable');
+        this.data.restaurantProfiles[idx] = {
+          ...this.data.restaurantProfiles[idx],
+          ...data,
+          updatedAt: new Date(),
+        };
+        this.persist();
+        return this.data.restaurantProfiles[idx];
       },
       upsert: async ({ where, update, create }: any) => {
         const idx = this.data.restaurantProfiles.findIndex((p) => p.restaurantId === where.restaurantId);
@@ -289,6 +346,8 @@ class LocalFallbackStore {
         if (where?.restaurantId) list = list.filter((s) => s.restaurantId === where.restaurantId);
         if (where?.type) list = list.filter((s) => s.type === where.type);
         if (where?.source) list = list.filter((s) => s.source === where.source);
+        if (where?.externalId) list = list.filter((s) => s.externalId === where.externalId);
+        if (where?.status) list = list.filter((s) => s.status === where.status);
         if (where?.detectedAt?.gte) {
           const gte = new Date(where.detectedAt.gte).getTime();
           list = list.filter((s) => new Date(s.detectedAt).getTime() >= gte);
@@ -299,6 +358,8 @@ class LocalFallbackStore {
         let list = [...this.data.signals];
         if (where?.restaurantId) list = list.filter((s) => s.restaurantId === where.restaurantId);
         if (where?.type) list = list.filter((s) => s.type === where.type);
+        if (where?.source) list = list.filter((s) => s.source === where.source);
+        if (where?.status) list = list.filter((s) => s.status === where.status);
         if (where?.detectedAt?.gte) {
           const gte = new Date(where.detectedAt.gte).getTime();
           list = list.filter((s) => new Date(s.detectedAt).getTime() >= gte);
@@ -310,6 +371,72 @@ class LocalFallbackStore {
           list = list.slice(0, take);
         }
         return list;
+      },
+      update: async ({ where, data }: any) => {
+        const idx = this.data.signals.findIndex((s) => s.id === where.id);
+        if (idx === -1) {
+          const item = {
+            id: where.id || `sig_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+            detectedAt: new Date(),
+            createdAt: new Date(),
+            ...data,
+          };
+          this.data.signals.push(item);
+          this.persist();
+          return item;
+        }
+        this.data.signals[idx] = {
+          ...this.data.signals[idx],
+          ...data,
+          updatedAt: new Date(),
+        };
+        this.persist();
+        return this.data.signals[idx];
+      },
+      updateMany: async ({ where, data }: any) => {
+        let count = 0;
+        this.data.signals = this.data.signals.map((s) => {
+          let match = true;
+          if (where?.restaurantId && s.restaurantId !== where.restaurantId) match = false;
+          if (where?.status && s.status !== where.status) match = false;
+          if (where?.endsAt?.lt && (!s.endsAt || new Date(s.endsAt).getTime() >= new Date(where.endsAt.lt).getTime())) match = false;
+          if (match) {
+            count++;
+            return { ...s, ...data, updatedAt: new Date() };
+          }
+          return s;
+        });
+        this.persist();
+        return { count };
+      },
+      upsert: async ({ where, create, update }: any) => {
+        const idx = this.data.signals.findIndex(
+          (s) => s.id === where.id || (where.restaurantId && s.restaurantId === where.restaurantId && where.externalId && s.externalId === where.externalId)
+        );
+        if (idx !== -1) {
+          this.data.signals[idx] = { ...this.data.signals[idx], ...update, updatedAt: new Date() };
+          this.persist();
+          return this.data.signals[idx];
+        } else {
+          const item = {
+            id: `sig_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+            detectedAt: new Date(),
+            createdAt: new Date(),
+            ...create,
+          };
+          this.data.signals.push(item);
+          this.persist();
+          return item;
+        }
+      },
+      deleteMany: async ({ where }: any = {}) => {
+        const initialLen = this.data.signals.length;
+        this.data.signals = this.data.signals.filter((s) => {
+          if (where?.restaurantId && s.restaurantId === where.restaurantId) return false;
+          return true;
+        });
+        this.persist();
+        return { count: initialLen - this.data.signals.length };
       },
     };
   }
@@ -360,8 +487,28 @@ class LocalFallbackStore {
 
   get post() {
     return {
-      findUnique: async ({ where }: any) => {
+      findUnique: async ({ where, include }: any) => {
         const post = this.data.posts.find((p) => p.id === where.id);
+        if (!post) return null;
+        const rest = this.data.restaurants.find((r) => r.id === post.restaurantId);
+        const opp = post.opportunityId ? this.data.opportunities.find((o) => o.id === post.opportunityId) : null;
+        return {
+          ...post,
+          opportunity: include?.opportunity ? (opp || null) : undefined,
+          restaurant: rest ? this.hydrateRestaurant(rest, { socialAccounts: true, profile: true }) : null,
+        };
+      },
+      findFirst: async ({ where, orderBy }: any = {}) => {
+        let list = [...this.data.posts];
+        if (where?.id) list = list.filter((p) => p.id === where.id);
+        if (where?.restaurantId) list = list.filter((p) => p.restaurantId === where.restaurantId);
+        if (where?.opportunityId) list = list.filter((p) => p.opportunityId === where.opportunityId);
+        if (where?.status) list = list.filter((p) => p.status === where.status);
+        if (where?.origin) list = list.filter((p) => p.origin === where.origin);
+        if (orderBy?.createdAt === 'desc') {
+          list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        }
+        const post = list[0] || null;
         if (!post) return null;
         const rest = this.data.restaurants.find((r) => r.id === post.restaurantId);
         return {
@@ -369,15 +516,29 @@ class LocalFallbackStore {
           restaurant: rest ? this.hydrateRestaurant(rest, { socialAccounts: true, profile: true }) : null,
         };
       },
-      findMany: async ({ where }: any = {}) => {
+      findMany: async ({ where, orderBy, take }: any = {}) => {
         let list = [...this.data.posts];
         if (where?.restaurantId) list = list.filter((p) => p.restaurantId === where.restaurantId);
+        if (where?.status) list = list.filter((p) => p.status === where.status);
+        if (where?.origin) list = list.filter((p) => p.origin === where.origin);
+        if (orderBy?.createdAt === 'desc') {
+          list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        }
+        if (take) {
+          list = list.slice(0, take);
+        }
         return list;
       },
       create: async ({ data }: any) => {
         const item = {
-          id: `post_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+          id: data.id || `post_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
           status: 'pending_approval',
+          origin: 'generated',
+          aspectRatio: '4:5',
+          hashtags: [],
+          mediaUrls: [],
+          mediaType: 'image',
+          referenceImages: [],
           createdAt: new Date(),
           updatedAt: new Date(),
           ...data,
@@ -402,6 +563,16 @@ class LocalFallbackStore {
 
   get publication() {
     return {
+      count: async ({ where }: any = {}) => {
+        let list = [...this.data.publications];
+        if (where?.restaurantId) list = list.filter((p) => p.restaurantId === where.restaurantId);
+        if (where?.status) list = list.filter((p) => p.status === where.status);
+        if (where?.publishedAt?.gte) {
+          const gte = new Date(where.publishedAt.gte).getTime();
+          list = list.filter((p) => p.publishedAt && new Date(p.publishedAt).getTime() >= gte);
+        }
+        return list.length;
+      },
       findMany: async ({ where }: any = {}) => {
         let list = [...this.data.publications];
         if (where?.restaurantId) list = list.filter((p) => p.restaurantId === where.restaurantId);
@@ -442,16 +613,83 @@ class LocalFallbackStore {
         const item = {
           id: `fb_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
           createdAt: new Date(),
+          status: 'active',
           ...data,
         };
         this.data.feedbackEvents.push(item);
         this.persist();
         return item;
       },
-      findMany: async ({ where }: any = {}) => {
+      findFirst: async ({ where }: any = {}) => {
         let list = [...this.data.feedbackEvents];
         if (where?.restaurantId) list = list.filter((f) => f.restaurantId === where.restaurantId);
+        if (where?.type) {
+          if (typeof where.type === 'object' && where.type.in) {
+            list = list.filter((f) => where.type.in.includes(f.type));
+          } else {
+            list = list.filter((f) => f.type === where.type);
+          }
+        }
+        if (where?.reason) list = list.filter((f) => f.reason === where.reason);
+        if (where?.status) list = list.filter((f) => f.status === where.status);
+        if (where?.createdAt?.gte) {
+          list = list.filter((f) => new Date(f.createdAt) >= new Date(where.createdAt.gte));
+        }
+        return list[0] || null;
+      },
+      findMany: async ({ where, orderBy, take }: any = {}) => {
+        let list = [...this.data.feedbackEvents];
+        if (where?.restaurantId) list = list.filter((f) => f.restaurantId === where.restaurantId);
+        if (where?.type) {
+          if (typeof where.type === 'object' && where.type.in) {
+            list = list.filter((f) => where.type.in.includes(f.type));
+          } else {
+            list = list.filter((f) => f.type === where.type);
+          }
+        }
+        if (where?.status) list = list.filter((f) => f.status === where.status);
+        if (where?.createdAt?.gte) {
+          list = list.filter((f) => new Date(f.createdAt) >= new Date(where.createdAt.gte));
+        }
+        if (orderBy?.createdAt === 'desc') {
+          list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        }
+        if (take) {
+          list = list.slice(0, take);
+        }
         return list;
+      },
+      count: async ({ where }: any = {}) => {
+        let list = [...this.data.feedbackEvents];
+        if (where?.restaurantId) list = list.filter((f) => f.restaurantId === where.restaurantId);
+        if (where?.type) {
+          if (typeof where.type === 'object' && where.type.in) {
+            list = list.filter((f) => where.type.in.includes(f.type));
+          } else {
+            list = list.filter((f) => f.type === where.type);
+          }
+        }
+        if (where?.status) list = list.filter((f) => f.status === where.status);
+        if (where?.createdAt?.gte) {
+          list = list.filter((f) => new Date(f.createdAt) >= new Date(where.createdAt.gte));
+        }
+        return list.length;
+      },
+      updateMany: async ({ where, data }: any) => {
+        let updatedCount = 0;
+        this.data.feedbackEvents = this.data.feedbackEvents.map((f) => {
+          if (where?.id && f.id === where.id) {
+            updatedCount++;
+            return { ...f, ...data, updatedAt: new Date() };
+          }
+          if (where?.restaurantId && f.restaurantId === where.restaurantId) {
+            updatedCount++;
+            return { ...f, ...data, updatedAt: new Date() };
+          }
+          return f;
+        });
+        this.persist();
+        return { count: updatedCount };
       },
     };
   }

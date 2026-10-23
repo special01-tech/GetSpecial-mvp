@@ -1,302 +1,555 @@
+/* =============================================================================
+ * HISTORY MODULE CSS — GetSpecial Mobile-First UX
+ * ============================================================================= */
+
 .container {
   padding: 24px;
   max-width: 960px;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .header {
-  margin-bottom: 24px;
-}
-
-.headerTitleRow {
-  display: flex;
-  align-items: center;
-  gap: 16px;
   margin-bottom: 20px;
-}
-
-.iconCircle {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: #fff7ed;
-  border: 1.5px solid #ffedd5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.title {
-  font-size: 24px;
-  font-weight: 800;
-  color: #0f172a;
-  margin: 0 0 4px 0;
-}
-
-.subtitle {
-  font-size: 14px;
-  color: #64748b;
-  margin: 0;
-  line-height: 1.4;
-}
-
-.navTabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  background: #f1f5f9;
-  padding: 6px;
-  border-radius: 12px;
-}
-
-@media (max-width: 560px) {
-  .navTabs {
-    grid-template-columns: 1fr;
-    gap: 6px;
-  }
-}
-
-.tabBtn {
-  background: none;
-  border: none;
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 700;
-  color: #64748b;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.tabActive {
-  background: #ffffff;
-  color: #0f172a;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.subFilterBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 18px;
-  flex-wrap: wrap;
-}
-
-.filterLabel {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #64748b;
-}
-
-.pillGroup {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.pillBtn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 9999px;
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
-  font-size: 12px;
-  font-weight: 700;
-  color: #475569;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.pillActive {
-  background: #0f172a;
-  color: #ffffff;
-  border-color: #0f172a;
-}
-
-.list {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-.card {
-  background: #ffffff;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 18px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-}
-
-.cardHeader {
+.headerTitleRow {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 10px;
-  gap: 12px;
+  align-items: center;
+  gap: 14px;
 }
 
-.dateBadge {
-  font-size: 11px;
-  font-weight: 700;
-  color: #94a3b8;
-  text-transform: uppercase;
+.iconCircle {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #FFF7ED;
+  border: 1.5px solid #FFEDD5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(255, 90, 0, 0.08);
 }
 
-.cardTitle {
-  margin: 4px 0 0 0;
-  font-size: 16px;
+.headerTitleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  font-size: 1.35rem;
   font-weight: 800;
-  color: #0f172a;
+  color: #0F172A;
+  margin: 0;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
-.statusBadge {
+.subtitle {
+  font-size: 0.85rem;
+  color: #64748B;
+  margin: 0;
+  line-height: 1.35;
+}
+
+/* Onglets Segmented Control */
+.navTabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  background: #F1F5F9;
+  padding: 4px;
+  border-radius: 12px;
+}
+
+.tabBtn {
+  background: transparent;
+  border: none;
+  height: 40px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #64748B;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tabActive {
+  background: #FFFFFF;
+  color: #0F172A;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* Ruban de filtres horizontaux */
+.subFilterBar {
+  margin-bottom: 14px;
+}
+
+.pillGroup {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 2px 6px 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.pillGroup::-webkit-scrollbar {
+  display: none;
+}
+
+.pillBtn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px;
-  border-radius: 9999px;
-  font-size: 12px;
-  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pillBtn:active {
+  transform: scale(0.97);
+}
+
+.pillActive {
+  background: #0F172A;
+  color: #FFFFFF;
+  border-color: #0F172A;
+  font-weight: 700;
+}
+
+/* Liste des cartes */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Carte de proposition & publication */
+.card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+}
+
+/* Ligne supérieure : Date & Statut */
+.cardTopRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.cardDateWrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.cardClockIcon {
+  color: #94A3B8;
+}
+
+.dateBadge {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #64748B;
+  text-transform: capitalize;
+}
+
+/* Badges de statut */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
   white-space: nowrap;
 }
 
 .badgeConfirmed {
-  background: #dcfce7;
-  color: #15803d;
-  border: 1px solid #bbf7d0;
+  background: #ECFDF5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
 }
 
 .badgeRejected {
-  background: #fee2e2;
-  color: #b91c1c;
-  border: 1px solid #fecaca;
+  background: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
 }
 
 .badgePending {
-  background: #f1f5f9;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
+  background: #F8FAFC;
+  color: #475569;
+  border: 1px solid #E2E8F0;
 }
 
+.pendingDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #F59E0B;
+}
+
+/* Titre pleine largeur (jamais étouffé) */
+.cardTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+/* Description claire */
 .cardDesc {
-  margin: 0 0 12px 0;
-  font-size: 14px;
-  color: #475569;
+  margin: 0;
+  font-size: 0.88rem;
+  color: #334155;
   line-height: 1.5;
 }
 
+/* Boîte motif de rejet / erreur */
 .rejectionBox {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #fef2f2;
-  border-left: 3px solid #ef4444;
+  background: #FEF2F2;
+  border-left: 3px solid #EF4444;
   padding: 8px 12px;
   border-radius: 6px;
-  margin-bottom: 12px;
-  font-size: 13px;
-  color: #991b1b;
+  font-size: 0.8rem;
+  color: #991B1B;
+  line-height: 1.4;
 }
 
+/* Pied de carte avec badges & action directe */
 .cardFooter {
-  border-top: 1px solid #f1f5f9;
-  padding-top: 10px;
-  font-size: 12px;
-  color: #64748b;
+  border-top: 1px solid #F1F5F9;
+  padding-top: 12px;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
+.metaBadgesRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.urgentBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: #FFF7ED;
+  color: #EA580C;
+  border: 1px solid #FFEDD5;
+}
+
+.normalBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #F8FAFC;
+  color: #475569;
+  border: 1px solid #E2E8F0;
+}
+
+.postsCountBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #F5F3FF;
+  color: #7C3AED;
+  border: 1px solid #DDD6FE;
+}
+
+.noPostsBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #F8FAFC;
+  color: #94A3B8;
+  border: 1px solid #E2E8F0;
+}
+
+/* Bouton tactile de redirection directe vers le Studio */
+.createInStudioBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid #FFE4D6;
+  background: #FFF4ED;
+  color: #FF5A00;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.createInStudioBtn:hover {
+  background: #FF5A00;
+  color: #FFFFFF;
+  border-color: #FF5A00;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 90, 0, 0.25);
+}
+
+.createInStudioBtn:active {
+  transform: scale(0.98);
+}
+
+/* Styles spécifiques publications diffusées */
 .channelBadge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-size: 13px;
+}
+
+.pubPlatformName {
+  font-weight: 700;
+  font-size: 0.84rem;
+  color: #0F172A;
+  text-transform: capitalize;
+}
+
+.cardDateSeparator {
+  color: #CBD5E1;
+  font-size: 0.75rem;
 }
 
 .pubBody {
   display: flex;
-  gap: 16px;
-  margin-top: 10px;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.pubThumb {
+  flex-shrink: 0;
 }
 
 .pubThumb img {
-  width: 90px;
-  height: 90px;
-  border-radius: 8px;
+  width: 76px;
+  height: 76px;
+  border-radius: 10px;
   object-fit: cover;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #E2E8F0;
+  display: block;
 }
 
 .pubContent {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .pubTitle {
-  margin: 0 0 4px 0;
-  font-size: 15px;
+  margin: 0;
+  font-size: 0.96rem;
   font-weight: 700;
-  color: #0f172a;
+  color: #0F172A;
+  line-height: 1.3;
 }
 
 .pubText {
   margin: 0;
-  font-size: 13px;
+  font-size: 0.84rem;
   color: #475569;
-  line-height: 1.4;
+  line-height: 1.45;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
+/* État vide & chargement */
 .emptyState {
   text-align: center;
-  padding: 48px 24px;
-  background: #ffffff;
-  border: 2px dashed #e2e8f0;
-  border-radius: 16px;
+  padding: 40px 20px;
+  background: #FFFFFF;
+  border: 1.5px dashed #E2E8F0;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
 .emptyState h3 {
-  margin: 14px 0 6px 0;
-  font-size: 17px;
-  color: #1e293b;
+  margin: 6px 0 0 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0F172A;
 }
 
 .emptyState p {
   margin: 0;
-  font-size: 14px;
-  color: #64748b;
+  font-size: 0.85rem;
+  color: #64748B;
+  max-width: 320px;
+  line-height: 1.45;
+}
+
+.emptyStateActionBtn {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px;
+  background: #FF5A00;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(255, 90, 0, 0.25);
+  font-family: inherit;
 }
 
 .loadingState {
   text-align: center;
   padding: 40px;
-  color: #64748b;
+  color: #64748B;
 }
 
 .spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #e2e8f0;
-  border-top-color: #ff6600;
+  width: 30px;
+  height: 30px;
+  border: 3px solid #E2E8F0;
+  border-top-color: #FF5A00;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   margin: 0 auto 12px auto;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
+  to { transform: rotate(360deg); }
+}
+
+/* ========================================================= */
+/* RÈGLES SMARTPHONE (< 768px)                               */
+/* ========================================================= */
+@media (max-width: 768px) {
+  .container {
+    padding: 12px 14px calc(80px + env(safe-area-inset-bottom)) 14px;
+  }
+
+  .header {
+    margin-bottom: 14px;
+    gap: 10px;
+  }
+
+  .headerTitleRow {
+    gap: 10px;
+  }
+
+  .iconCircle {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+
+  .title {
+    font-size: 1.2rem;
+  }
+
+  .subtitle {
+    font-size: 0.78rem;
+  }
+
+  .card {
+    padding: 14px;
+    gap: 8px;
+  }
+
+  .cardTitle {
+    font-size: 0.98rem;
+  }
+
+  .cardDesc {
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  .cardFooter {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding-top: 10px;
+  }
+
+  .metaBadgesRow {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .createInStudioBtn {
+    width: 100%;
+    height: 44px;
+    font-size: 0.88rem;
+  }
+
+  .pubBody {
+    gap: 10px;
+  }
+
+  .pubThumb img {
+    width: 68px;
+    height: 68px;
   }
 }

@@ -17,6 +17,7 @@ export interface CountryConfig {
   speedUnit: 'mph' | 'km/h' | 'm/s';
   timeFormat: '12h' | '24h';
   phonePrefix: string;
+  timezone?: string;
 }
 
 const COUNTRY_REGISTRY: Record<string, CountryConfig> = {

@@ -43,7 +43,7 @@ async function comparePassword(password: string, storedHash: string): Promise<bo
 /* =============================================================================
  * Module AUTH — Service
  *
- * Rôle : Création de compte sécurisée et vérification des identifiants.
+ * Rôle : Création de compte sécurisée et vérification stricte des identifiants.
  * ============================================================================= */
 
 export class AuthService {
@@ -64,7 +64,6 @@ export class AuthService {
     const passwordHash = await hashPassword(validated.data.password);
 
     if (existing) {
-      // Si l'utilisateur existe déjà, mettre à jour son mot de passe et permettre la connexion
       const updated = await (prisma.user as any).update({
         where: { email },
         data: {
@@ -109,43 +108,28 @@ export class AuthService {
     }
 
     const email = validated.data.email.toLowerCase().trim();
-    let user = await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { email },
     });
 
-    // Si l'utilisateur n'existe pas encore lors d'une tentative de connexion,
-    // on le provisionne automatiquement pour éviter toute friction ou blocage
     if (!user) {
-      const passwordHash = await hashPassword(validated.data.password || 'Password123!');
-      user = await (prisma.user as any).create({
-        data: {
-          email,
-          passwordHash,
-          name: email.split('@')[0],
-        },
-      });
+      throw new UnauthorizedError('Email ou mot de passe incorrect.');
+    }
+
+    const storedHash = (user as any).passwordHash;
+    if (!storedHash) {
+      throw new UnauthorizedError('Veuillez vous connecter via le fournisseur avec lequel votre compte a été créé.');
     }
 
     let isValid = false;
     try {
-      const storedHash = (user as any).passwordHash;
       isValid = await comparePassword(validated.data.password, storedHash);
     } catch {
       isValid = false;
     }
 
-    // Tolérance pour les environnements de test / démo et mots de passe usuels
     if (!isValid) {
-      if (
-        validated.data.password === 'Password123!' ||
-        validated.data.password === 'defaultPassword123' ||
-        validated.data.password === 'password123' ||
-        validated.data.password.length >= 4
-      ) {
-        isValid = true;
-      } else {
-        throw new UnauthorizedError('Email ou mot de passe incorrect.');
-      }
+      throw new UnauthorizedError('Email ou mot de passe incorrect.');
     }
 
     const userRestaurant = await (prisma as any).restaurant.findFirst({

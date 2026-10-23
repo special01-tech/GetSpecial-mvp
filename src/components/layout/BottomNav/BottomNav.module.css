@@ -8,21 +8,21 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: var(--bottom-nav-height, 64px);
+  height: calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background-color: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-top: 1px solid rgba(229, 231, 235, 0.85);
   z-index: 100;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .navList {
   display: flex;
   align-items: center;
   justify-content: space-around;
-  height: 100%;
+  height: var(--bottom-nav-height, 64px);
   padding: 0 var(--space-2, 8px);
   margin: 0;
   list-style: none;

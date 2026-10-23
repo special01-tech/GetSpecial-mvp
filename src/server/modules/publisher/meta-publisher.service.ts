@@ -66,25 +66,24 @@ export class MetaPublisherService {
 
     // Détection du mode développement / mock
     const isMockToken = accessToken.startsWith('token_') || accessToken.startsWith('mock_');
+    if (isMockToken) {
+      throw new Error(
+        `Jeton d'accès Meta non valide ou de test (${accessToken.slice(0, 8)}...). Veuillez connecter un compte Instagram/Facebook authentique dans vos paramètres.`
+      );
+    }
 
     while (attempt < maxAttempts && !published) {
       attempt++;
       try {
-        if (isMockToken) {
-          // Simulation réussie en environnement de développement local
-          externalPostId = `direct_meta_${platform}_${Date.now()}`;
+        // Appel réel à l'API Meta Graph v19.0
+        if (platform === 'facebook') {
+          externalPostId = await this.publishToFacebook(pageId, accessToken, post.text, post.imageUrl);
+          published = true;
+        } else if (platform === 'instagram') {
+          externalPostId = await this.publishToInstagram(pageId, accessToken, post.text, post.imageUrl);
           published = true;
         } else {
-          // Appel réel à l'API Meta Graph v19.0
-          if (platform === 'facebook') {
-            externalPostId = await this.publishToFacebook(pageId, accessToken, post.text, post.imageUrl);
-            published = true;
-          } else if (platform === 'instagram') {
-            externalPostId = await this.publishToInstagram(pageId, accessToken, post.text, post.imageUrl);
-            published = true;
-          } else {
-            throw new Error(`Plateforme ${platform} non prise en charge par le driver Meta.`);
-          }
+          throw new Error(`Plateforme ${platform} non prise en charge par le driver Meta.`);
         }
       } catch (err: any) {
         lastError = err.message || 'Erreur inconnue lors de l’envoi Meta Graph API';

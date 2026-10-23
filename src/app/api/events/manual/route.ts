@@ -5,10 +5,10 @@ import { logAudit } from '@/server/lib/audit';
 import { z } from 'zod';
 
 const ManualEventSchema = z.object({
-  restaurantId: z.string(),
-  title: z.string().min(2),
-  description: z.string().min(5),
-  dateTime: z.string(),
+  restaurantId: z.string().min(1, 'restaurantId est requis'),
+  title: z.string().min(2, 'Le titre doit comporter au moins 2 caractères'),
+  description: z.string().min(5, 'La description doit comporter au moins 5 caractères'),
+  dateTime: z.string().refine((val) => !isNaN(Date.parse(val)), 'Format de date invalide (ISO attendu)'),
   intensity: z.number().min(0).max(1).default(1.0),
 });
 
@@ -17,13 +17,15 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const restaurantId = searchParams.get('restaurantId');
 
-    const whereClause: any = { type: 'event' };
-    if (restaurantId) {
-      whereClause.restaurantId = restaurantId;
+    if (!restaurantId) {
+      return error('restaurantId est requis pour consulter les événements', 400);
     }
 
     const events = await (prisma as any).signal.findMany({
-      where: whereClause,
+      where: {
+        type: 'event',
+        restaurantId,
+      },
       orderBy: { detectedAt: 'desc' },
       take: 50,
     });

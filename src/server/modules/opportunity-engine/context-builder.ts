@@ -23,9 +23,15 @@ export class ContextBuilder {
         profile: true,
         offers: { where: { status: 'active' } },
         signals: {
-          where: { detectedAt: { gte: new Date(Date.now() - 24 * 3600 * 1000) } },
+          where: {
+            status: 'active',
+            OR: [
+              { endsAt: { gte: new Date(Date.now() - 2 * 3600 * 1000) } },
+              { detectedAt: { gte: new Date(Date.now() - 48 * 3600 * 1000) } },
+            ],
+          },
           orderBy: { detectedAt: 'desc' },
-          take: 20,
+          take: 30,
         },
       },
     });
@@ -47,11 +53,59 @@ export class ContextBuilder {
       .map((d: any) => (d.reason || '').trim())
       .filter((r: string) => r.length > 0);
 
-    // 2. Jour courant & Horaires
+    // 2. Jour courant & Horaires avec respect du fuseau horaire de l'établissement
     const now = new Date();
-    const dayInfo = DAYS_MAP[now.getDay()] || { key: 'mon', fr: 'lundi' };
+    const timezone = restaurant.timezone || (restaurant.country === 'US' ? 'America/New_York' : 'Europe/Paris');
+
+    let localHour = now.getHours();
+    let localMinute = now.getMinutes();
+    let localDayOfWeek = now.getDay();
+
+    try {
+      const parts = new Intl.DateTimeFormat('fr-FR', {
+        timeZone: timezone,
+        hour: 'numeric',
+        minute: 'numeric',
+        weekday: 'short',
+        hour12: false,
+      }).formatToParts(now);
+
+      const h = parts.find((p) => p.type === 'hour')?.value;
+      const m = parts.find((p) => p.type === 'minute')?.value;
+      if (h) localHour = parseInt(h, 10);
+      if (m) localMinute = parseInt(m, 10);
+
+      const weekdayStr = new Intl.DateTimeFormat('en-US', { timeZone: timezone, weekday: 'short' }).format(now).toLowerCase();
+      const dayMapLookup: Record<string, number> = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+      if (weekdayStr in dayMapLookup) {
+        localDayOfWeek = dayMapLookup[weekdayStr];
+      }
+    } catch {}
+
+    const localTimeStr = `${String(localHour).padStart(2, '0')}:${String(localMinute).padStart(2, '0')}`;
+    const dayInfo = DAYS_MAP[localDayOfWeek] || { key: 'mon', fr: 'lundi' };
     const profile = restaurant.profile || {};
     const customRules = (profile.customRules as Record<string, any>) || {};
+
+    let timeOfDay: 'morning' | 'lunch' | 'afternoon' | 'evening' | 'night' = 'lunch';
+    let timeOfDayFr = 'Midi / Service du déjeuner';
+
+    if (localHour >= 5 && localHour < 11) {
+      timeOfDay = 'morning';
+      timeOfDayFr = 'Matinée (Avant le service du midi)';
+    } else if (localHour >= 11 && localHour < 14) {
+      timeOfDay = 'lunch';
+      timeOfDayFr = 'Midi / Service du déjeuner';
+    } else if (localHour >= 14 && localHour < 18) {
+      timeOfDay = 'afternoon';
+      timeOfDayFr = 'Après-midi (Préparation afterwork, apéro & soirée)';
+    } else if (localHour >= 18 && localHour < 22) {
+      timeOfDay = 'evening';
+      timeOfDayFr = 'Soirée / Service du dîner';
+    } else {
+      timeOfDay = 'night';
+      timeOfDayFr = 'Fin de soirée & nuit (Préparation du service de demain)';
+    }
 
     const offPeakDays: string[] = Array.isArray(profile.offPeakDays)
       ? profile.offPeakDays.map((d: string) => d.toLowerCase())
@@ -66,51 +120,81 @@ export class ContextBuilder {
       todayHours.toLowerCase().includes('ferm') ||
       todayHours.toLowerCase().includes('close');
 
-    // 3. Météo du jour (Tolérance aux pannes : safe parsing)
+    // 3. Météo du jour (Tolérance aux pannes : lecture du contrat unifié data)
     const weatherSignal = (restaurant.signals || []).find((s: any) => s.type === 'weather');
     let weatherData: ContextDossier['weather'] = { available: false };
 
     if (weatherSignal && weatherSignal.data) {
       const data = weatherSignal.data as Record<string, any>;
-      const condition = data.condition || data.weatherDesc || '';
+      const raw = (data.raw as Record<string, any>) || {};
+      const condition = data.condition || raw.condition || data.weatherDesc || '';
       const condLower = condition.toLowerCase();
-      const isRain = Boolean(data.isRain || condLower.includes('pluie') || condLower.includes('rain'));
-      const isSunny = Boolean(data.isSunny || condLower.includes('soleil') || condLower.includes('dégagé') || condLower.includes('clear'));
+      const isRain = Boolean(data.isRain || raw.isRain || condLower.includes('pluie') || condLower.includes('rain'));
+      const isSunny = Boolean(data.isSunny || raw.isSunny || condLower.includes('soleil') || condLower.includes('dégagé') || condLower.includes('clear'));
 
       weatherData = {
         available: true,
         condition: condition || (isSunny ? 'Ensoleillé' : isRain ? 'Pluvieux' : 'Nuageux'),
-        temperature: typeof data.temperature === 'number' ? Math.round(data.temperature) : undefined,
-        tempUnit: data.tempUnit || '°C',
+        temperature: typeof data.temperature === 'number' ? Math.round(data.temperature) : typeof raw.temperatureC === 'number' ? raw.temperatureC : undefined,
+        tempUnit: data.tempUnit || raw.tempUnit || '°C',
         isSunny,
         isRain,
         summary: data.summary || `${condition}${data.temperature ? ` (${Math.round(data.temperature)}°C)` : ''}`,
       };
     }
 
-    // 4. Événements locaux (< 2km, filtrés selon préférences)
+    // 4. Événements locaux et célébrations (Filtrés selon distance et préférences)
     const preferredEventTypes: string[] = Array.isArray(customRules.preferredEventTypes)
       ? customRules.preferredEventTypes.map((t: string) => t.toLowerCase())
       : [];
 
-    const eventSignals = (restaurant.signals || []).filter((s: any) => s.type === 'event');
-    const events: ContextDossier['events'] = eventSignals.slice(0, 5).map((es: any) => {
+    const activeSignals = (restaurant.signals || []).filter((s: any) => s.type === 'event' || s.type === 'holiday');
+    const events: ContextDossier['events'] = activeSignals.slice(0, 8).map((es: any) => {
       const data = (es.data as Record<string, any>) || {};
+      const raw = (data.raw as Record<string, any>) || {};
+      const rawStartsAt = es.startsAt || data.startsAt || raw.startsAt || data.timestamp;
+
+      let dateFormatted = 'Aujourd’hui';
+      if (rawStartsAt) {
+        try {
+          if (es.type === 'holiday') {
+            dateFormatted = new Intl.DateTimeFormat('fr-FR', {
+              timeZone: timezone,
+              weekday: 'short',
+              month: 'short',
+              day: 'numeric',
+            }).format(new Date(rawStartsAt));
+          } else {
+            dateFormatted = new Intl.DateTimeFormat('fr-FR', {
+              timeZone: timezone,
+              weekday: 'short',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+            }).format(new Date(rawStartsAt));
+          }
+        } catch {
+          dateFormatted = 'Aujourd’hui';
+        }
+      }
+
       return {
         id: es.id,
-        title: data.title || 'Événement local',
-        type: data.category || (data.isSport ? 'sport' : 'concert'),
-        venue: data.venue || data.location,
-        distanceMeters: data.distanceMeters || (data.distance ? Math.round(data.distance * 1000) : undefined),
-        startTime: data.time || data.startTime || (data.timestamp ? new Date(data.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : undefined),
-        summary: data.summary || data.description,
+        title: data.title || es.title || 'Événement local',
+        type: es.category || data.category || (es.type === 'holiday' ? 'holiday' : 'concert'),
+        venue: data.venue || raw.venue || 'À proximité',
+        distanceMeters: es.distanceMeters || data.distanceMeters || (data.distance ? Math.round(data.distance * 1000) : undefined),
+        startTime: dateFormatted,
+        summary: data.summary || es.summary || data.description,
       };
     });
 
     // 5. Offres actives du restaurant & données réelles de comptage (Boutons comptoir + QR codes)
     let counterOffersMap = new Map<string, { total_uses: number }>();
     try {
-      const redemptions = await (prisma.redemption as any).findMany({
+      const redemptions = await ((prisma as any).redemption).findMany({
         where: { restaurantId: restaurant.id, status: { not: 'cancelled' } },
       });
       for (const r of redemptions) {
@@ -141,11 +225,11 @@ export class ContextBuilder {
         name: restaurant.name,
         type: restaurant.type || 'restaurant',
         address: restaurant.address,
-        city: restaurant.city || (restaurant.address.split(',')[1] || '').trim() || 'Paris',
+        city: restaurant.city || (restaurant.address ? (restaurant.address.split(',')[1] || '').trim() : '') || '',
         timezone: restaurant.timezone || 'Europe/Paris',
         specialties: Array.isArray(restaurant.specialties) ? restaurant.specialties : [],
         hasTerrace: Boolean(profile.hasTerrace),
-        averageTicket: customRules.averageTicket || '15-30 €',
+        averageTicket: profile.averageTicket ? `${profile.averageTicket} €` : (customRules.averageTicket || '15-30 €'),
         offPeakDays,
         baselineCovers: typeof profile.baselineCovers === 'number' ? profile.baselineCovers : 15,
         preferredEventTypes,
@@ -158,6 +242,10 @@ export class ContextBuilder {
         isOffPeakDay,
         isClosed,
         hoursText: todayHours || 'Non spécifié',
+        currentTime: localTimeStr,
+        currentHour: localHour,
+        timeOfDay,
+        timeOfDayFr,
       },
       weather: weatherData,
       events,

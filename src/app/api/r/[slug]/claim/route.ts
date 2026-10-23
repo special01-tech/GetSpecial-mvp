@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
 import { success, error } from '@/server/lib/api-response';
+import { checkRateLimit } from '@/server/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,11 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const rate = checkRateLimit(req, 'public:claim', 20, 60 * 1000);
+    if (!rate.allowed) {
+      return error(`Trop de tentatives. Réessayez dans ${rate.retryAfterSec}s.`, 429);
+    }
+
     const { slug } = await params;
     const body = await req.json();
     const { offerId, partySize = 1, source = 'qr' } = body;
@@ -17,9 +23,14 @@ export async function POST(
       return error('offerId manquant', 400);
     }
 
-    const restaurant = await (prisma.restaurant as any).findFirst({
-      where: { status: 'active' },
+    let restaurant = await (prisma.restaurant as any).findUnique({
+      where: { id: slug },
     });
+    if (!restaurant) {
+      restaurant = await (prisma.restaurant as any).findFirst({
+        where: { status: 'active' },
+      });
+    }
 
     if (!restaurant) {
       return error('Restaurant non trouvé', 404);
@@ -34,16 +45,15 @@ export async function POST(
 
     // Récupérer ou générer un deviceId anonyme
     const deviceId = req.cookies.get('gs_device_id')?.value || `dev_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const normalizedPartySize = Math.max(1, parseInt(String(partySize), 10) || 1);
 
-    // Enregistrer la réclamation dans la base
-    const redemption = await (prisma.redemption as any).create({
+    // Enregistrer la réclamation dans feedbackEvent (compatible Prisma & fallbackStore)
+    const redemption = await (prisma.feedbackEvent as any).create({
       data: {
         restaurantId: restaurant.id,
-        offerId,
-        deviceId,
-        claimToken,
-        partySize: Math.max(1, parseInt(partySize, 10) || 1),
-        source: source || 'qr',
+        type: 'qr_claim',
+        reason: `offer:${offerId}|token:${claimToken}|device:${deviceId}|source:${source}`,
+        value: normalizedPartySize,
         status: 'claimed',
       },
     });
@@ -51,7 +61,7 @@ export async function POST(
     const res = success({
       redemptionId: redemption.id,
       claimToken,
-      partySize: redemption.partySize,
+      partySize: normalizedPartySize,
       expiresInMinutes: 10,
     });
 

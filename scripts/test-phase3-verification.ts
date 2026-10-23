@@ -87,7 +87,7 @@ async function runPhase3Verification() {
       data: {
         restaurantId: restB.id,
         content: 'Exclusive Deal B: $2 Margaritas all evening!',
-        platform: 'TIKTOK',
+        platform: 'INSTAGRAM',
         status: 'approved',
       },
     });
@@ -198,7 +198,7 @@ async function runPhase3Verification() {
         title: 'Austin High Championship Game',
         type: 'Football',
       },
-      platform: 'tiktok',
+      platform: 'instagram',
       time: '4:00 PM - 7:00 PM',
     });
 
@@ -255,14 +255,14 @@ async function runPhase3Verification() {
   };
 
   // -------------------------------------------------------------------------
-  // SECTION 5 & 20 : REAL ZERNIO TIKTOK ACCOUNT AUDIT
+  // SECTION 5 & 20 : REAL ZERNIO SOCIAL ACCOUNT AUDIT
   // -------------------------------------------------------------------------
   try {
     const isConfigured = zernioService.isConfigured();
     results['Zernio Social Publishing Engine'] = {
       status: isConfigured ? 'PASS' : 'FAIL',
       evidence: isConfigured
-        ? 'Live API key connected to api.zernio.com/v1 with verified TikTok account (@getspecial_app)'
+        ? 'Live API key connected to api.zernio.com/v1'
         : 'Zernio key missing',
     };
   } catch (err: any) {

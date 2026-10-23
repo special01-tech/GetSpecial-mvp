@@ -190,7 +190,7 @@ async function runE2EAudit() {
     console.log(`[10] Zernio Social API: Configured: ${hasZernioKey}`);
     results['Zernio Social Publishing'] = {
       status: 'PASS',
-      details: hasZernioKey ? 'Live API key connected with TikTok active account (@getspecial_app)' : 'Zernio ready for integration',
+      details: hasZernioKey ? 'Live API key connected with social account' : 'Zernio ready for integration',
     };
   } catch (err: any) {
     results['Zernio Social Publishing'] = { status: 'FAIL', details: err.message };

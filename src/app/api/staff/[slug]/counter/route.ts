@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
-import { success, error } from '@/server/lib/api-response';
-import { canCancelRedemption } from '@/server/modules/counter/domain';
+import { success, error, unauthorized } from '@/server/lib/api-response';
+import { verifySessionToken, resolveRequestUser } from '@/server/lib/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,12 +11,28 @@ export async function POST(
 ) {
   try {
     const { slug } = await params;
+
+    // Vérifier la session Staff ou la session Gérant en production
+    const staffCookie = req.cookies.get('gs_staff_session')?.value;
+    const verifiedStaff = verifySessionToken(staffCookie);
+    const ownerSession = await resolveRequestUser(req);
+    const isProd = process.env.NODE_ENV === 'production';
+
+    if (isProd && !verifiedStaff && !ownerSession) {
+      return unauthorized('Session Staff expirée ou non authentifiée. Veuillez saisir le code PIN.');
+    }
+
     const body = await req.json();
     const { action, offerId, redemptionId, codeWord } = body;
 
-    const restaurant = await (prisma.restaurant as any).findFirst({
-      where: { status: 'active' },
+    let restaurant = await (prisma.restaurant as any).findUnique({
+      where: { id: slug },
     });
+    if (!restaurant) {
+      restaurant = await (prisma.restaurant as any).findFirst({
+        where: { status: 'active' },
+      });
+    }
 
     if (!restaurant) {
       return error('Restaurant introuvable', 404);
@@ -50,7 +66,6 @@ export async function POST(
     if (action === 'validate-code') {
       if (!codeWord) return error('Code mot manquant', 400);
 
-      // Trouver l'offre correspondant au mot-code
       let offers: any[] = [];
       try {
         offers = await (prisma.offer as any).findMany({

@@ -1,12 +1,20 @@
 {
-  "name": "GetSpecial",
+  "id": "/?source=pwa",
+  "name": "GetSpecial — Marketing IA pour Restaurants",
   "short_name": "GetSpecial",
-  "description": "Marketing intelligent pour restaurants — La plateforme centralisée.",
+  "description": "La plateforme intelligente qui transforme chaque événement, météo et moment en opportunités de chiffre d'affaires pour votre restaurant.",
+  "lang": "fr",
   "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#F2F2F2",
   "theme_color": "#FF5A00",
   "orientation": "portrait-primary",
+  "categories": [
+    "business",
+    "food",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
@@ -23,6 +31,29 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Tableau de bord",
+      "short_name": "Dashboard",
+      "description": "Consulter les signaux et opportunités du jour",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Créer un post",
+      "short_name": "Studio",
+      "description": "Générer une publication marketing IA",
+      "url": "/dashboard/create",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Planning",
+      "short_name": "Planning",
+      "description": "Gérer les publications programmées",
+      "url": "/dashboard/planning",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
     }
   ]
 }

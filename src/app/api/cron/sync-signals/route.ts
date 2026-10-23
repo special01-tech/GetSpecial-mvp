@@ -11,13 +11,16 @@ import { signalSyncScheduler } from '@/server/modules/signal-collector/signal-sy
  * Sécurisé par CRON_SECRET en production.
  */
 export async function GET(req: NextRequest) {
-  // Vérification du secret en production
+  // Sécurisation stricte : CRON_SECRET est obligatoire pour protéger les quotas API
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret) {
-    const authHeader = req.headers.get('authorization');
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      return error('Unauthorized', 401);
-    }
+  if (!cronSecret) {
+    console.error('[CRON_SYNC_SIGNALS] Erreur critique : CRON_SECRET non configuré sur le serveur.');
+    return error('Service indisponible : CRON_SECRET non configuré', 503);
+  }
+
+  const authHeader = req.headers.get('authorization');
+  if (authHeader !== `Bearer ${cronSecret}`) {
+    return error('Accès non autorisé', 401);
   }
 
   try {

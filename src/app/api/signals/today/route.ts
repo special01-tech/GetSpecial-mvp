@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
     // 1. Recherche du restaurant réel en base
     let restaurant: any = null;
 
-    if (requestedRestId && !requestedRestId.startsWith('rest_demo_') && !requestedRestId.startsWith('rest_test_')) {
+    if (requestedRestId) {
       try {
         restaurant = await (prisma as any).restaurant.findUnique({
           where: { id: requestedRestId },
@@ -71,88 +71,153 @@ export async function GET(req: NextRequest) {
     }
 
     if (!restaurant) {
-      // Si la base est vierge, créer le premier établissement réel opérationnel
-      restaurant = await (prisma as any).restaurant.create({
-        data: {
-          name: "L'Atelier Culinaire",
-          type: 'restaurant',
-          address: '15 Rue de Rivoli, 75004 Paris, France',
-          latitude: 48.8556,
-          longitude: 2.3522,
-          country: 'FR',
-          timezone: 'Europe/Paris',
-          status: 'active',
-          isPaused: false,
-          specialties: ['Cuisine de saison', 'Produits frais du marché', 'Planches apéritives', 'Cocktails signature'],
-          userId: 'usr_local_owner',
-          profile: {
-            create: {
-              tone: 'chaleureux',
-              hasTerrace: true,
-              offPeakDays: ['monday', 'tuesday'],
-              constraints: ['Service du midi et du soir'],
-            },
-          },
-          offers: {
-            create: [
-              {
-                title: 'Formule Déjeuner Express',
-                description: 'Plat du jour de saison + Café gourmand du lundi au vendredi.',
-                discountValue: 'Formule 16,50 €',
-                status: 'active',
-              },
-              {
-                title: 'Afterwork Convivial',
-                description: 'Grande Planche mixte artisanale & Boisson au choix.',
-                discountValue: '-15% sur la planche',
-                status: 'active',
-              },
-            ],
-          },
-        },
-        include: { profile: true, offers: true, signals: true },
-      });
+      return error(
+        'Aucun établissement actif trouvé. Veuillez sélectionner un restaurant valide ou créer votre établissement.',
+        404
+      );
     }
 
     // Coordonnées réelles de l'établissement
-    const lat = restaurant.latitude || 48.8566;
-    const lon = restaurant.longitude || 2.3522;
-    const country = (restaurant.country || restaurant.profile?.country || (restaurant.address?.includes('USA') ? 'US' : 'FR')).toUpperCase();
+    const country = (restaurant.country || restaurant.profile?.country || 'FR').toUpperCase();
     const config = getCountryConfig(country);
 
-    // 2. RÉCUPÉRATION MÉTÉO EN DIRECT
+    // 2. SYNCHRONISATION DES SIGNAUX SI NÉCESSAIRE (Moins de 3h ou forceRefresh)
+    const threeHoursAgo = new Date(Date.now() - 3 * 3600 * 1000);
+    const hasRecentSignals = (restaurant.signals || []).some((s: any) => new Date(s.detectedAt) >= threeHoursAgo);
+
+    if (forceRefresh || !hasRecentSignals) {
+      try {
+        const { signalSyncScheduler } = await import('@/server/modules/signal-collector/signal-sync.scheduler');
+        await signalSyncScheduler.syncSignalsForRestaurant(restaurant.id);
+      } catch (syncErr: any) {
+        console.warn('[TODAY_ROUTE] Synchronisation des signaux échouée, utilisation des signaux existants :', syncErr.message);
+      }
+    }
+
+    // 3. LECTURE DES SIGNAUX ACTIFS EN BASE
+    let activeSignals = await (prisma as any).signal.findMany({
+      where: {
+        restaurantId: restaurant.id,
+        status: 'active',
+      },
+      orderBy: { detectedAt: 'desc' },
+      take: 30,
+    });
+
+    // Si aucun signal météo ou événement en base, charger directement depuis les APIs réelles
+    const hasWeatherInDb = activeSignals.some((s: any) => s.type === 'weather');
+    const hasEventsInDb = activeSignals.some((s: any) => s.type === 'event' || s.type === 'holiday');
+
+    if (!hasWeatherInDb || !hasEventsInDb || activeSignals.length === 0) {
+      try {
+        const lat = restaurant.latitude ? parseFloat(restaurant.latitude) : 48.8556;
+        const lon = restaurant.longitude ? parseFloat(restaurant.longitude) : 2.3522;
+        const customRules = (restaurant.profile?.customRules as Record<string, any>) || {};
+        const eventPrefs = customRules.eventPreferences || {};
+        const prefRadius = typeof eventPrefs.radiusKm === 'number'
+          ? eventPrefs.radiusKm
+          : typeof customRules.eventRadiusKm === 'number'
+          ? customRules.eventRadiusKm
+          : 15;
+        const catPrefs = {
+          sport: eventPrefs.categories?.sport ?? true,
+          concert: eventPrefs.categories?.concert ?? true,
+          arts: eventPrefs.categories?.arts ?? true,
+          holiday: eventPrefs.categories?.holiday ?? true,
+          internal: eventPrefs.categories?.internal ?? true,
+        };
+
+        const promises: Promise<any>[] = [];
+        if (!hasWeatherInDb) {
+          promises.push(weatherService.getSignals(lat, lon, country).catch(() => []));
+        } else {
+          promises.push(Promise.resolve([]));
+        }
+
+        if (!hasEventsInDb) {
+          const restCity = restaurant.city || (country === 'FR' ? 'Paris' : country === 'US' ? 'New York' : '');
+          const canFetchTicketmaster = catPrefs.sport || catPrefs.concert || catPrefs.arts;
+          if (canFetchTicketmaster) {
+            promises.push(ticketmasterCollector.collect(lat, lon, prefRadius, country, new Date(), restCity).catch(() => []));
+          } else {
+            promises.push(Promise.resolve([]));
+          }
+
+          if (catPrefs.holiday) {
+            promises.push(calendarificCollector.collect(country, new Date()).catch(() => []));
+          } else {
+            promises.push(Promise.resolve([]));
+          }
+        } else {
+          promises.push(Promise.resolve([]));
+          promises.push(Promise.resolve([]));
+        }
+
+        const [directWeather, directEvents, directHolidays] = await Promise.all(promises);
+        activeSignals = [...activeSignals, ...directWeather, ...directEvents, ...directHolidays];
+
+        // Persister les signaux récoltés directement pour les futures requêtes
+        const newlyFetched = [...directWeather, ...directEvents, ...directHolidays];
+        for (const sig of newlyFetched) {
+          try {
+            await (prisma as any).signal.create({
+              data: {
+                restaurantId: restaurant.id,
+                externalId: sig.externalId,
+                type: sig.type,
+                category: sig.category || 'other',
+                source: sig.source,
+                intensity: sig.intensity,
+                startsAt: sig.startsAt ? new Date(sig.startsAt) : new Date(sig.timestamp),
+                endsAt: sig.endsAt ? new Date(sig.endsAt) : new Date(Date.now() + 24 * 3600 * 1000),
+                distanceMeters: sig.distanceMeters ?? null,
+                isFallback: sig.isFallback ?? false,
+                detectedAt: new Date(),
+                status: 'active',
+                data: sig.data,
+              },
+            });
+          } catch {
+            // Ignorer si déjà existant
+          }
+        }
+      } catch (directErr) {
+        console.warn('[TODAY_ROUTE] Chargement direct de secours échoué :', directErr);
+      }
+    }
+
+    // A. Météo
+    const weatherSignal = activeSignals.find((s: any) => s.type === 'weather');
     let weatherData: any = null;
     let weatherError: string | null = null;
 
-    try {
-      const weatherSignals = await weatherService.getSignals(lat, lon, country);
-      if (weatherSignals && weatherSignals.length > 0) {
-        const wSig = weatherSignals[0];
-        const isRain = Boolean(wSig.data?.isRain);
-        const isSunny = Boolean(wSig.data?.isSunny);
+    if (weatherSignal && weatherSignal.data) {
+      const data = weatherSignal.data as Record<string, any>;
+      const raw = (data.raw as Record<string, any>) || {};
+      const isRain = Boolean(data.isRain ?? raw.isRain);
+      const isSunny = Boolean(data.isSunny ?? raw.isSunny);
+      const condition = data.condition || weatherSignal.title || 'Ciel dégagé';
+      const condLower = condition.toLowerCase();
+      const isCloudSun = !isRain && (condLower.includes('éclaircie') || condLower.includes('nuag') || condLower.includes('partiellement'));
 
-        weatherData = {
-          isReal: true,
-          available: true,
-          source: wSig.source,
-          condition: wSig.data?.condition || wSig.title,
-          temperature: wSig.data?.temperature ?? wSig.data?.tempCelsius ?? 20,
-          tempFahrenheit: wSig.data?.tempFahrenheit,
-          tempCelsius: wSig.data?.tempCelsius,
-          tempUnit: wSig.data?.tempUnit || config.tempUnit || '°C',
-          isRain,
-          isSunny,
-          iconType: isRain ? 'rain' : isSunny ? 'sun' : 'cloud',
-          terraceAdvice: wSig.data?.terraceAdvice || wSig.summary,
-        };
-      }
-    } catch (err: any) {
-      weatherError = err.message || 'Échec de la récupération météo';
-      console.warn('[TODAY_WEATHER_WARNING]', weatherError);
+      weatherData = {
+        isReal: true,
+        available: true,
+        source: weatherSignal.source === 'open-meteo' ? 'Open-Meteo API' : weatherSignal.source || 'Météo en direct',
+        condition,
+        temperature: data.temperature ?? data.tempCelsius ?? 20,
+        tempFahrenheit: data.tempFahrenheit,
+        tempCelsius: data.tempCelsius,
+        tempUnit: data.tempUnit || config.tempUnit || '°C',
+        isRain,
+        isSunny,
+        iconType: isRain ? 'rain' : isSunny ? 'sun' : isCloudSun ? 'cloud-sun' : 'cloud',
+        terraceAdvice: data.terraceAdvice || weatherSignal.summary || 'Conditions météo réelles du jour.',
+      };
+    } else {
       weatherData = {
         isReal: true,
         available: false,
-        error: weatherError,
         condition: 'Météo indisponible',
         temperature: null,
         tempUnit: config.tempUnit || '°C',
@@ -161,274 +226,225 @@ export async function GET(req: NextRequest) {
       };
     }
 
-    // 3. RÉCUPÉRATION DES ÉVÉNEMENTS RÉELS (Ticketmaster, Calendarific, Événements Restaurant)
-    const liveEvents: any[] = [];
-
-    // A. Événements Ticketmaster réels (15 km autour du restaurant)
-    try {
-      const tmSignals = await ticketmasterCollector.collect(lat, lon, 15, country);
-      for (const sig of tmSignals) {
-        const raw = (sig.rawPayload as any) || {};
-        liveEvents.push({
-          id: raw.id || `tm_${Math.random()}`,
-          isReal: true,
-          source: 'Ticketmaster API',
-          title: sig.title,
-          category: 'concert',
-          time: sig.timestamp,
-          distance: `${raw.distance || 15} km`,
-          venue: raw.venue || 'À proximité',
-          summary: sig.summary,
-          url: raw.url,
-        });
-      }
-    } catch (err: any) {
-      console.warn('[TODAY_TICKETMASTER_WARNING]', err.message);
-    }
-
-    // B. Événements Calendarific (Jours fériés et célébrations officielles pour le pays)
-    try {
-      const calSignals = await calendarificCollector.collect(country, new Date());
-      for (const sig of calSignals) {
-        liveEvents.push({
-          id: `cal_${Math.random()}`,
-          isReal: true,
-          source: 'Fêtes & Jours Fériés',
-          title: sig.title,
-          category: 'culture',
-          time: sig.timestamp ? new Date(sig.timestamp).toLocaleDateString(config.locale) : "Aujourd'hui",
-          distance: 'National / Local',
-          venue: config.name,
-          summary: sig.summary,
-        });
-      }
-    } catch (err: any) {
-      console.warn('[TODAY_CALENDARIFIC_WARNING]', err.message);
-    }
-
-    // C. Événements personnalisés créés par le restaurateur lui-même
-    if (restaurant.signals) {
-      const customEvents = restaurant.signals.filter((s: any) => s.type === 'event' || s.source === 'user');
-      for (const sig of customEvents) {
-        liveEvents.push({
-          id: sig.id,
-          isReal: true,
-          source: 'Événement Restaurant',
-          title: sig.data?.title || sig.data?.name || sig.title || 'Soirée au restaurant',
-          category: 'event',
-          time: sig.data?.time || sig.data?.date || 'Ce soir',
-          distance: 'Sur place',
-          venue: restaurant.name,
-          summary: sig.data?.description || sig.data?.summary || 'Événement organisé par votre restaurant.',
-        });
-      }
-    }
-
-    // 4. PRÉPARATION DU CONTEXTE RÉEL POUR L'IA (Opportunity Engine)
-    const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const dayNamesFr = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+    // B. Événements et Célébrations réels
+    const restaurantTimezone = restaurant.timezone || (country === 'US' ? 'America/New_York' : 'Europe/Paris');
     const now = new Date();
-    const dayIdx = now.getDay();
-    const dayKey = daysOfWeek[dayIdx];
-    const dayNameFr = dayNamesFr[dayIdx];
-    const offPeakDays = restaurant.profile?.offPeakDays || [];
-    const isOffPeakDay = offPeakDays.includes(dayKey);
+    const todayLocalStr = new Intl.DateTimeFormat('en-CA', { timeZone: restaurantTimezone }).format(now); // "YYYY-MM-DD"
 
-    const specialties = restaurant.specialties && restaurant.specialties.length > 0
-      ? restaurant.specialties
-      : ['Cuisine & Spécialités maison'];
+    const eventSignals = activeSignals.filter((s: any) => s.type === 'event' || s.type === 'holiday');
+    const liveEvents = eventSignals.map((sig: any) => {
+      const data = (sig.data as Record<string, any>) || {};
+      const raw = (data.raw as Record<string, any>) || {};
+      const rawStartsAt = sig.startsAt || data.startsAt || data.timestamp;
 
-    // 4. CALCUL DE L'HEURE LOCALE RÉELLE ET TRANCHE HORAIRE (Opportunity Engine)
-    const timezone = restaurant.timezone || (country === 'US' ? 'America/Chicago' : country === 'BJ' ? 'Africa/Porto-Novo' : country === 'CI' ? 'Africa/Abidjan' : 'Europe/Paris');
-    let localHour = now.getHours();
-    let localMinute = now.getMinutes();
-    let localTimeStr = `${String(localHour).padStart(2, '0')}:${String(localMinute).padStart(2, '0')}`;
+      let timeDisplay = 'Aujourd’hui';
+      if (sig.type === 'holiday') {
+        timeDisplay = config.language === 'fr' ? 'Toute la journée' : 'All day';
+      } else if (rawStartsAt) {
+        try {
+          const eventDate = new Date(rawStartsAt);
+          const eventDateLocalStr = new Intl.DateTimeFormat('en-CA', { timeZone: restaurantTimezone }).format(eventDate);
+          
+          const timeFormatted = new Intl.DateTimeFormat(config.locale, {
+            timeZone: restaurantTimezone,
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          }).format(eventDate);
 
-    try {
-      const formatter = new Intl.DateTimeFormat('fr-FR', {
-        timeZone: timezone,
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: false,
-      });
-      const parts = formatter.formatToParts(now);
-      const h = parts.find((p) => p.type === 'hour')?.value;
-      const m = parts.find((p) => p.type === 'minute')?.value;
-      if (h) localHour = parseInt(h, 10);
-      if (m) localMinute = parseInt(m, 10);
-      localTimeStr = `${String(localHour).padStart(2, '0')}:${String(localMinute).padStart(2, '0')}`;
-    } catch {}
+          const dayFormatted = new Intl.DateTimeFormat(config.locale, {
+            timeZone: restaurantTimezone,
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+          }).format(eventDate);
 
-    // Détermination contextuelle de la tranche horaire
-    let timeOfDay: 'morning' | 'lunch' | 'afternoon' | 'evening' | 'night' = 'lunch';
-    let timeOfDayFr = 'Midi / Service du déjeuner';
-
-    if (localHour >= 5 && localHour < 11) {
-      timeOfDay = 'morning';
-      timeOfDayFr = 'Matinée (Avant le service du midi)';
-    } else if (localHour >= 11 && localHour < 14) {
-      timeOfDay = 'lunch';
-      timeOfDayFr = 'Midi / Service du déjeuner';
-    } else if (localHour >= 14 && localHour < 18) {
-      timeOfDay = 'afternoon';
-      timeOfDayFr = 'Après-midi (Préparation afterwork, apéro & soirée)';
-    } else if (localHour >= 18 && localHour < 22) {
-      timeOfDay = 'evening';
-      timeOfDayFr = 'Soirée / Service du dîner';
-    } else {
-      timeOfDay = 'night';
-      timeOfDayFr = 'Fin de soirée & nuit (Préparation du service de demain)';
-    }
-
-    const realDossier: ContextDossier = {
-      restaurant: {
-        id: restaurant.id,
-        name: restaurant.name,
-        type: restaurant.type || 'Restaurant',
-        address: restaurant.address,
-        city: restaurant.city || restaurant.address.split(',')[1]?.trim() || '',
-        timezone: restaurant.timezone || timezone,
-        specialties,
-        hasTerrace: restaurant.profile?.hasTerrace ?? false,
-        averageTicket: '25 €',
-        offPeakDays,
-        baselineCovers: 35,
-        preferredEventTypes: ['concert', 'sport', 'afterwork'],
-        constraints: restaurant.profile?.constraints || [],
-        tone: restaurant.profile?.tone || 'chaleureux',
-      },
-      currentDay: {
-        dayKey: dayKey.slice(0, 3),
-        dayNameFr,
-        isOffPeakDay,
-        isClosed: false,
-        hoursText: 'Service continu',
-        currentTime: localTimeStr,
-        currentHour: localHour,
-        timeOfDay,
-        timeOfDayFr,
-      },
-      weather: weatherData?.available ? {
-        available: true,
-        condition: weatherData.condition,
-        temperature: weatherData.temperature ?? 20,
-        tempUnit: weatherData.tempUnit || '°C',
-        isSunny: weatherData.isSunny ?? false,
-        isRain: weatherData.isRain ?? false,
-        summary: weatherData.terraceAdvice || weatherData.condition,
-      } : {
-        available: false,
-        condition: 'Indisponible',
-        temperature: undefined,
-        tempUnit: config.tempUnit || '°C',
-        summary: 'Météo non disponible aujourd’hui',
-      },
-      events: liveEvents.map((ev, idx) => ({
-        id: ev.id || `ev_${idx}`,
-        title: ev.title,
-        type: ev.category === 'concert' ? 'concert' : 'event',
-        venue: ev.venue || 'À proximité',
-        distanceMeters: 500,
-        startTime: ev.time || 'Ce soir',
-        summary: ev.summary || ev.title,
-      })),
-      activeOffers: (restaurant.offers || []).map((o: any) => ({
-        id: o.id,
-        title: o.title,
-        description: o.description,
-        discountValue: o.discountValue,
-      })),
-      recentDismissals: [],
-    };
-
-    // 5. ÉVALUATION IA PAR DEEPSEEK (Opportunity Engine)
-    const todayDateKey = now.toISOString().slice(0, 10);
-    const cacheKey = `${restaurant.id}_${todayDateKey}`;
-
-    let engineOpportunities: any[] = [];
-    let engineReport: any = null;
-
-    if (!forceRefresh && dailyOpportunityCache.has(cacheKey)) {
-      const cached = dailyOpportunityCache.get(cacheKey)!;
-      engineOpportunities = cached.opportunities;
-      engineReport = {
-        ...cached.report,
-        fromDailyCache: true,
-        cachedDate: cached.dateKey,
-      };
-    } else {
-      const openRouterClient = new OpenRouterClient();
-      try {
-        const { output, isMock, mockReason, modelUsed } = await openRouterClient.evaluateDossier(realDossier);
-        engineOpportunities = output.opportunities || [];
-        engineReport = {
-          timestamp: new Date().toISOString(),
-          restaurantId: restaurant.id,
-          restaurantName: restaurant.name,
-          modelUsed: modelUsed || process.env.OPENROUTER_MODEL || 'deepseek/deepseek-v4-pro',
-          isMock,
-          mockReason,
-          fromDailyCache: false,
-          opportunitiesGenerated: engineOpportunities.length,
-        };
-
-        if (engineOpportunities.length > 0) {
-          dailyOpportunityCache.set(cacheKey, {
-            dateKey: todayDateKey,
-            opportunities: engineOpportunities,
-            report: engineReport,
-          });
+          if (eventDateLocalStr === todayLocalStr) {
+            timeDisplay = config.language === 'fr' ? `Aujourd’hui à ${timeFormatted}` : `Today at ${timeFormatted}`;
+          } else {
+            // Vérifier si demain
+            const tomorrow = new Date(now.getTime() + 24 * 3600 * 1000);
+            const tomorrowLocalStr = new Intl.DateTimeFormat('en-CA', { timeZone: restaurantTimezone }).format(tomorrow);
+            if (eventDateLocalStr === tomorrowLocalStr) {
+              timeDisplay = config.language === 'fr' ? `Demain à ${timeFormatted}` : `Tomorrow at ${timeFormatted}`;
+            } else {
+              timeDisplay = `${dayFormatted} à ${timeFormatted}`;
+            }
+          }
+        } catch {
+          timeDisplay = data.localTime ? `À ${data.localTime}` : 'Aujourd’hui';
         }
-      } catch (engineErr: any) {
-        console.error('[OPPORTUNITY_ENGINE_ERROR]', engineErr);
-        engineReport = {
-          error: engineErr.message,
-          status: 'failed',
-        };
       }
-    }
 
-    // 6. FORMATAGE DES OPPORTUNITÉS RÉELLES
-    const formattedOpportunities = engineOpportunities.map((opp: any, idx: number) => {
-      const importance = opp.importance || (idx === 0 ? 'HIGH' : 'MEDIUM');
-      const impactScore = opp.impactScore || (importance === 'HIGH' ? 90 : 75);
-
-      // Synthèse en 1 phrase unique demandée par le restaurateur :
-      // [Événement détecté] ➔ [Plat & Formule à promouvoir] ➔ [Heure de publication & Réseaux] ➔ [Mot-code]
-      const eventPart = opp.title || opp.factsUsed?.[0] || 'Opportunité du jour';
-      const offerLabel = opp.offer?.label || 'Formule spéciale';
-      const offerDetail = opp.offer?.details ? ` (${opp.offer.details})` : '';
-      const pubTime = opp.distribution?.recommendedPublishTime || '11h30';
-      const channels = Array.isArray(opp.distribution?.channels) && opp.distribution.channels.length > 0
-        ? opp.distribution.channels.map((c: string) => c.charAt(0).toUpperCase() + c.slice(1).toLowerCase()).join(' & ')
-        : 'Instagram & Facebook';
-      const codeWord = opp.offer?.codeWord || 'SPECIAL';
-
-      const oneSentenceSummary = `${eventPart} : promouvez ${offerLabel}${offerDetail} dès ${pubTime} sur ${channels} (mot-code : ${codeWord}).`;
+      const dist = sig.distanceMeters || data.distanceMeters;
+      const distanceStr = dist ? (dist < 1000 ? `${dist} m` : `${(dist / 1000).toFixed(1)} km`) : (sig.type === 'holiday' ? 'National / Local' : 'À proximité');
 
       return {
-        id: opp.id || `opp_real_${idx + 1}`,
+        id: sig.id,
+        externalId: sig.externalId,
+        isReal: true,
+        source: sig.source === 'ticketmaster' ? 'Ticketmaster API' : sig.source === 'calendarific' ? 'Fêtes & Célébrations' : 'Événement Restaurant',
+        title: data.title || sig.title || raw.name || 'Événement local',
+        category: sig.category || data.category || (sig.type === 'holiday' ? 'holiday' : 'concert'),
+        time: timeDisplay,
+        startsAt: rawStartsAt,
+        distance: distanceStr,
+        distanceMeters: dist,
+        venue: data.venue || raw.venue || (sig.type === 'holiday' ? config.name : 'À proximité'),
+        summary: data.summary || sig.summary || raw.description || '',
+        url: data.url || raw.url,
+        imageUrl: data.imageUrl || raw.imageUrl || sig.imageUrl || null,
+        isFallback: sig.isFallback || false,
+      };
+    });
+
+    // Dédoublonnage intelligent : regrouper les événements multi-jours ou récurrents sous une seule carte
+    const consolidatedEventsMap = new Map<string, typeof liveEvents[0]>();
+
+    for (const ev of liveEvents) {
+      const cleanTitle = (ev.title || '')
+        .toLowerCase()
+        .replace(/^(sport \/ match|concert|spectacle|fête & célébration) : /i, '')
+        .replace(/ \(multi-jours\)/i, '')
+        .replace(/[^a-z0-9]/g, '');
+      const cleanVenue = (ev.venue || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const dedupKey = `${cleanTitle}___${cleanVenue}`;
+
+      const existing = consolidatedEventsMap.get(dedupKey);
+      if (!existing) {
+        consolidatedEventsMap.set(dedupKey, ev);
+      } else {
+        if (ev.startsAt && existing.startsAt) {
+          const t1 = new Date(existing.startsAt).getTime();
+          const t2 = new Date(ev.startsAt).getTime();
+          const firstDate = new Date(Math.min(t1, t2));
+          const lastDate = new Date(Math.max(t1, t2));
+
+          const firstStr = new Intl.DateTimeFormat(config.locale, { timeZone: restaurantTimezone, day: 'numeric', month: 'short' }).format(firstDate);
+          const lastStr = new Intl.DateTimeFormat(config.locale, { timeZone: restaurantTimezone, day: 'numeric', month: 'short' }).format(lastDate);
+
+          if (firstStr !== lastStr) {
+            existing.time = config.language === 'fr' ? `Du ${firstStr} au ${lastStr}` : `${firstStr} - ${lastStr}`;
+            if (!existing.title.includes('Multi-jours') && !existing.title.includes('Multi-day')) {
+              existing.title = `${existing.title} (Multi-jours)`;
+            }
+          }
+        }
+      }
+    }
+
+    const userEventPrefs = (restaurant.profile?.customRules as Record<string, any>)?.eventPreferences || {};
+    const effectiveCatPrefs = {
+      sport: userEventPrefs.categories?.sport ?? true,
+      concert: userEventPrefs.categories?.concert ?? true,
+      arts: userEventPrefs.categories?.arts ?? true,
+      holiday: userEventPrefs.categories?.holiday ?? true,
+      internal: userEventPrefs.categories?.internal ?? true,
+    };
+    const maxRadiusKm = typeof userEventPrefs.radiusKm === 'number'
+      ? userEventPrefs.radiusKm
+      : typeof (restaurant.profile?.customRules as any)?.eventRadiusKm === 'number'
+      ? (restaurant.profile?.customRules as any)?.eventRadiusKm
+      : 15;
+    const maxRadiusMeters = maxRadiusKm * 1000;
+    const excludedKeywords: string[] = Array.isArray(userEventPrefs.excludedKeywords)
+      ? userEventPrefs.excludedKeywords.map((k: string) => k.toLowerCase().trim()).filter(Boolean)
+      : [];
+
+    const uniqueLiveEvents = Array.from(consolidatedEventsMap.values());
+    const filteredLiveEvents = uniqueLiveEvents.filter((ev: any) => {
+      const cat = (ev.category || '').toLowerCase();
+
+      // 1. Filtrage par catégorie
+      if (cat === 'sport' || cat === 'sports') {
+        if (!effectiveCatPrefs.sport) return false;
+      } else if (cat === 'concert' || cat === 'music') {
+        if (!effectiveCatPrefs.concert) return false;
+      } else if (cat === 'arts' || cat === 'theatre' || cat === 'theatre & comedy') {
+        if (!effectiveCatPrefs.arts) return false;
+      } else if (cat === 'holiday') {
+        if (!effectiveCatPrefs.holiday) return false;
+      } else if (cat === 'internal' || ev.source === 'Événement Restaurant') {
+        if (!effectiveCatPrefs.internal) return false;
+      }
+
+      // 2. Filtrage par rayon kilométrique (uniquement pour les événements physiques géolocalisés)
+      if (typeof ev.distanceMeters === 'number' && ev.distanceMeters > 0 && cat !== 'holiday') {
+        if (ev.distanceMeters > maxRadiusMeters) return false;
+      }
+
+      // 3. Filtrage par mots-clés exclus
+      if (excludedKeywords.length > 0) {
+        const textToSearch = `${ev.title} ${ev.summary} ${ev.venue || ''}`.toLowerCase();
+        for (const kw of excludedKeywords) {
+          if (textToSearch.includes(kw)) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    });
+
+    // 4. RÉCUPÉRATION OU GÉNÉRATION DES OPPORTUNITÉS PERSISTÉES
+    const todayDateKey = new Date().toISOString().slice(0, 10);
+    let dbOpportunities = await (prisma as any).opportunity.findMany({
+      where: {
+        restaurantId: restaurant.id,
+        status: 'pending',
+        suggestedAt: { gte: new Date(Date.now() - 12 * 3600 * 1000) }, // Moins de 12h
+      },
+      orderBy: { relevanceScore: 'desc' },
+      take: 5,
+    });
+
+    let engineReport: any = null;
+
+    if (forceRefresh || dbOpportunities.length === 0) {
+      const { opportunityEngineService } = await import('@/server/modules/opportunity-engine/opportunity-engine.service');
+      const genResult = await opportunityEngineService.generateOpportunitiesWithReport(restaurant.id);
+      dbOpportunities = genResult.opportunities;
+      engineReport = genResult.executionReport;
+    }
+
+    // 5. FORMATAGE DES OPPORTUNITÉS POUR L'INTERFACE
+    const formattedOpportunities = dbOpportunities.map((opp: any, idx: number) => {
+      const factsCited = (opp.factsCited as Record<string, any>) || {};
+      const importance = opp.importance || factsCited.importance || (idx === 0 ? 'HIGH' : 'MEDIUM');
+      const impactScore = opp.impactScore || factsCited.impactScore || Math.round((opp.relevanceScore || 0.8) * 100);
+      const offer = opp.offer || factsCited.offer || { label: opp.title, codeWord: 'SPECIAL' };
+      const distribution = opp.distribution || factsCited.distribution || { channels: ['INSTAGRAM', 'FACEBOOK'] };
+      const reasons = opp.reasons || factsCited.reasons || [];
+      const verifiedFacts = factsCited.facts || [];
+
+      const channelsStr = Array.isArray(distribution.channels)
+        ? distribution.channels.map((c: string) => c.charAt(0).toUpperCase() + c.slice(1).toLowerCase()).join(' & ')
+        : 'Instagram & Facebook';
+
+      const oneSentenceSummary = `${opp.title} : promouvez ${offer.label} dès ${distribution.recommendedPublishTime || '11h30'} sur ${channelsStr} (mot-code : ${offer.codeWord || 'SPECIAL'}).`;
+
+      return {
+        id: opp.id,
         title: opp.title,
         urgency: opp.urgency ? opp.urgency.charAt(0).toUpperCase() + opp.urgency.slice(1) : 'Medium',
         importance,
         impactScore,
-        category: opp.category,
-        signalOrigin: opp.factsUsed?.[0] || 'Signal contextuel du jour',
+        category: opp.category || factsCited.category || 'LOCAL_EVENT',
+        signalOrigin: verifiedFacts[0] || 'Signal contextuel du jour',
         description: opp.description,
-        recommendedTime: opp.offer?.validityText || (opp.distribution?.recommendedPublishTime ? `Publication à ${opp.distribution.recommendedPublishTime}` : 'Ce jour'),
+        recommendedTime: offer.validityText || (distribution.recommendedPublishTime ? `Publication à ${distribution.recommendedPublishTime}` : 'Ce jour'),
         targetAudience: 'Clientèle locale & habitués',
-        potentialCovers: impactScore > 85 ? '+25 à +40 couverts' : '+15 à +25 couverts',
-        status: 'pending',
-        verifiedFacts: opp.factsUsed || [],
-        reasons: Array.isArray(opp.reasons) ? opp.reasons : [opp.reasons].filter(Boolean),
-        offer: opp.offer,
-        distribution: opp.distribution,
-        codeWord: opp.offer?.codeWord,
+        status: opp.status || 'pending',
+        verifiedFacts,
+        reasons: Array.isArray(reasons) ? reasons : [reasons].filter(Boolean),
+        offer,
+        distribution,
+        codeWord: offer.codeWord,
         oneSentenceSummary,
       };
     });
 
-    // Première offre active réelle (ou null si aucune)
+    // Offre active principale
     const activeOffer = restaurant.offers && restaurant.offers.length > 0
       ? {
           id: restaurant.offers[0].id,
@@ -440,7 +456,6 @@ export async function GET(req: NextRequest) {
         }
       : null;
 
-    // 7. RETOUR HONNÊTE ET TRANSPARENT
     return success({
       isLive: true,
       isTestMockMode: false,
@@ -455,11 +470,16 @@ export async function GET(req: NextRequest) {
         currencyCode: config.currencyCode || 'EUR',
         isPaused: restaurant.isPaused || false,
       },
+      eventPreferences: {
+        categories: effectiveCatPrefs,
+        radiusKm: maxRadiusKm,
+        excludedKeywords,
+      },
       weather: weatherData,
       weatherError,
-      event: liveEvents[0] || null,
-      events: liveEvents,
-      eventsCount: liveEvents.length,
+      event: filteredLiveEvents[0] || null,
+      events: filteredLiveEvents,
+      eventsCount: filteredLiveEvents.length,
       opportunities: formattedOpportunities,
       offer: activeOffer,
       offers: restaurant.offers || [],

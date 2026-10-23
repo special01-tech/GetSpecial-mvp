@@ -45,10 +45,16 @@ function isDbConnectionError(err: any): boolean {
     code === 'P1002' ||
     code === 'P1003' ||
     code === 'P1017' ||
+    code === 'P2021' ||
+    code === 'P2022' ||
     msg.includes("can't reach database server") ||
     msg.includes('connection refused') ||
     msg.includes('enotfound') ||
-    msg.includes('etimedout')
+    msg.includes('etimedout') ||
+    msg.includes('tenant/user') ||
+    msg.includes('not found') ||
+    msg.includes('fatal') ||
+    msg.includes('pooler')
   );
 }
 
@@ -69,8 +75,8 @@ function createResilientPrismaProxy(targetPrisma: any): PrismaClient {
       return new Proxy(rawModel || {}, {
         get(modelTarget, actionProp: string) {
           return async (...args: any[]) => {
-            // Si la base distante a déjà été détectée inaccessible, utiliser le store local directement
-            if (globalForPrisma.isDbOffline) {
+            // Si la base distante a déjà été détectée inaccessible ou mode local forcé, utiliser le store local directement
+            if (globalForPrisma.isDbOffline || isForceOffline) {
               const fallbackAction = fallbackModel[actionProp];
               if (typeof fallbackAction === 'function') {
                 return fallbackAction(...args);
@@ -79,13 +85,29 @@ function createResilientPrismaProxy(targetPrisma: any): PrismaClient {
 
             try {
               if (typeof modelTarget[actionProp] === 'function') {
-                return await modelTarget[actionProp](...args);
+                // Timeout de sécurité de 2.5s maximum pour ne jamais subir les 42s de blocage TCP
+                let timer: NodeJS.Timeout | null = null;
+                const timeoutPromise = new Promise((_, reject) => {
+                  timer = setTimeout(() => reject(new Error('Prisma connection timeout (>2500ms)')), 2500);
+                });
+                const dbPromise = modelTarget[actionProp](...args);
+                if (dbPromise && typeof dbPromise.catch === 'function') {
+                  dbPromise.catch(() => {});
+                }
+                try {
+                  return await Promise.race([dbPromise, timeoutPromise]);
+                } finally {
+                  if (timer) clearTimeout(timer);
+                }
               }
             } catch (err: any) {
-              if (isDbConnectionError(err)) {
+              const isConnError = isDbConnectionError(err) || (err.message && err.message.includes('timeout'));
+              if (isConnError) {
+                globalForPrisma.isDbOffline = true;
                 if (!globalForPrisma.dbOfflineNoticeLogged) {
+                  globalForPrisma.dbOfflineNoticeLogged = true;
                   console.warn(
-                    `[DB_CONNECTION_FAILOVER] PostgreSQL distant injoignable (${err.code || err.message}). Secours temporaire.`
+                    `[DB_CONNECTION_FAILOVER] PostgreSQL distant injoignable (${err.code || err.message}). Bascule instantanée sur le store local.`
                   );
                 }
 
