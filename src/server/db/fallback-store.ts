@@ -113,6 +113,7 @@ class LocalFallbackStore {
         let list = this.data.restaurants;
         if (where?.userId) list = list.filter((r) => r.userId === where.userId);
         if (where?.id) list = list.filter((r) => r.id === where.id);
+        if (where?.status) list = list.filter((r) => r.status === where.status);
         const rest = list[0] || null;
         if (!rest) return null;
         return this.hydrateRestaurant(rest, include);
@@ -272,10 +273,32 @@ class LocalFallbackStore {
 
   get offer() {
     return {
-      findMany: async ({ where }: any = {}) => {
+      findUnique: async ({ where }: any) => {
+        if (!where?.id) return null;
+        return this.data.offers.find((o) => o.id === where.id) || null;
+      },
+      findFirst: async ({ where }: any = {}) => {
         let list = [...this.data.offers];
+        if (where?.id) list = list.filter((o) => o.id === where.id);
         if (where?.restaurantId) list = list.filter((o) => o.restaurantId === where.restaurantId);
         if (where?.status) list = list.filter((o) => o.status === where.status);
+        return list[0] || null;
+      },
+      findMany: async ({ where, orderBy }: any = {}) => {
+        let list = [...this.data.offers];
+        if (where?.restaurantId) list = list.filter((o) => o.restaurantId === where.restaurantId);
+        if (where?.status) {
+          if (typeof where.status === 'object' && where.status.not) {
+            list = list.filter((o) => o.status !== where.status.not);
+          } else if (typeof where.status === 'object' && Array.isArray(where.status.in)) {
+            list = list.filter((o) => where.status.in.includes(o.status));
+          } else {
+            list = list.filter((o) => o.status === where.status);
+          }
+        }
+        if (orderBy?.createdAt === 'desc') {
+          list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        }
         return list;
       },
       create: async ({ data }: any) => {
@@ -289,6 +312,24 @@ class LocalFallbackStore {
         this.data.offers.push(item);
         this.persist();
         return item;
+      },
+      update: async ({ where, data }: any) => {
+        const idx = this.data.offers.findIndex((o) => o.id === where.id);
+        if (idx === -1) throw new Error('Offre introuvable');
+        this.data.offers[idx] = {
+          ...this.data.offers[idx],
+          ...data,
+          updatedAt: new Date(),
+        };
+        this.persist();
+        return this.data.offers[idx];
+      },
+      delete: async ({ where }: any) => {
+        const idx = this.data.offers.findIndex((o) => o.id === where.id);
+        if (idx === -1) throw new Error('Offre introuvable');
+        const [removed] = this.data.offers.splice(idx, 1);
+        this.persist();
+        return removed;
       },
     };
   }
@@ -330,9 +371,14 @@ class LocalFallbackStore {
 
   get signal() {
     return {
+      findUnique: async ({ where }: any) => {
+        if (!where?.id) return null;
+        return this.data.signals.find((s) => s.id === where.id) || null;
+      },
       create: async ({ data }: any) => {
         const item = {
           id: `sig_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+          status: 'active',
           detectedAt: new Date(),
           createdAt: new Date(),
           ...data,
@@ -343,6 +389,7 @@ class LocalFallbackStore {
       },
       findFirst: async ({ where }: any = {}) => {
         let list = [...this.data.signals];
+        if (where?.id) list = list.filter((s) => s.id === where.id);
         if (where?.restaurantId) list = list.filter((s) => s.restaurantId === where.restaurantId);
         if (where?.type) list = list.filter((s) => s.type === where.type);
         if (where?.source) list = list.filter((s) => s.source === where.source);
@@ -359,7 +406,13 @@ class LocalFallbackStore {
         if (where?.restaurantId) list = list.filter((s) => s.restaurantId === where.restaurantId);
         if (where?.type) list = list.filter((s) => s.type === where.type);
         if (where?.source) list = list.filter((s) => s.source === where.source);
-        if (where?.status) list = list.filter((s) => s.status === where.status);
+        if (where?.status) {
+          if (typeof where.status === 'object' && where.status.not) {
+            list = list.filter((s) => s.status !== where.status.not);
+          } else {
+            list = list.filter((s) => s.status === where.status);
+          }
+        }
         if (where?.detectedAt?.gte) {
           const gte = new Date(where.detectedAt.gte).getTime();
           list = list.filter((s) => new Date(s.detectedAt).getTime() >= gte);
@@ -377,6 +430,7 @@ class LocalFallbackStore {
         if (idx === -1) {
           const item = {
             id: where.id || `sig_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+            status: 'active',
             detectedAt: new Date(),
             createdAt: new Date(),
             ...data,
@@ -420,6 +474,7 @@ class LocalFallbackStore {
         } else {
           const item = {
             id: `sig_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+            status: 'active',
             detectedAt: new Date(),
             createdAt: new Date(),
             ...create,
@@ -428,6 +483,13 @@ class LocalFallbackStore {
           this.persist();
           return item;
         }
+      },
+      delete: async ({ where }: any) => {
+        const idx = this.data.signals.findIndex((s) => s.id === where.id);
+        if (idx === -1) throw new Error('Signal introuvable');
+        const [removed] = this.data.signals.splice(idx, 1);
+        this.persist();
+        return removed;
       },
       deleteMany: async ({ where }: any = {}) => {
         const initialLen = this.data.signals.length;
@@ -722,7 +784,17 @@ class LocalFallbackStore {
       copy.socialAccounts = this.data.socialAccounts.filter((a) => a.restaurantId === rest.id);
     }
     if (include?.signals) {
-      copy.signals = this.data.signals.filter((s) => s.restaurantId === rest.id);
+      let sigs = this.data.signals.filter((s) => s.restaurantId === rest.id);
+      if (typeof include.signals === 'object' && include.signals.where?.status) {
+        sigs = sigs.filter((s) => (s.status || 'active') === include.signals.where.status);
+      }
+      if (typeof include.signals === 'object' && include.signals.orderBy?.detectedAt === 'desc') {
+        sigs.sort((a, b) => new Date(b.detectedAt).getTime() - new Date(a.detectedAt).getTime());
+      }
+      if (typeof include.signals === 'object' && typeof include.signals.take === 'number') {
+        sigs = sigs.slice(0, include.signals.take);
+      }
+      copy.signals = sigs;
     }
     if (include?.opportunities) {
       copy.opportunities = this.data.opportunities.filter((o) => o.restaurantId === rest.id);

@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   FileText,
-  Globe,
   Image as ImageIcon,
   UploadCloud,
   Sparkles,
@@ -12,51 +11,49 @@ import {
 } from 'lucide-react';
 import {
   RestaurantMenuData,
-  INITIAL_RESTAURANT_MENU,
   RestaurantOffer,
 } from '@/services/restaurant/restaurant-offers.data';
 import styles from './MenuManager.module.css';
 
 interface MenuManagerProps {
   restaurantName: string;
+  initialMenu?: RestaurantMenuData | null;
   onImportOffers: (newOffers: RestaurantOffer[]) => void;
-  onNotice: (message: string) => void;
+  onNotice: (message: string, variant?: 'success' | 'error') => void;
   onMenuExtracted?: (result: {
     dishes: any[];
     extractedOffers: any[];
     rawSummary?: string;
     detectedCategories?: string[];
+    menuMetadata?: RestaurantMenuData;
   }) => void;
+  onMenuCleared?: () => void;
 }
+
+const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024; // 15 Mo
 
 export default function MenuManager({
   restaurantName,
-  onImportOffers,
+  initialMenu = null,
   onNotice,
   onMenuExtracted,
+  onMenuCleared,
 }: MenuManagerProps) {
-  const [activeTab, setActiveTab] = useState<'pdf' | 'url' | 'image'>('pdf');
-  const [menuData, setMenuData] = useState<RestaurantMenuData | null>(INITIAL_RESTAURANT_MENU);
-  const [webUrl, setWebUrl] = useState('');
+  const [activeTab, setActiveTab] = useState<'pdf' | 'image'>('pdf');
+  const [menuData, setMenuData] = useState<RestaurantMenuData | null>(initialMenu);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // Base64 du dernier fichier uploadé (PDF ou image) — envoyé directement à l'API
   const [uploadedFileBase64, setUploadedFileBase64] = useState<string | null>(null);
 
-  // Charger le menu stocké au montage
+  // Synchronise les métadonnées chargées depuis l'API parent
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('getspecial_restaurant_menu');
-      if (stored) {
-        setMenuData(JSON.parse(stored));
-      }
-    } catch {
-      // Ignorer
+    if (initialMenu) {
+      setMenuData(initialMenu);
     }
-  }, []);
+  }, [initialMenu]);
 
-  const saveMenuData = (data: RestaurantMenuData | null) => {
+  const persistLocalMenu = (data: RestaurantMenuData | null) => {
     setMenuData(data);
     if (typeof window !== 'undefined') {
       if (data) {
@@ -67,21 +64,46 @@ export default function MenuManager({
     }
   };
 
-  // Gestion de l'upload de fichier (PDF ou Image) — lecture base64 pour l'envoi IA
+  // Gestion de l'upload de fichier (PDF ou Image uniquement)
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // Réinitialise l'input pour permettre de resélectionner le même fichier si besoin
+    e.target.value = '';
     if (!file) return;
 
-    const isPdf = file.type.includes('pdf') || file.name.endsWith('.pdf');
-    const isImage = file.type.includes('image');
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const isImage =
+      file.type === 'image/jpeg' ||
+      file.type === 'image/png' ||
+      file.type === 'image/webp' ||
+      /\.(jpe?g|png|webp)$/i.test(file.name);
+
+    // Erreurs imputables à l'utilisateur : message clair et direct
+    if (!isPdf && !isImage) {
+      onNotice(
+        'Format non pris en charge. Veuillez importer un fichier PDF ou une image (JPG, PNG, WEBP).',
+        'error'
+      );
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      onNotice('Ce fichier dépasse la taille maximale autorisée de 15 Mo.', 'error');
+      return;
+    }
+
+    if (file.size === 0) {
+      onNotice('Le fichier sélectionné est vide.', 'error');
+      return;
+    }
 
     const formattedSize =
       file.size > 1024 * 1024
         ? `${(file.size / (1024 * 1024)).toFixed(1)} Mo`
-        : `${Math.round(file.size / 1024)} Ko`;
+        : `${Math.max(1, Math.round(file.size / 1024))} Ko`;
 
-    const newMenu: RestaurantMenuData = {
-      sourceType: isPdf ? 'pdf' : isImage ? 'image' : 'pdf',
+    const candidateMenu: RestaurantMenuData = {
+      sourceType: isPdf ? 'pdf' : 'image',
       name: file.name,
       fileSize: formattedSize,
       uploadedAt: new Date().toLocaleDateString('fr-FR', {
@@ -91,57 +113,35 @@ export default function MenuManager({
       }),
     };
 
-    // Lecture du fichier en base64 pour envoi à l'API d'extraction IA
+    const previousMenu = menuData;
     const reader = new FileReader();
     reader.onload = () => {
       const base64 = reader.result as string;
       setUploadedFileBase64(base64);
-      saveMenuData(newMenu);
-      onNotice(`Fichier « ${file.name} » chargé. Analyse IA en cours...`);
-      analyzeMenu(newMenu, base64);
+      setMenuData(candidateMenu);
+      onNotice(`Lecture de « ${file.name} » en cours...`, 'success');
+      analyzeMenu(candidateMenu, base64, previousMenu);
     };
     reader.onerror = () => {
-      onNotice('Erreur lors de la lecture du fichier. Réessayez.');
+      onNotice('Impossible de lire ce fichier. Vérifiez qu’il n’est pas endommagé.', 'error');
     };
     reader.readAsDataURL(file);
   };
 
-  // Validation du site web
-  const handleUrlSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!webUrl.trim()) return;
-
-    let cleanUrl = webUrl.trim();
-    if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
-      cleanUrl = `https://${cleanUrl}`;
+  // Extraction IA via /api/menu/extract + sauvegarde réelle en base
+  const analyzeMenu = async (
+    targetMenu: RestaurantMenuData,
+    fileBase64Override?: string,
+    rollbackMenu?: RestaurantMenuData | null
+  ) => {
+    const fileBase64ToSend = fileBase64Override || uploadedFileBase64;
+    if (!fileBase64ToSend) {
+      onNotice('Veuillez sélectionner le fichier de votre carte pour lancer l’analyse.', 'error');
+      fileInputRef.current?.click();
+      return;
     }
 
-    const newMenu: RestaurantMenuData = {
-      sourceType: 'url',
-      name: cleanUrl.replace(/^https?:\/\//, ''),
-      url: cleanUrl,
-      uploadedAt: new Date().toLocaleDateString('fr-FR', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-      }),
-    };
-
-    saveMenuData(newMenu);
-    onNotice(`Lien vers le menu enregistré : ${cleanUrl}`);
-    analyzeMenu(newMenu);
-  };
-
-  // Appel de l'analyse IA via /api/menu/extract
-  const analyzeMenu = async (currentMenu?: RestaurantMenuData | null, fileBase64Override?: string) => {
-    const targetMenu = currentMenu || menuData;
-    if (!targetMenu) return;
-
     setIsAnalyzing(true);
-
-    // Base64 à utiliser : priorité au paramètre direct (upload frais), sinon état
-    const fileBase64ToSend = fileBase64Override || uploadedFileBase64 || null;
-
     try {
       const res = await fetch('/api/menu/extract', {
         method: 'POST',
@@ -150,70 +150,126 @@ export default function MenuManager({
           sourceType: targetMenu.sourceType,
           fileName: targetMenu.name,
           fileSize: targetMenu.fileSize,
-          url: targetMenu.url || undefined,
-          fileBase64: fileBase64ToSend || undefined,
+          fileBase64: fileBase64ToSend,
           restaurantName,
         }),
       });
 
-      const json = await res.json();
-      if (json.success && json.data) {
-        const result = json.data;
+      const json = await res.json().catch(() => null);
 
-        // Mettre à jour les métadonnées du menu enregistré
-        const updatedMenu: RestaurantMenuData = {
-          ...targetMenu,
-          detectedCategories: result.detectedCategories,
-          extractedCount: result.extractedOffers?.length || 0,
-        };
-        saveMenuData(updatedMenu);
-
-        // Persister les dishes extraits en base de données
-        if (result.dishes && result.dishes.length > 0) {
-          try {
-            const restaurantId =
-              (typeof window !== 'undefined'
-                ? localStorage.getItem('getspecial_restaurant_id')
-                : null) || 'current';
-
-            await fetch(`/api/restaurants/${restaurantId}/dishes`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                dishes: result.dishes.map((d: any) => ({
-                  name: d.name,
-                  description: d.description || '',
-                  priceText: d.price || '',
-                })),
-              }),
-            });
-          } catch (dbErr) {
-            console.warn('[MENU_DISHES_DB_PATCH_ERROR]', dbErr);
-          }
+      if (!res.ok || !json?.success || !json?.data) {
+        if (rollbackMenu !== undefined) {
+          setMenuData(rollbackMenu);
         }
-
-        // Sauvegarder dans le localStorage pour persistance immédiate
-        if (typeof window !== 'undefined') {
-          if (result.dishes) {
-            localStorage.setItem('getspecial_restaurant_dishes', JSON.stringify(result.dishes));
-          }
-          if (result.rawSummary) {
-            localStorage.setItem('getspecial_restaurant_menu_summary', result.rawSummary);
-          }
+        // Si l'erreur provient du fichier/action utilisateur (4xx), afficher le conseil précis
+        if (res.status >= 400 && res.status < 500 && json?.error) {
+          onNotice(json.error, 'error');
+        } else {
+          // Erreur technique serveur/modèle : journalisée en console, message sobre côté utilisateur
+          console.error('[MENU_MANAGER_EXTRACT_FAILURE]', res.status, json);
+          onNotice(
+            'L’analyse automatique de la carte est momentanément indisponible. Veuillez réessayer.',
+            'error'
+          );
         }
-
-        // Émettre au composant parent (RestaurantOffersPage) pour mettre à jour la section Plats ou Offres
-        onMenuExtracted?.(result);
-
-        onNotice(`✅ ${result.dishes?.length || 0} plat(s) et ${result.extractedOffers?.length || 0} offre(s) extraits de votre menu !`);
-      } else {
-        throw new Error(json.error || 'Erreur lors de l\'analyse');
+        return;
       }
-    } catch (err: any) {
-      console.warn('Erreur extraction:', err);
-      onNotice('Impossible d\'analyser le menu pour le moment.');
+
+      const result = json.data;
+      const updatedMenu: RestaurantMenuData = {
+        ...targetMenu,
+        detectedCategories: result.detectedCategories || [],
+        extractedCount: (result.dishes?.length || 0) + (result.extractedOffers?.length || 0),
+      };
+
+      // Sauvegarde réelle en base de données (plats complets + résumé + métadonnées du menu)
+      const restaurantId =
+        (typeof window !== 'undefined' ? localStorage.getItem('getspecial_restaurant_id') : null) ||
+        'current';
+
+      const saveRes = await fetch(`/api/restaurants/${restaurantId}/dishes`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dishes: (result.dishes || []).map((d: any) => ({
+            id: d.id,
+            name: d.name,
+            category: d.category || 'Plats',
+            price: d.price || '',
+            priceText: d.price || '',
+            description: d.description || '',
+            isSignature: Boolean(d.isSignature),
+          })),
+          rawSummary: result.rawSummary || '',
+          menuMetadata: updatedMenu,
+        }),
+      });
+
+      const saveJson = await saveRes.json().catch(() => null);
+      if (!saveRes.ok || !saveJson?.success) {
+        console.error('[MENU_DISHES_DB_PATCH_ERROR]', saveRes.status, saveJson);
+        onNotice(
+          'Les plats ont été lus mais leur sauvegarde a échoué. Veuillez réessayer.',
+          'error'
+        );
+        return;
+      }
+
+      persistLocalMenu(updatedMenu);
+
+      onMenuExtracted?.({
+        dishes: saveJson.data?.dishes || result.dishes || [],
+        extractedOffers: result.extractedOffers || [],
+        rawSummary: result.rawSummary || '',
+        detectedCategories: result.detectedCategories || [],
+        menuMetadata: updatedMenu,
+      });
+
+      onNotice(
+        `${result.dishes?.length || 0} plat(s) et ${result.extractedOffers?.length || 0} formule(s) extraits et enregistrés.`,
+        'success'
+      );
+    } catch (err) {
+      console.error('[MENU_MANAGER_NETWORK_ERROR]', err);
+      if (rollbackMenu !== undefined) {
+        setMenuData(rollbackMenu);
+      }
+      onNotice('Connexion interrompue lors de l’analyse. Vérifiez votre réseau et réessayez.', 'error');
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  // Suppression réelle du menu actif en base et en local
+  const handleRemoveMenu = async () => {
+    const restaurantId =
+      (typeof window !== 'undefined' ? localStorage.getItem('getspecial_restaurant_id') : null) ||
+      'current';
+
+    try {
+      const res = await fetch(`/api/restaurants/${restaurantId}/dishes`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dishes: [],
+          rawSummary: '',
+          menuMetadata: null,
+        }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        console.error('[MENU_REMOVE_ERROR]', res.status, json);
+        onNotice('Impossible de supprimer la carte pour le moment. Veuillez réessayer.', 'error');
+        return;
+      }
+
+      persistLocalMenu(null);
+      setUploadedFileBase64(null);
+      onMenuCleared?.();
+      onNotice('Carte retirée avec succès.', 'success');
+    } catch (err) {
+      console.error('[MENU_REMOVE_NETWORK_ERROR]', err);
+      onNotice('Impossible de contacter le serveur pour supprimer la carte.', 'error');
     }
   };
 
@@ -228,7 +284,7 @@ export default function MenuManager({
           <div>
             <h3 className={styles.menuTitle}>Carte & Menu du restaurant</h3>
             <p className={styles.menuSubtitle}>
-              Ajoutez votre carte pour que l’IA identifie et synchronise automatiquement vos formules phares.
+              Importez un PDF ou une photo de votre carte pour extraire automatiquement vos plats et formules.
             </p>
           </div>
         </div>
@@ -239,7 +295,7 @@ export default function MenuManager({
         </div>
       </div>
 
-      {/* Onglets de sélection du type de menu */}
+      {/* Onglets de sélection : PDF ou Image uniquement */}
       <div className={styles.sourceTabsRow}>
         <button
           type="button"
@@ -252,15 +308,6 @@ export default function MenuManager({
 
         <button
           type="button"
-          onClick={() => setActiveTab('url')}
-          className={`${styles.sourceTabBtn} ${activeTab === 'url' ? styles.sourceTabActive : ''}`}
-        >
-          <Globe size={15} />
-          <span>Site web / Carte en ligne</span>
-        </button>
-
-        <button
-          type="button"
           onClick={() => setActiveTab('image')}
           className={`${styles.sourceTabBtn} ${activeTab === 'image' ? styles.sourceTabActive : ''}`}
         >
@@ -269,13 +316,18 @@ export default function MenuManager({
         </button>
       </div>
 
-      {/* Zone de téléversement / saisie selon l'onglet actif */}
-      {activeTab === 'pdf' && (
+      {/* Zone de téléversement selon l'onglet actif */}
+      {activeTab === 'pdf' ? (
         <div
           className={styles.uploadZone}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => !isAnalyzing && fileInputRef.current?.click()}
           role="button"
           tabIndex={0}
+          onKeyDown={(e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && !isAnalyzing) {
+              fileInputRef.current?.click();
+            }
+          }}
         >
           <input
             ref={fileInputRef}
@@ -283,39 +335,29 @@ export default function MenuManager({
             accept=".pdf,application/pdf"
             className={styles.fileInputHidden}
             onChange={handleFileUpload}
+            disabled={isAnalyzing}
           />
           <UploadCloud size={30} className={styles.uploadIcon} />
           <p className={styles.uploadTitle}>
-            Cliquez ou glissez-déposez le PDF de votre menu
+            {isAnalyzing
+              ? 'Analyse de votre PDF en cours...'
+              : 'Cliquez pour importer le PDF de votre menu'}
           </p>
           <p className={styles.uploadDesc}>
-            Format PDF jusqu’à 15 Mo (carte du midi, carte des vins, menu complet)
+            Format PDF jusqu’à 15 Mo (carte complète, formules du midi, boissons)
           </p>
         </div>
-      )}
-
-      {activeTab === 'url' && (
-        <form onSubmit={handleUrlSubmit} className={styles.urlInputRow}>
-          <input
-            type="text"
-            placeholder="Ex: https://mon-restaurant.fr/carte ou lien Deliveroo / UberEats..."
-            value={webUrl}
-            onChange={(e) => setWebUrl(e.target.value)}
-            className={styles.urlInput}
-          />
-          <button type="submit" className={styles.analyzeBtn}>
-            <Globe size={14} />
-            <span>Enregistrer & Analyser</span>
-          </button>
-        </form>
-      )}
-
-      {activeTab === 'image' && (
+      ) : (
         <div
           className={styles.uploadZone}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => !isAnalyzing && fileInputRef.current?.click()}
           role="button"
           tabIndex={0}
+          onKeyDown={(e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && !isAnalyzing) {
+              fileInputRef.current?.click();
+            }
+          }}
         >
           <input
             ref={fileInputRef}
@@ -323,18 +365,21 @@ export default function MenuManager({
             accept="image/png,image/jpeg,image/webp"
             className={styles.fileInputHidden}
             onChange={handleFileUpload}
+            disabled={isAnalyzing}
           />
           <ImageIcon size={30} className={styles.uploadIcon} />
           <p className={styles.uploadTitle}>
-            Ajoutez une photo de votre carte, ardoise ou menu du jour
+            {isAnalyzing
+              ? 'Analyse de votre photo en cours...'
+              : 'Importez une photo de votre carte ou ardoise du jour'}
           </p>
           <p className={styles.uploadDesc}>
-            PNG, JPG ou WEBP. L’IA lit et extrait le texte de vos ardoises.
+            Formats JPG, PNG ou WEBP jusqu’à 15 Mo. Assurez-vous que les prix soient lisibles.
           </p>
         </div>
       )}
 
-      {/* Affichage du menu actif enregistré */}
+      {/* Affichage du menu actif réellement enregistré */}
       {menuData && (
         <div className={styles.activeMenuBox}>
           <div className={styles.activeMenuInfo}>
@@ -344,7 +389,7 @@ export default function MenuManager({
               <span className={styles.activeMenuMeta}>
                 Ajouté le {menuData.uploadedAt}
                 {menuData.fileSize ? ` • ${menuData.fileSize}` : ''}
-                {menuData.extractedCount ? ` • ${menuData.extractedCount} offres détectées` : ''}
+                {menuData.extractedCount ? ` • ${menuData.extractedCount} éléments extraits` : ''}
               </span>
             </div>
           </div>
@@ -353,8 +398,7 @@ export default function MenuManager({
             <button
               type="button"
               onClick={() => {
-                if (menuData.sourceType !== 'url' && !uploadedFileBase64) {
-                  onNotice('Veuillez resélectionner le fichier de votre carte pour relancer l’analyse.');
+                if (!uploadedFileBase64) {
                   fileInputRef.current?.click();
                   return;
                 }
@@ -371,19 +415,17 @@ export default function MenuManager({
               ) : (
                 <>
                   <Sparkles size={14} />
-                  <span>Scanner & Extraire les offres</span>
+                  <span>{uploadedFileBase64 ? 'Relancer l’analyse' : 'Remplacer le fichier'}</span>
                 </>
               )}
             </button>
 
             <button
               type="button"
-              onClick={() => {
-                saveMenuData(null);
-                onNotice('Menu retiré.');
-              }}
+              onClick={handleRemoveMenu}
+              disabled={isAnalyzing}
               className={styles.removeMenuBtn}
-              title="Supprimer ce menu"
+              title="Retirer cette carte et vider les plats extraits"
               aria-label="Supprimer"
             >
               <Trash2 size={13} />

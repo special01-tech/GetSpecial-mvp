@@ -1,11 +1,5 @@
 import { NextRequest } from 'next/server';
 import { success, error } from '@/server/lib/api-response';
-import { geocodeAddress } from '@/server/lib/geocoding';
-
-// Autorise les requêtes de développement local sous Windows si un antivirus ou proxy inspecte les certificats SSL
-if (process.env.NODE_ENV === 'development' && typeof process !== 'undefined') {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-}
 
 export interface RestaurantSearchResult {
   id: string;
@@ -53,118 +47,7 @@ export async function GET(req: NextRequest) {
       return error('Veuillez renseigner le nom ou la ville de votre établissement.', 400);
     }
 
-    const googleApiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-    // 1. REQUÊTE GOOGLE PLACES API OFFICIELLE (support Places API New v1 & Legacy)
-    if (googleApiKey) {
-      const queryText = [name, city, country].filter(Boolean).join(' ');
-
-      // 1.A. TENTATIVE VIA PLACES API (NEW) - places.googleapis.com/v1/places:searchText
-      try {
-        const newPlacesRes = await fetch('https://places.googleapis.com/v1/places:searchText', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Goog-Api-Key': googleApiKey,
-            'X-Goog-FieldMask':
-              'places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.nationalPhoneNumber,places.internationalPhoneNumber,places.regularOpeningHours,places.photos,places.primaryTypeDisplayName,places.websiteUri',
-          },
-          body: JSON.stringify({
-            textQuery: queryText,
-            languageCode: 'fr',
-          }),
-        });
-
-        if (newPlacesRes.ok) {
-          const newPlacesData = await newPlacesRes.json();
-          if (Array.isArray(newPlacesData.places) && newPlacesData.places.length > 0) {
-            const results: RestaurantSearchResult[] = newPlacesData.places.slice(0, 5).map((p: any, idx: number) => {
-              const photoName = p.photos?.[0]?.name;
-              const photoUrl = photoName
-                ? `https://places.googleapis.com/v1/${photoName}/media?maxHeightPx=800&maxWidthPx=800&key=${googleApiKey}`
-                : undefined;
-
-              const hours = p.regularOpeningHours?.weekdayDescriptions?.slice(0, 2).join(' • ') || undefined;
-              const phone = p.nationalPhoneNumber || p.internationalPhoneNumber || undefined;
-              const category = p.primaryTypeDisplayName?.text || deduceCuisineType(p.displayName?.text || name, country);
-
-              return {
-                id: `google_${p.id || idx}`,
-                name: p.displayName?.text || name,
-                address: p.formattedAddress || [name, city].filter(Boolean).join(', '),
-                city: city,
-                country: country,
-                latitude: p.location?.latitude || 48.8566,
-                longitude: p.location?.longitude || 2.3522,
-                rating: p.rating,
-                reviewsCount: p.userRatingCount,
-                cuisineType: category,
-                phone,
-                openingHours: hours,
-                isOpenNow: true,
-                photoUrl,
-                googlePlaceId: p.id,
-              };
-            });
-
-            return success(results);
-          }
-        } else {
-          const errBody = await newPlacesRes.json().catch(() => ({}));
-          console.warn('[GOOGLE_PLACES_NEW_API_ERROR]', newPlacesRes.status, errBody);
-        }
-      } catch (newApiErr) {
-        console.warn('[GOOGLE_PLACES_NEW_EXCEPTION]', newApiErr);
-      }
-
-      // 1.B. FALLBACK VIA PLACES API LEGACY (si la clé utilise l'ancienne version)
-      try {
-        const googleRes = await fetch(
-          `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(queryText)}&key=${googleApiKey}`
-        );
-        if (googleRes.ok) {
-          const googleData = await googleRes.json();
-          if (googleData.status === 'REQUEST_DENIED') {
-            console.warn(
-              '[GOOGLE_PLACES_KEY_RESTRICTION] La clé GOOGLE_PLACES_API_KEY a été rejetée par Google:',
-              googleData.error_message
-            );
-          }
-          if (Array.isArray(googleData.results) && googleData.results.length > 0) {
-            const results: RestaurantSearchResult[] = googleData.results.slice(0, 5).map((p: any, idx: number) => {
-              const photoRef = p.photos?.[0]?.photo_reference;
-              const photoUrl = photoRef
-                ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=${photoRef}&key=${googleApiKey}`
-                : undefined;
-
-              const category = p.types?.[0]?.replace(/_/g, ' ') || 'Restaurant';
-
-              return {
-                id: `google_${p.place_id || idx}`,
-                name: p.name || name,
-                address: p.formatted_address || [name, city].filter(Boolean).join(', '),
-                city: city,
-                country: country,
-                latitude: p.geometry?.location?.lat || 48.8566,
-                longitude: p.geometry?.location?.lng || 2.3522,
-                rating: p.rating,
-                reviewsCount: p.user_ratings_total,
-                cuisineType: category.charAt(0).toUpperCase() + category.slice(1),
-                phone: p.formatted_phone_number || undefined,
-                photoUrl,
-                googlePlaceId: p.place_id,
-              };
-            });
-
-            return success(results);
-          }
-        }
-      } catch (googleErr) {
-        console.warn('[GOOGLE_PLACES_API_ERROR] Fallback Nominatim:', googleErr);
-      }
-    }
-
-    // 2. REQUÊTE LIVE MONDIALE OPENSTREETMAP NOMINATIM (100% gratuit, mondial, temps réel)
+    // Recherche via OpenStreetMap Nominatim
     const searchQuery = [name, city].filter(Boolean).join(' ');
     try {
       const countryParam = country ? `&countrycodes=${country.toLowerCase()}` : '';
@@ -198,7 +81,6 @@ export async function GET(req: NextRequest) {
                 ? 'Bar & Brasserie'
                 : deduceCuisineType(detectedName, countryCode);
 
-            // Ne conserver le téléphone QUE si OpenStreetMap fournit un numéro réel vérifié
             const realPhone = tags.phone || tags['contact:phone'] || addr.phone || undefined;
             const realOpeningHours = tags.opening_hours || undefined;
 
@@ -212,8 +94,8 @@ export async function GET(req: NextRequest) {
               country: countryCode,
               latitude: parseFloat(p.lat),
               longitude: parseFloat(p.lon),
-              rating: 4.8,
-              reviewsCount: 0,
+              rating: undefined,
+              reviewsCount: undefined,
               cuisineType,
               phone: realPhone,
               openingHours: realOpeningHours,
@@ -227,49 +109,11 @@ export async function GET(req: NextRequest) {
         }
       }
     } catch (apiErr: any) {
-      console.warn('[SEARCH_API_LIVE_WARNING] OpenStreetMap temporairement indisponible (mode fallback activé):', apiErr?.message || apiErr);
+      console.warn('[SEARCH_API_LIVE_WARNING] Recherche indisponible:', apiErr?.message || apiErr);
     }
 
-    // 3. Fallback intelligent & constructif : Générer la fiche exacte du restaurant saisi
-    // afin que le restaurateur ne soit JAMAIS bloqué et puisse poursuivre son inscription immédiatement
-    const cuisineType = deduceCuisineType(name, country);
-
-    // Détermination des coordonnées géographiques réelles de la ville saisie
-    let lat = 48.8566;
-    let lon = 2.3522;
-    const formattedAddress = city ? `${name}, ${city}` : name;
-
-    try {
-      const geo = await geocodeAddress([city, country].filter(Boolean).join(', '));
-      if (geo.latitude && geo.longitude) {
-        lat = geo.latitude;
-        lon = geo.longitude;
-      }
-    } catch {
-      // Coordonnées de secours
-    }
-
-    const smartResult: RestaurantSearchResult = {
-      id: `place_auto_${Date.now()}`,
-      name: name,
-      address: formattedAddress,
-      city: city,
-      state: undefined,
-      postalCode: '',
-      country: country,
-      latitude: lat,
-      longitude: lon,
-      rating: undefined,
-      reviewsCount: undefined,
-      cuisineType,
-      phone: undefined, // Aucun faux numéro généré : l'utilisateur a ses vraies données
-      openingHours: undefined,
-      isOpenNow: true,
-      photoUrl: undefined, // Aucune image fausse ou codée en dur
-      googlePlaceId: undefined,
-    };
-
-    return success([smartResult]);
+    // Aucun établissement trouvé : pas de simulation, renvoi d'un tableau vide
+    return success([]);
   } catch (err: any) {
     console.error('[SEARCH_API_FATAL_ERROR]', err);
     return error(err.message || 'Erreur lors de la recherche', 500);

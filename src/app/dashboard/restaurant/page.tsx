@@ -13,6 +13,7 @@ import {
   Edit2,
   Check,
   CheckCircle2,
+  AlertCircle,
   Moon,
   SunMedium,
   MapPin,
@@ -30,7 +31,7 @@ import {
   SlidersHorizontal,
   Navigation,
   X,
-  Palette,
+  TrendingUp,
 } from 'lucide-react';
 import { useLanguage } from '@/i18n';
 import {
@@ -41,11 +42,39 @@ import {
 import styles from './restaurant.module.css';
 
 /**
- * Normalise les horaires d'ouverture pour l'interface
+ * Normalise les horaires d'ouverture pour l'interface (tableau ou dictionnaire historique).
  */
 function normalizeOpeningHours(raw: any) {
   if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === 'object' && 'day' in raw[0]) {
     return raw;
+  }
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    const dayLookup: Record<string, string[]> = {
+      Lundi: ['mon', 'lundi', 'monday'],
+      Mardi: ['tue', 'mardi', 'tuesday'],
+      Mercredi: ['wed', 'mercredi', 'wednesday'],
+      Jeudi: ['thu', 'jeudi', 'thursday'],
+      Vendredi: ['fri', 'vendredi', 'friday'],
+      Samedi: ['sat', 'samedi', 'saturday'],
+      Dimanche: ['sun', 'dimanche', 'sunday'],
+    };
+    return INITIAL_RESTAURANT_PROFILE.openingHours.map((defaultDay) => {
+      const keys = dayLookup[defaultDay.day] || [];
+      const foundKey = Object.keys(raw).find((k) => keys.includes(k.toLowerCase()));
+      if (!foundKey) return defaultDay;
+      const val = String(raw[foundKey] || '').trim();
+      const closed = !val || val.toLowerCase().includes('ferm') || val.toLowerCase().includes('close');
+      if (closed) {
+        return { day: defaultDay.day, isOpen: false, lunch: 'Fermé', dinner: 'Fermé' };
+      }
+      const parts = val.split('/').map((s) => s.trim());
+      return {
+        day: defaultDay.day,
+        isOpen: true,
+        lunch: parts[0] || defaultDay.lunch,
+        dinner: parts[1] || defaultDay.dinner,
+      };
+    });
   }
   return INITIAL_RESTAURANT_PROFILE.openingHours;
 }
@@ -88,18 +117,25 @@ const PRESET_OFFPEAK_SLOTS: Omit<OffPeakSlot, 'id'>[] = [
 
 const DAYS_NAMES = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
+interface NoticeState {
+  text: string;
+  type: 'success' | 'error';
+}
+
 /**
  * Mon Resto — Profil de l'établissement, Horaires d'ouverture & Heures creuses
- * Remasterisé UX-First & Mobile-Oriented
  */
 export default function MyRestaurantPage() {
   const { t } = useLanguage();
   const [profile, setProfile] = useState<RestaurantProfileData>(INITIAL_RESTAURANT_PROFILE);
+  const [lastPersistedProfile, setLastPersistedProfile] =
+    useState<RestaurantProfileData>(INITIAL_RESTAURANT_PROFILE);
 
   // Modes d'édition par section
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [isEditingServices, setIsEditingServices] = useState(false);
   const [isEditingHours, setIsEditingHours] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Filtre / Navigation rapide par pilules pour mobile
   const [activeSectionFilter, setActiveSectionFilter] = useState<
@@ -117,8 +153,13 @@ export default function MyRestaurantPage() {
   const [newSlotDays, setNewSlotDays] = useState('Du Lundi au Vendredi');
 
   // Thème sombre & notifications
-  const [savedNotice, setSavedNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<NoticeState | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
+
+  const showNotice = (text: string, type: 'success' | 'error' = 'success') => {
+    setNotice({ text, type });
+    setTimeout(() => setNotice(null), 4000);
+  };
 
   // Détection du jour courant
   const todayDayName = useMemo(() => {
@@ -128,7 +169,7 @@ export default function MyRestaurantPage() {
 
   // Calcul du score d'optimisation IA de la fiche (0 à 100%)
   const completionScore = useMemo(() => {
-    let score = 20; // Base profil existant
+    let score = 15;
     if (profile.name && profile.name !== 'Mon Restaurant') score += 10;
     if (profile.type) score += 10;
     if (profile.address && profile.city) score += 15;
@@ -137,6 +178,7 @@ export default function MyRestaurantPage() {
     if (profile.specialties && profile.specialties.length > 0) score += 10;
     if (profile.hasTerrace || profile.hasDelivery) score += 5;
     if (profile.capacityCovers || profile.averageTicket) score += 5;
+    if (profile.baselineCovers && profile.baselineCovers > 0) score += 5;
     if (profile.hasOffPeak && (profile.offPeakSlots || []).length > 0) score += 10;
     return Math.min(100, score);
   }, [profile]);
@@ -146,7 +188,7 @@ export default function MyRestaurantPage() {
     return profile.openingHours.find((h) => h.day.toLowerCase() === todayDayName.toLowerCase());
   }, [profile.openingHours, todayDayName]);
 
-  // Charger profil depuis l'API et local storage
+  // Chargement réel du profil depuis l'API
   useEffect(() => {
     try {
       const storedTheme = localStorage.getItem('getspecial_theme');
@@ -157,50 +199,60 @@ export default function MyRestaurantPage() {
         document.documentElement.removeAttribute('data-theme');
       }
 
-      // Synchronisation en direct avec l'API
       const restaurantId = localStorage.getItem('getspecial_restaurant_id') || 'current';
 
       fetch(`/api/restaurants/${restaurantId}/profile`)
-        .then((res) => res.json())
-        .then((json) => {
-          if (json.success && json.data) {
-            const r = json.data;
-            if (r.id) {
-              localStorage.setItem('getspecial_restaurant_id', r.id);
+        .then(async (res) => {
+          const json = await res.json().catch(() => null);
+          if (!res.ok || !json?.success || !json?.data) {
+            if (res.status !== 404) {
+              console.error('[RESTAURANT_PROFILE_LOAD_ERROR]', res.status, json);
+              showNotice('Impossible de synchroniser les données de votre restaurant.', 'error');
             }
-            const prof = r.profile || {};
-            setProfile((prev) => ({
-              ...prev,
-              id: r.id,
-              name: r.name || prev.name,
-              type: r.type || prev.type,
-              address: r.address || prev.address,
-              city: r.city || '',
-              postalCode: r.postalCode || '',
-              phone: r.phone || '',
-              website: r.website || '',
-              specialties: Array.isArray(r.specialties) ? r.specialties : prev.specialties || [],
-              tone: prof.tone || prev.tone,
-              colors:
-                Array.isArray(prof.brandColors) && prof.brandColors.length > 0
-                  ? prof.brandColors
-                  : prev.colors,
-              hasTerrace: prof.hasTerrace !== undefined ? prof.hasTerrace : prev.hasTerrace,
-              hasDelivery: prof.hasDelivery !== undefined ? prof.hasDelivery : prev.hasDelivery,
-              capacityCovers: prof.capacityCovers ?? null,
-              averageTicket: prof.averageTicket ?? null,
-              baselineCovers: prof.baselineCovers ?? 15,
-              hasOffPeak: prof.customRules?.hasOffPeak ?? prev.hasOffPeak,
-              offPeakSlots: prof.customRules?.offPeakSlots ?? prev.offPeakSlots,
-              openingHours: normalizeOpeningHours(r.openingHours),
-            }));
+            return;
           }
+
+          const r = json.data;
+          if (r.id) {
+            localStorage.setItem('getspecial_restaurant_id', r.id);
+          }
+          const prof = r.profile || {};
+          const hydrated: RestaurantProfileData = {
+            ...INITIAL_RESTAURANT_PROFILE,
+            id: r.id,
+            name: r.name || INITIAL_RESTAURANT_PROFILE.name,
+            type: r.type || INITIAL_RESTAURANT_PROFILE.type,
+            address: r.address || '',
+            city: r.city || '',
+            postalCode: r.postalCode || '',
+            phone: r.phone || '',
+            website: r.website || '',
+            specialties: Array.isArray(r.specialties) ? r.specialties : [],
+            tone: prof.tone || INITIAL_RESTAURANT_PROFILE.tone,
+            colors:
+              Array.isArray(prof.brandColors) && prof.brandColors.length > 0
+                ? prof.brandColors
+                : INITIAL_RESTAURANT_PROFILE.colors,
+            hasTerrace: Boolean(prof.hasTerrace),
+            hasDelivery: Boolean(prof.hasDelivery),
+            capacityCovers: prof.capacityCovers ?? null,
+            averageTicket: prof.averageTicket ?? null,
+            baselineCovers: prof.baselineCovers ?? 15,
+            hasOffPeak: Boolean(prof.customRules?.hasOffPeak),
+            offPeakSlots: Array.isArray(prof.customRules?.offPeakSlots)
+              ? prof.customRules.offPeakSlots
+              : [],
+            openingHours: normalizeOpeningHours(r.openingHours),
+          };
+          setProfile(hydrated);
+          setLastPersistedProfile(hydrated);
         })
         .catch((err) => {
-          console.warn('Could not fetch restaurant profile from API:', err);
+          console.error('[RESTAURANT_PROFILE_NETWORK_ERROR]', err);
+          showNotice('Connexion au serveur indisponible.', 'error');
         });
-    } catch {
-      // Ignorer
+    } catch (err) {
+      console.error('[RESTAURANT_PROFILE_INIT_ERROR]', err);
     }
   }, []);
 
@@ -213,77 +265,134 @@ export default function MyRestaurantPage() {
         localStorage.setItem('getspecial_theme', 'dark');
       } else {
         document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('getspecial_theme', 'light');
       }
     }
-    setSavedNotice(
-      nextMode ? t('restaurant.profile.darkEnabled') : t('restaurant.profile.lightEnabled')
+    showNotice(
+      nextMode ? t('restaurant.profile.darkEnabled') : t('restaurant.profile.lightEnabled'),
+      'success'
     );
-    setTimeout(() => setSavedNotice(null), 3000);
   };
 
-  const saveProfile = async (updated: RestaurantProfileData, notice: string) => {
-    setProfile(updated);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('getspecial_restaurant_full_profile', JSON.stringify(updated));
-      const restaurantId =
-        updated.id || localStorage.getItem('getspecial_restaurant_id') || 'current';
-      try {
-        const res = await fetch(`/api/restaurants/${restaurantId}/profile`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: updated.name,
-            type: updated.type,
-            address: updated.address,
-            city: updated.city,
-            postalCode: updated.postalCode,
-            phone: updated.phone,
-            website: updated.website,
-            openingHours: updated.openingHours,
-            specialties: updated.specialties || [],
-            tone: updated.tone,
-            hasTerrace: updated.hasTerrace,
-            hasDelivery: updated.hasDelivery,
-            capacityCovers:
-              updated.capacityCovers !== null &&
-              updated.capacityCovers !== undefined &&
-              (updated.capacityCovers as any) !== ''
-                ? Number(updated.capacityCovers)
-                : null,
-            averageTicket:
-              updated.averageTicket !== null &&
-              updated.averageTicket !== undefined &&
-              (updated.averageTicket as any) !== ''
-                ? Number(updated.averageTicket)
-                : null,
-            brandColors: updated.colors,
-            customRules: {
-              hasOffPeak: updated.hasOffPeak,
-              offPeakSlots: updated.offPeakSlots,
-            },
-          }),
-        });
-        const json = await res.json();
-        if (json.success && json.data?.id) {
-          localStorage.setItem('getspecial_restaurant_id', json.data.id);
-        }
-      } catch (err) {
-        console.warn('Could not sync profile update to backend:', err);
-      }
+  /**
+   * Sauvegarde réelle côté serveur avec rollback et notification honnête en cas d'échec.
+   */
+  const saveProfile = async (
+    updated: RestaurantProfileData,
+    successMessage: string
+  ): Promise<boolean> => {
+    if (!updated.name || !updated.name.trim()) {
+      showNotice('Le nom de l’établissement ne peut pas être vide.', 'error');
+      return false;
     }
-    setSavedNotice(notice);
-    setTimeout(() => setSavedNotice(null), 3500);
+
+    const previousSnapshot = lastPersistedProfile;
+    setProfile(updated);
+    setIsSaving(true);
+
+    try {
+      const restaurantId =
+        updated.id ||
+        (typeof window !== 'undefined' ? localStorage.getItem('getspecial_restaurant_id') : null) ||
+        'current';
+
+      const res = await fetch(`/api/restaurants/${restaurantId}/profile`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: updated.name.trim(),
+          type: updated.type.trim(),
+          address: updated.address || '',
+          city: updated.city || '',
+          postalCode: updated.postalCode || '',
+          phone: updated.phone || '',
+          website: updated.website || '',
+          openingHours: updated.openingHours,
+          specialties: updated.specialties || [],
+          tone: updated.tone,
+          hasTerrace: updated.hasTerrace,
+          hasDelivery: updated.hasDelivery,
+          capacityCovers:
+            updated.capacityCovers !== null &&
+            updated.capacityCovers !== undefined &&
+            (updated.capacityCovers as any) !== ''
+              ? Number(updated.capacityCovers)
+              : null,
+          averageTicket:
+            updated.averageTicket !== null &&
+            updated.averageTicket !== undefined &&
+            (updated.averageTicket as any) !== ''
+              ? Number(updated.averageTicket)
+              : null,
+          baselineCovers:
+            updated.baselineCovers !== null &&
+            updated.baselineCovers !== undefined &&
+            (updated.baselineCovers as any) !== ''
+              ? Number(updated.baselineCovers)
+              : 15,
+          brandColors: updated.colors,
+          customRules: {
+            hasOffPeak: Boolean(updated.hasOffPeak),
+            offPeakSlots: updated.offPeakSlots || [],
+          },
+        }),
+      });
+
+      const json = await res.json().catch(() => null);
+
+      if (!res.ok || !json?.success) {
+        setProfile(previousSnapshot);
+        if (res.status >= 400 && res.status < 500 && json?.error) {
+          showNotice(json.error, 'error');
+        } else {
+          console.error('[SAVE_PROFILE_API_ERROR]', res.status, json);
+          showNotice('Vos modifications n’ont pas pu être enregistrées. Veuillez réessayer.', 'error');
+        }
+        return false;
+      }
+
+      const finalProfile: RestaurantProfileData = {
+        ...updated,
+        id: json.data?.id || updated.id,
+      };
+      setProfile(finalProfile);
+      setLastPersistedProfile(finalProfile);
+
+      if (typeof window !== 'undefined') {
+        if (finalProfile.id) {
+          localStorage.setItem('getspecial_restaurant_id', finalProfile.id);
+        }
+        localStorage.setItem('getspecial_restaurant_full_profile', JSON.stringify(finalProfile));
+        localStorage.setItem(
+          'getspecial_selected_restaurant',
+          JSON.stringify({ id: finalProfile.id, name: finalProfile.name, address: finalProfile.address })
+        );
+      }
+
+      showNotice(successMessage, 'success');
+      return true;
+    } catch (err) {
+      console.error('[SAVE_PROFILE_NETWORK_ERROR]', err);
+      setProfile(previousSnapshot);
+      showNotice('Impossible de joindre le serveur. Vérifiez votre connexion.', 'error');
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Gestion des Spécialités
-  const handleAddSpecialty = () => {
+  const handleAddSpecialty = async () => {
     const val = newSpecialtyInput.trim();
     if (!val) return;
     const current = profile.specialties || [];
-    if (current.includes(val)) return;
+    if (current.includes(val)) {
+      showNotice(`La spécialité « ${val} » figure déjà dans votre liste.`, 'error');
+      return;
+    }
     const updated = { ...profile, specialties: [...current, val] };
-    saveProfile(updated, `Spécialité « ${val} » ajoutée.`);
-    setNewSpecialtyInput('');
+    const ok = await saveProfile(updated, `Spécialité « ${val} » ajoutée.`);
+    if (ok) setNewSpecialtyInput('');
   };
 
   const handleRemoveSpecialty = (item: string) => {
@@ -339,25 +448,21 @@ export default function MyRestaurantPage() {
     setProfile({ ...profile, openingHours: newHours });
   };
 
-  // Raccourci UX Magique : Appliquer les horaires du Lundi à tous les jours ouverts
   const handleApplyHoursToAllOpenDays = () => {
     const refDay = profile.openingHours.find((h) => h.isOpen) || profile.openingHours[0];
     if (!refDay) return;
-    const newHours = profile.openingHours.map((h) => {
-      if (h.isOpen) {
-        return { ...h, lunch: refDay.lunch, dinner: refDay.dinner };
-      }
-      return h;
-    });
+    const newHours = profile.openingHours.map((h) =>
+      h.isOpen ? { ...h, lunch: refDay.lunch, dinner: refDay.dinner } : h
+    );
     const updated = { ...profile, openingHours: newHours };
     saveProfile(updated, `Horaires de ${refDay.day} appliqués à tous les jours ouverts.`);
   };
 
   // Ajout / Suppression d'heures creuses
-  const handleAddOffPeakSlot = (preset?: Omit<OffPeakSlot, 'id'>) => {
+  const handleAddOffPeakSlot = async (preset?: Omit<OffPeakSlot, 'id'>) => {
     const slotToAdd: OffPeakSlot = preset
       ? {
-          id: `slot_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+          id: `slot_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
           ...preset,
         }
       : {
@@ -374,8 +479,8 @@ export default function MyRestaurantPage() {
       hasOffPeak: true,
       offPeakSlots: [...currentSlots, slotToAdd],
     };
-    saveProfile(updated, `Créneau « ${slotToAdd.name} » ajouté.`);
-    setIsAddingOffPeak(false);
+    const ok = await saveProfile(updated, `Créneau « ${slotToAdd.name} » ajouté.`);
+    if (ok) setIsAddingOffPeak(false);
   };
 
   const handleDeleteOffPeakSlot = (slotId: string) => {
@@ -387,29 +492,27 @@ export default function MyRestaurantPage() {
     saveProfile(updated, 'Créneau supprimé.');
   };
 
-  // Remplacement de couleur de marque principale
   const handleColorChange = (index: number, newColor: string) => {
     const newColors = [...profile.colors];
     newColors[index] = newColor;
     setProfile({ ...profile, colors: newColors });
   };
 
-  // Un mode d'édition est-il actuellement actif ?
   const isAnyEditingActive = isEditingInfo || isEditingServices || isEditingHours;
 
-  const handleSaveAllActiveEdits = () => {
-    saveProfile(profile, 'Toutes les modifications ont été enregistrées.');
-    setIsEditingInfo(false);
-    setIsEditingServices(false);
-    setIsEditingHours(false);
+  const handleSaveAllActiveEdits = async () => {
+    const ok = await saveProfile(profile, 'Toutes les modifications ont été enregistrées.');
+    if (ok) {
+      setIsEditingInfo(false);
+      setIsEditingServices(false);
+      setIsEditingHours(false);
+    }
   };
 
   return (
     <div className={styles.screenWrapper}>
       <div className={styles.container}>
-        {/* ========================================================= */}
-        {/* EN-TÊTE PRINCIPAL : Mon Resto                             */}
-        {/* ========================================================= */}
+        {/* EN-TÊTE PRINCIPAL */}
         <header className={styles.header}>
           <div className={styles.headerTexts}>
             <div className={styles.headerTitleRow}>
@@ -445,17 +548,20 @@ export default function MyRestaurantPage() {
           </button>
         </header>
 
-        {/* Notice temporaire de confirmation */}
-        {savedNotice && (
-          <div className={styles.savedNotice}>
-            <CheckCircle2 size={16} />
-            <span>{savedNotice}</span>
+        {/* Bannière de retour honnête (Succès vert ou Erreur rouge) */}
+        {notice && (
+          <div
+            className={`${styles.savedNotice} ${
+              notice.type === 'error' ? styles.errorNotice : ''
+            }`}
+            role="status"
+          >
+            {notice.type === 'error' ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
+            <span>{notice.text}</span>
           </div>
         )}
 
-        {/* ========================================================= */}
-        {/* CARTE HERO ÉTABLISSEMENT : Fiche Pro Haute Fidélité       */}
-        {/* ========================================================= */}
+        {/* CARTE HERO ÉTABLISSEMENT */}
         <div className={styles.heroCard}>
           <div className={styles.heroHeaderRow}>
             <div className={styles.heroLeft}>
@@ -469,7 +575,7 @@ export default function MyRestaurantPage() {
                 </div>
 
                 <div className={styles.heroAddressRow}>
-                  {(profile.address || profile.city) ? (
+                  {profile.address || profile.city ? (
                     <a
                       href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                         [profile.address, profile.postalCode, profile.city].filter(Boolean).join(' ')
@@ -479,20 +585,30 @@ export default function MyRestaurantPage() {
                       title="Ouvrir dans Google Maps"
                     >
                       <MapPin size={13} color="#FF5A00" />
-                      <span>{[profile.address, profile.postalCode, profile.city].filter(Boolean).join(', ')}</span>
+                      <span>
+                        {[profile.address, profile.postalCode, profile.city]
+                          .filter(Boolean)
+                          .join(', ')}
+                      </span>
                     </a>
                   ) : (
                     <span>
                       <MapPin size={13} color="#94A3B8" />
-                      <span style={{ color: '#94A3B8', fontStyle: 'italic' }}>Adresse non renseignée</span>
+                      <span style={{ color: '#94A3B8', fontStyle: 'italic' }}>
+                        Adresse non renseignée
+                      </span>
                     </span>
                   )}
 
                   {todaySchedule && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>
+                    <span
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
+                    >
                       <Clock size={13} color={todaySchedule.isOpen ? '#10B981' : '#EF4444'} />
                       <span style={{ color: todaySchedule.isOpen ? '#059669' : '#DC2626' }}>
-                        {todaySchedule.isOpen ? `Aujourd’hui : ${todaySchedule.lunch}` : 'Fermé aujourd’hui'}
+                        {todaySchedule.isOpen
+                          ? `Aujourd’hui : ${todaySchedule.lunch} / ${todaySchedule.dinner}`
+                          : 'Fermé aujourd’hui'}
                       </span>
                     </span>
                   )}
@@ -508,7 +624,7 @@ export default function MyRestaurantPage() {
             </div>
           </div>
 
-          {/* Jauge de Complétion & Impact IA */}
+          {/* Jauge de Complétion */}
           <div className={styles.profileCompletionBox}>
             <div className={styles.completionLabelRow}>
               <span className={styles.completionTitle}>
@@ -522,8 +638,8 @@ export default function MyRestaurantPage() {
             </div>
             <p className={styles.completionHint}>
               {completionScore >= 80
-                ? '🌟 Fiche très complète : vos visuels et textes générés correspondront exactement à votre restaurant.'
-                : '💡 Remplissez votre adresse, vos spécialités et vos horaires pour booster la pertinence de l’IA.'}
+                ? 'Fiche complète : vos visuels, offres et verdicts s’appuient sur vos vraies données.'
+                : 'Renseignez votre adresse, vos spécialités, votre fréquentation témoin et vos heures creuses.'}
             </p>
           </div>
 
@@ -538,7 +654,11 @@ export default function MyRestaurantPage() {
 
             {profile.website ? (
               <a
-                href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
+                href={
+                  profile.website.startsWith('http')
+                    ? profile.website
+                    : `https://${profile.website}`
+                }
                 target="_blank"
                 rel="noopener noreferrer"
                 className={styles.quickActionChip}
@@ -549,7 +669,7 @@ export default function MyRestaurantPage() {
               </a>
             ) : null}
 
-            {(profile.address || profile.city) ? (
+            {profile.address || profile.city ? (
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                   [profile.address, profile.postalCode, profile.city].filter(Boolean).join(' ')
@@ -577,9 +697,7 @@ export default function MyRestaurantPage() {
           </div>
         </div>
 
-        {/* ========================================================= */}
-        {/* N1 : NAVIGATION PAR ONGLETS PRINCIPAUX                     */}
-        {/* ========================================================= */}
+        {/* N1 : NAVIGATION PAR ONGLETS PRINCIPAUX */}
         <nav className={styles.tabsNav} aria-label={t('restaurant.tabs.label')}>
           <Link href="/dashboard/restaurant" className={`${styles.tabBtn} ${styles.tabActive}`}>
             <Store size={15} />
@@ -589,7 +707,7 @@ export default function MyRestaurantPage() {
 
           <Link href="/dashboard/restaurant/offers" className={styles.tabBtn}>
             <Tag size={15} />
-            <span className={styles.tabFullText}>Offres & Formules</span>
+            <span className={styles.tabFullText}>Plats ou Offres</span>
             <span className={styles.tabShortText}>Offres</span>
           </Link>
 
@@ -600,9 +718,7 @@ export default function MyRestaurantPage() {
           </Link>
         </nav>
 
-        {/* ========================================================= */}
-        {/* N2 : SOUS-NAVIGATION TACTILE PAR SEGMENTS (Mobile-First)   */}
-        {/* ========================================================= */}
+        {/* N2 : SOUS-NAVIGATION PAR SEGMENTS */}
         <div className={styles.sectionPillsNav} role="tablist" aria-label="Sections du profil">
           <button
             type="button"
@@ -654,17 +770,11 @@ export default function MyRestaurantPage() {
           </button>
         </div>
 
-        {/* ========================================================= */}
-        {/* GRILLE DES SECTIONS (RESPONSIVE DESKTOP & MOBILE FIRST)    */}
-        {/* ========================================================= */}
+        {/* GRILLE DES SECTIONS */}
         <div className={styles.restaurantGrid}>
-          {/* ======================================================= */}
-          {/* COLONNE GAUCHE                                          */}
-          {/* ======================================================= */}
+          {/* COLONNE GAUCHE */}
           <div className={styles.columnLeft}>
-            {/* ----------------------------------------------------- */}
-            {/* SECTION 1 : IDENTITÉ & IMAGE DE MARQUE                */}
-            {/* ----------------------------------------------------- */}
+            {/* SECTION 1 : IDENTITÉ & IMAGE DE MARQUE */}
             {(activeSectionFilter === 'all' || activeSectionFilter === 'identity') && (
               <section className={styles.sectionCard}>
                 <div className={styles.sectionHeader}>
@@ -674,24 +784,34 @@ export default function MyRestaurantPage() {
                     </div>
                     <div>
                       <h2 className={styles.sectionTitle}>Identité & Image de Marque</h2>
-                      <p className={styles.sectionDesc}>Style, coordonnées et ligne éditoriale adoptés par l’IA.</p>
+                      <p className={styles.sectionDesc}>
+                        Style, coordonnées et ligne éditoriale adoptés par l’IA.
+                      </p>
                     </div>
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => {
+                    disabled={isSaving}
+                    onClick={async () => {
                       if (isEditingInfo) {
-                        saveProfile(profile, 'Identité de l’établissement mise à jour.');
+                        const ok = await saveProfile(
+                          profile,
+                          'Identité de l’établissement mise à jour.'
+                        );
+                        if (ok) setIsEditingInfo(false);
+                      } else {
+                        setIsEditingInfo(true);
                       }
-                      setIsEditingInfo(!isEditingInfo);
                     }}
-                    className={`${styles.editToggleBtn} ${isEditingInfo ? styles.editToggleBtnActive : ''}`}
+                    className={`${styles.editToggleBtn} ${
+                      isEditingInfo ? styles.editToggleBtnActive : ''
+                    }`}
                   >
                     {isEditingInfo ? (
                       <>
                         <Check size={13} strokeWidth={2.4} />
-                        <span>Enregistrer</span>
+                        <span>{isSaving ? 'Enregistrement...' : 'Enregistrer'}</span>
                       </>
                     ) : (
                       <>
@@ -703,7 +823,6 @@ export default function MyRestaurantPage() {
                 </div>
 
                 <div className={styles.fieldsGrid}>
-                  {/* Nom */}
                   <div className={styles.fieldItem}>
                     <label className={styles.fieldLabel}>Nom de l’établissement</label>
                     {isEditingInfo ? (
@@ -719,7 +838,6 @@ export default function MyRestaurantPage() {
                     )}
                   </div>
 
-                  {/* Type d'établissement */}
                   <div className={styles.fieldItem}>
                     <label className={styles.fieldLabel}>Type d’établissement</label>
                     {isEditingInfo ? (
@@ -735,7 +853,6 @@ export default function MyRestaurantPage() {
                     )}
                   </div>
 
-                  {/* Adresse */}
                   <div className={styles.fieldItem}>
                     <label className={styles.fieldLabel}>Adresse postale</label>
                     {isEditingInfo ? (
@@ -747,13 +864,14 @@ export default function MyRestaurantPage() {
                         placeholder="Ex: 14 Rue de la Gastronomie"
                       />
                     ) : (
-                      <span className={profile.address ? styles.fieldValue : styles.fieldValueEmpty}>
+                      <span
+                        className={profile.address ? styles.fieldValue : styles.fieldValueEmpty}
+                      >
                         {profile.address || 'Non renseignée'}
                       </span>
                     )}
                   </div>
 
-                  {/* Code Postal & Ville */}
                   <div className={styles.fieldItem}>
                     <label className={styles.fieldLabel}>Ville & Code Postal</label>
                     {isEditingInfo ? (
@@ -776,13 +894,19 @@ export default function MyRestaurantPage() {
                         />
                       </div>
                     ) : (
-                      <span className={(profile.postalCode || profile.city) ? styles.fieldValue : styles.fieldValueEmpty}>
-                        {[profile.postalCode, profile.city].filter(Boolean).join(' ') || 'Non renseigné'}
+                      <span
+                        className={
+                          profile.postalCode || profile.city
+                            ? styles.fieldValue
+                            : styles.fieldValueEmpty
+                        }
+                      >
+                        {[profile.postalCode, profile.city].filter(Boolean).join(' ') ||
+                          'Non renseigné'}
                       </span>
                     )}
                   </div>
 
-                  {/* Téléphone */}
                   <div className={styles.fieldItem}>
                     <label className={styles.fieldLabel}>Numéro de contact</label>
                     {isEditingInfo ? (
@@ -800,7 +924,6 @@ export default function MyRestaurantPage() {
                     )}
                   </div>
 
-                  {/* Site web */}
                   <div className={styles.fieldItem}>
                     <label className={styles.fieldLabel}>Site web officiel</label>
                     {isEditingInfo ? (
@@ -812,13 +935,14 @@ export default function MyRestaurantPage() {
                         placeholder="Ex: https://latelierculinaire.fr"
                       />
                     ) : (
-                      <span className={profile.website ? styles.fieldValue : styles.fieldValueEmpty}>
+                      <span
+                        className={profile.website ? styles.fieldValue : styles.fieldValueEmpty}
+                      >
                         {profile.website || 'Non renseigné'}
                       </span>
                     )}
                   </div>
 
-                  {/* Ton de communication */}
                   <div className={styles.fieldItem} style={{ gridColumn: '1 / -1' }}>
                     <label className={styles.fieldLabel}>Ton de communication de l’IA</label>
                     {isEditingInfo ? (
@@ -835,7 +959,9 @@ export default function MyRestaurantPage() {
                             <button
                               key={preset}
                               type="button"
-                              className={`${styles.toneChip} ${profile.tone === preset ? styles.toneChipSelected : ''}`}
+                              className={`${styles.toneChip} ${
+                                profile.tone === preset ? styles.toneChipSelected : ''
+                              }`}
                               onClick={() => setProfile({ ...profile, tone: preset })}
                             >
                               {preset}
@@ -851,15 +977,19 @@ export default function MyRestaurantPage() {
                     )}
                   </div>
 
-                  {/* Couleurs de marque */}
                   <div className={styles.fieldItem} style={{ gridColumn: '1 / -1' }}>
-                    <label className={styles.fieldLabel}>Couleurs de marque (utilisées pour les visuels IA)</label>
+                    <label className={styles.fieldLabel}>
+                      Couleurs de marque (utilisées pour les visuels IA)
+                    </label>
                     <div className={styles.colorPalette}>
                       {profile.colors.map((c, i) => (
                         <div key={i} className={styles.colorSwatchWrapper}>
                           <label
                             className={styles.colorSwatch}
-                            style={{ backgroundColor: c, cursor: isEditingInfo ? 'pointer' : 'default' }}
+                            style={{
+                              backgroundColor: c,
+                              cursor: isEditingInfo ? 'pointer' : 'default',
+                            }}
                             title={`Couleur ${i + 1} : ${c}`}
                           >
                             {isEditingInfo && (
@@ -885,9 +1015,7 @@ export default function MyRestaurantPage() {
               </section>
             )}
 
-            {/* ----------------------------------------------------- */}
-            {/* SECTION 2 : SPÉCIALITÉS & PLATS PHARES (Impact IA)    */}
-            {/* ----------------------------------------------------- */}
+            {/* SECTION 2 : SPÉCIALITÉS & PLATS PHARES */}
             {(activeSectionFilter === 'all' || activeSectionFilter === 'specialties') && (
               <section className={styles.sectionCard}>
                 <div className={styles.sectionHeader}>
@@ -897,7 +1025,9 @@ export default function MyRestaurantPage() {
                     </div>
                     <div>
                       <h2 className={styles.sectionTitle}>Spécialités & Plats Phares</h2>
-                      <p className={styles.sectionDesc}>Mises en avant automatiquement par l’IA dans vos visuels et promotions.</p>
+                      <p className={styles.sectionDesc}>
+                        Mises en avant automatiquement par l’IA dans vos visuels et promotions.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -906,7 +1036,8 @@ export default function MyRestaurantPage() {
                   <div className={styles.specialtiesTagsRow}>
                     {(profile.specialties || []).length === 0 ? (
                       <p className={styles.specialtiesEmpty}>
-                        Aucune spécialité renseignée. Ajoutez vos plats phares ci-dessous pour que l’IA les valorise !
+                        Aucune spécialité renseignée. Ajoutez vos plats phares ci-dessous pour que
+                        l’IA les valorise !
                       </p>
                     ) : (
                       (profile.specialties || []).map((spec) => (
@@ -926,7 +1057,6 @@ export default function MyRestaurantPage() {
                     )}
                   </div>
 
-                  {/* Formulaire d'ajout rapide */}
                   <div className={styles.addSpecialtyBox}>
                     <input
                       type="text"
@@ -943,6 +1073,7 @@ export default function MyRestaurantPage() {
                     />
                     <button
                       type="button"
+                      disabled={isSaving}
                       onClick={handleAddSpecialty}
                       className={styles.addSpecialtyBtn}
                     >
@@ -954,9 +1085,7 @@ export default function MyRestaurantPage() {
               </section>
             )}
 
-            {/* ----------------------------------------------------- */}
-            {/* SECTION 3 : SERVICES, AMÉNAGEMENTS & CHIFFRES CLÉS    */}
-            {/* ----------------------------------------------------- */}
+            {/* SECTION 3 : SERVICES, AMÉNAGEMENTS & CHIFFRES CLÉS */}
             {(activeSectionFilter === 'all' || activeSectionFilter === 'services') && (
               <section className={styles.sectionCard}>
                 <div className={styles.sectionHeader}>
@@ -966,24 +1095,34 @@ export default function MyRestaurantPage() {
                     </div>
                     <div>
                       <h2 className={styles.sectionTitle}>Services & Modèle d’Activité</h2>
-                      <p className={styles.sectionDesc}>Données d’ambiance et de capacité prises en compte par le ciblage IA.</p>
+                      <p className={styles.sectionDesc}>
+                        Données de capacité et fréquentation témoin utilisées pour mesurer vos résultats.
+                      </p>
                     </div>
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => {
+                    disabled={isSaving}
+                    onClick={async () => {
                       if (isEditingServices) {
-                        saveProfile(profile, 'Services et données d’activité enregistrés.');
+                        const ok = await saveProfile(
+                          profile,
+                          'Services et données d’activité enregistrés.'
+                        );
+                        if (ok) setIsEditingServices(false);
+                      } else {
+                        setIsEditingServices(true);
                       }
-                      setIsEditingServices(!isEditingServices);
                     }}
-                    className={`${styles.editToggleBtn} ${isEditingServices ? styles.editToggleBtnActive : ''}`}
+                    className={`${styles.editToggleBtn} ${
+                      isEditingServices ? styles.editToggleBtnActive : ''
+                    }`}
                   >
                     {isEditingServices ? (
                       <>
                         <Check size={13} strokeWidth={2.4} />
-                        <span>Enregistrer</span>
+                        <span>{isSaving ? 'Enregistrement...' : 'Enregistrer'}</span>
                       </>
                     ) : (
                       <>
@@ -995,8 +1134,11 @@ export default function MyRestaurantPage() {
                 </div>
 
                 <div className={styles.servicesList}>
-                  {/* Terrasse */}
-                  <div className={`${styles.toggleRow} ${profile.hasTerrace ? styles.toggleRowActive : ''}`}>
+                  <div
+                    className={`${styles.toggleRow} ${
+                      profile.hasTerrace ? styles.toggleRowActive : ''
+                    }`}
+                  >
                     <div className={styles.toggleInfo}>
                       <div className={styles.toggleIconCircle}>
                         <Sun size={18} />
@@ -1004,15 +1146,19 @@ export default function MyRestaurantPage() {
                       <div>
                         <span className={styles.toggleTitle}>Terrasse extérieure</span>
                         <p className={styles.toggleSubtitle}>
-                          L’IA déclenchera des suggestions de posts ensoleillés et apéritifs quand la météo est clémente.
+                          L’IA déclenchera des suggestions de posts ensoleillés et apéritifs quand la
+                          météo est clémente.
                         </p>
                       </div>
                     </div>
 
                     <button
                       type="button"
+                      disabled={isSaving}
                       onClick={handleToggleTerrace}
-                      className={`${styles.switchBtn} ${profile.hasTerrace ? styles.switchOn : styles.switchOff}`}
+                      className={`${styles.switchBtn} ${
+                        profile.hasTerrace ? styles.switchOn : styles.switchOff
+                      }`}
                       aria-pressed={profile.hasTerrace}
                       aria-label="Activer ou désactiver la terrasse"
                     >
@@ -1020,8 +1166,11 @@ export default function MyRestaurantPage() {
                     </button>
                   </div>
 
-                  {/* Livraison */}
-                  <div className={`${styles.toggleRow} ${profile.hasDelivery ? styles.toggleRowActive : ''}`}>
+                  <div
+                    className={`${styles.toggleRow} ${
+                      profile.hasDelivery ? styles.toggleRowActive : ''
+                    }`}
+                  >
                     <div className={styles.toggleInfo}>
                       <div className={styles.toggleIconCircle}>
                         <Truck size={18} />
@@ -1029,15 +1178,19 @@ export default function MyRestaurantPage() {
                       <div>
                         <span className={styles.toggleTitle}>Livraison & Vente à emporter</span>
                         <p className={styles.toggleSubtitle}>
-                          Active des alertes et visuels de commande à distance les jours de pluie, froid ou grands matchs.
+                          Active des alertes et visuels de commande à distance les jours de pluie,
+                          froid ou grands matchs.
                         </p>
                       </div>
                     </div>
 
                     <button
                       type="button"
+                      disabled={isSaving}
                       onClick={handleToggleDelivery}
-                      className={`${styles.switchBtn} ${profile.hasDelivery ? styles.switchOn : styles.switchOff}`}
+                      className={`${styles.switchBtn} ${
+                        profile.hasDelivery ? styles.switchOn : styles.switchOff
+                      }`}
                       aria-pressed={profile.hasDelivery}
                       aria-label="Activer ou désactiver la livraison"
                     >
@@ -1045,7 +1198,7 @@ export default function MyRestaurantPage() {
                     </button>
                   </div>
 
-                  {/* Données économiques clés */}
+                  {/* Données économiques & Baseline (3 cartes) */}
                   <div className={styles.economicsCardsGrid}>
                     <div className={styles.metricCard}>
                       <span className={styles.metricLabel}>
@@ -1099,19 +1252,46 @@ export default function MyRestaurantPage() {
                         </span>
                       )}
                     </div>
+
+                    <div
+                      className={styles.metricCard}
+                      title="Nombre habituel de couverts un soir calme sans action commerciale (référence du Verdict)"
+                    >
+                      <span className={styles.metricLabel}>
+                        <TrendingUp size={12} color="#6366F1" />
+                        <span>Couverts témoins</span>
+                      </span>
+                      {isEditingServices ? (
+                        <input
+                          type="number"
+                          min="0"
+                          value={profile.baselineCovers ?? ''}
+                          onChange={(e) =>
+                            setProfile({
+                              ...profile,
+                              baselineCovers: e.target.value !== '' ? Number(e.target.value) : 15,
+                            })
+                          }
+                          className={styles.textInput}
+                          placeholder="Ex: 15 couverts"
+                        />
+                      ) : (
+                        <span className={styles.metricValueBig}>
+                          {profile.baselineCovers !== undefined
+                            ? `${profile.baselineCovers} cvts`
+                            : '15 cvts'}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </section>
             )}
           </div>
 
-          {/* ======================================================= */}
-          {/* COLONNE DROITE                                          */}
-          {/* ======================================================= */}
+          {/* COLONNE DROITE */}
           <div className={styles.columnRight}>
-            {/* ----------------------------------------------------- */}
-            {/* SECTION 4 : HORAIRES D'OUVERTURE DE LA SEMAINE        */}
-            {/* ----------------------------------------------------- */}
+            {/* SECTION 4 : HORAIRES D'OUVERTURE */}
             {(activeSectionFilter === 'all' || activeSectionFilter === 'hours') && (
               <section className={styles.sectionCard}>
                 <div className={styles.sectionHeader}>
@@ -1121,24 +1301,31 @@ export default function MyRestaurantPage() {
                     </div>
                     <div>
                       <h2 className={styles.sectionTitle}>Horaires d’Ouverture</h2>
-                      <p className={styles.sectionDesc}>Affichage et paramétrage détaillé par jour de la semaine.</p>
+                      <p className={styles.sectionDesc}>
+                        Affichage et paramétrage détaillé par jour de la semaine.
+                      </p>
                     </div>
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => {
+                    disabled={isSaving}
+                    onClick={async () => {
                       if (isEditingHours) {
-                        saveProfile(profile, 'Horaires d’ouverture mis à jour.');
+                        const ok = await saveProfile(profile, 'Horaires d’ouverture mis à jour.');
+                        if (ok) setIsEditingHours(false);
+                      } else {
+                        setIsEditingHours(true);
                       }
-                      setIsEditingHours(!isEditingHours);
                     }}
-                    className={`${styles.editToggleBtn} ${isEditingHours ? styles.editToggleBtnActive : ''}`}
+                    className={`${styles.editToggleBtn} ${
+                      isEditingHours ? styles.editToggleBtnActive : ''
+                    }`}
                   >
                     {isEditingHours ? (
                       <>
                         <Check size={13} strokeWidth={2.4} />
-                        <span>Enregistrer</span>
+                        <span>{isSaving ? 'Enregistrement...' : 'Enregistrer'}</span>
                       </>
                     ) : (
                       <>
@@ -1194,14 +1381,18 @@ export default function MyRestaurantPage() {
                                 <input
                                   type="text"
                                   value={item.lunch}
-                                  onChange={(e) => handleHourChange(index, 'lunch', e.target.value)}
+                                  onChange={(e) =>
+                                    handleHourChange(index, 'lunch', e.target.value)
+                                  }
                                   className={styles.timeSlotInput}
                                   placeholder="Midi (12:00 - 14:30)"
                                 />
                                 <input
                                   type="text"
                                   value={item.dinner}
-                                  onChange={(e) => handleHourChange(index, 'dinner', e.target.value)}
+                                  onChange={(e) =>
+                                    handleHourChange(index, 'dinner', e.target.value)
+                                  }
                                   className={styles.timeSlotInput}
                                   placeholder="Soir (19:00 - 22:30)"
                                 />
@@ -1228,9 +1419,7 @@ export default function MyRestaurantPage() {
               </section>
             )}
 
-            {/* ----------------------------------------------------- */}
-            {/* SECTION 5 : BOOSTER HEURES CREUSES & PÉRIODES CALMES  */}
-            {/* ----------------------------------------------------- */}
+            {/* SECTION 5 : BOOSTER HEURES CREUSES */}
             {(activeSectionFilter === 'all' || activeSectionFilter === 'offpeak') && (
               <section className={styles.sectionCard}>
                 <div className={styles.sectionHeader}>
@@ -1240,32 +1429,43 @@ export default function MyRestaurantPage() {
                     </div>
                     <div>
                       <h2 className={styles.sectionTitle}>Booster Heures Creuses</h2>
-                      <p className={styles.sectionDesc}>Remplissez vos tables lors des creux d’affluence grâce aux offres IA.</p>
+                      <p className={styles.sectionDesc}>
+                        Remplissez vos tables lors des creux d’affluence grâce aux offres IA.
+                      </p>
                     </div>
                   </div>
                 </div>
 
                 <div className={styles.offPeakContainer}>
-                  {/* Switch Principal */}
-                  <div className={`${styles.toggleRow} ${profile.hasOffPeak ? styles.toggleRowActive : ''}`}>
+                  <div
+                    className={`${styles.toggleRow} ${
+                      profile.hasOffPeak ? styles.toggleRowActive : ''
+                    }`}
+                  >
                     <div className={styles.toggleInfo}>
                       <div className={styles.toggleIconCircle}>
                         <Coffee size={18} />
                       </div>
                       <div>
                         <span className={styles.toggleTitle}>
-                          {profile.hasOffPeak ? 'Heures creuses actives' : 'Heures creuses désactivées'}
+                          {profile.hasOffPeak
+                            ? 'Heures creuses actives'
+                            : 'Heures creuses désactivées'}
                         </span>
                         <p className={styles.toggleSubtitle}>
-                          Permet à l’IA de vous proposer des offres flash (ex: -20% de 15h à 18h) pour dynamiser vos services calmes.
+                          Permet à l’IA de cibler vos jours et créneaux calmes avec une offre et un
+                          mot-code dédié.
                         </p>
                       </div>
                     </div>
 
                     <button
                       type="button"
+                      disabled={isSaving}
                       onClick={handleToggleOffPeak}
-                      className={`${styles.switchBtn} ${profile.hasOffPeak ? styles.switchOn : styles.switchOff}`}
+                      className={`${styles.switchBtn} ${
+                        profile.hasOffPeak ? styles.switchOn : styles.switchOff
+                      }`}
                       aria-pressed={profile.hasOffPeak}
                       aria-label="Basculer heures creuses"
                     >
@@ -1275,14 +1475,16 @@ export default function MyRestaurantPage() {
 
                   {profile.hasOffPeak && (
                     <>
-                      {/* Suggestions intelligentes 1-Click */}
                       <div className={styles.offPeakPresetsBox}>
-                        <span className={styles.offPeakPresetsTitle}>⚡ Suggestions rapides en 1 clic :</span>
+                        <span className={styles.offPeakPresetsTitle}>
+                          Suggestions rapides en 1 clic :
+                        </span>
                         <div className={styles.offPeakPresetsRow}>
                           {PRESET_OFFPEAK_SLOTS.map((preset) => (
                             <button
                               key={preset.name}
                               type="button"
+                              disabled={isSaving}
                               onClick={() => handleAddOffPeakSlot(preset)}
                               className={styles.presetSlotChip}
                               title={`Ajouter : ${preset.name} (${preset.timeStart}-${preset.timeEnd})`}
@@ -1294,11 +1496,11 @@ export default function MyRestaurantPage() {
                         </div>
                       </div>
 
-                      {/* Liste des créneaux configurés */}
                       <div className={styles.offPeakSlotsList}>
                         {(profile.offPeakSlots || []).length === 0 ? (
                           <p className={styles.offPeakEmptyText}>
-                            Aucun créneau configuré. Choisissez une suggestion rapide ci-dessus ou ajoutez-en un personnalisé.
+                            Aucun créneau configuré. Choisissez une suggestion rapide ci-dessus ou
+                            ajoutez-en un personnalisé.
                           </p>
                         ) : (
                           (profile.offPeakSlots || []).map((slot) => (
@@ -1314,6 +1516,7 @@ export default function MyRestaurantPage() {
                                 </span>
                                 <button
                                   type="button"
+                                  disabled={isSaving}
                                   onClick={() => handleDeleteOffPeakSlot(slot.id)}
                                   className={styles.offPeakDeleteBtn}
                                   title="Supprimer ce créneau"
@@ -1327,7 +1530,6 @@ export default function MyRestaurantPage() {
                         )}
                       </div>
 
-                      {/* Formulaire d'ajout personnalisé */}
                       {isAddingOffPeak ? (
                         <div className={styles.offPeakFormBox}>
                           <div className={styles.fieldItem}>
@@ -1369,7 +1571,7 @@ export default function MyRestaurantPage() {
                               value={newSlotDays}
                               onChange={(e) => setNewSlotDays(e.target.value)}
                               className={styles.textInput}
-                              placeholder="Ex: Du Lundi au Vendredi, Mercredi après-midi..."
+                              placeholder="Ex: Du Mardi au Jeudi, Mercredi soir..."
                             />
                           </div>
 
@@ -1383,6 +1585,7 @@ export default function MyRestaurantPage() {
                             </button>
                             <button
                               type="button"
+                              disabled={isSaving}
                               onClick={() => handleAddOffPeakSlot()}
                               className={styles.offPeakSaveBtn}
                             >
@@ -1408,9 +1611,7 @@ export default function MyRestaurantPage() {
           </div>
         </div>
 
-        {/* ========================================================= */}
-        {/* BARRE STICKY MOBILE D'ENREGISTREMENT                      */}
-        {/* ========================================================= */}
+        {/* BARRE STICKY MOBILE D'ENREGISTREMENT */}
         {isAnyEditingActive && (
           <div className={styles.stickyBottomBar}>
             <span className={styles.stickyStatusText}>
@@ -1419,15 +1620,15 @@ export default function MyRestaurantPage() {
             </span>
             <button
               type="button"
+              disabled={isSaving}
               onClick={handleSaveAllActiveEdits}
               className={styles.stickySaveBtn}
             >
-              Enregistrer tout
+              {isSaving ? 'Enregistrement...' : 'Enregistrer tout'}
             </button>
           </div>
         )}
 
-        {/* Espace de sécurité pour la barre de navigation basse */}
         <div className={styles.bottomSpacer} />
       </div>
     </div>

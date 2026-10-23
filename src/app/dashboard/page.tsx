@@ -60,6 +60,7 @@ export default function DashboardPage() {
   const [isLiveApi, setIsLiveApi] = useState(false);
   const [isLoadingLive, setIsLoadingLive] = useState(true);
   const [isRefreshingOpps, setIsRefreshingOpps] = useState(false);
+  const [isProfileIncomplete, setIsProfileIncomplete] = useState(false);
 
   // 4 statistiques réelles
   const [stats, setStats] = useState({
@@ -117,6 +118,10 @@ export default function DashboardPage() {
           }
           if (json.data.restaurant?.name) {
             setRestaurantName(json.data.restaurant.name);
+            const rest = json.data.restaurant;
+            const hasHours = Array.isArray(rest.openingHours) ? rest.openingHours.length > 0 : Boolean(rest.openingHours);
+            const hasDishes = Array.isArray(rest.profile?.customRules?.dishes) && rest.profile.customRules.dishes.length > 0;
+            setIsProfileIncomplete(!hasHours || !hasDishes);
           }
         }
       }
@@ -230,6 +235,46 @@ export default function DashboardPage() {
       <div className={styles.container}>
         {/* Bannière / Popup d'installation PWA Mobile */}
         <PwaInstallBanner />
+
+        {/* Bannière incitative si le profil du restaurant n'est pas encore complet */}
+        {isProfileIncomplete && (
+          <div
+            style={{
+              background: '#FFF7ED',
+              border: '1px solid #FFEDD5',
+              borderRadius: '12px',
+              padding: '12px 18px',
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Sparkles size={18} color="#EA580C" style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: '0.88rem', color: '#9A3412', fontWeight: 500 }}>
+                Votre profil établissement est incomplet. Renseignez vos horaires et votre carte dans Mon Resto pour débloquer toutes les opportunités.
+              </span>
+            </div>
+            <Link
+              href="/dashboard/restaurant"
+              style={{
+                background: '#EA580C',
+                color: '#FFFFFF',
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Compléter dans Mon Resto
+            </Link>
+          </div>
+        )}
 
         {/* Header Restaurant & Météo compacte en direct à sa place */}
         <header className={styles.header}>

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
 import { success, error } from '@/server/lib/api-response';
+import { resolveActiveRestaurant } from '@/server/lib/resolve-restaurant';
 import { weatherService } from '@/server/modules/signal-collector/weather/weather.service';
 import { ticketmasterCollector } from '@/server/modules/signal-collector/ticketmaster.collector';
 import { calendarificCollector } from '@/server/modules/signal-collector/calendarific.collector';
@@ -32,43 +33,13 @@ export async function GET(req: NextRequest) {
     const forceRefresh = searchParams.get('refresh') === 'true' || searchParams.get('forceRefresh') === 'true';
     const requestedRestId = searchParams.get('restaurantId') || req.headers.get('x-restaurant-id');
 
-    // 1. Recherche du restaurant réel en base
-    let restaurant: any = null;
+    // 1. Résolution stricte du restaurant (session utilisateur authentifiée ou ID explicite)
+    const restaurant = await resolveActiveRestaurant(req, requestedRestId, {
+      profile: true,
+      offers: true,
+      signals: true,
+    });
 
-    if (requestedRestId) {
-      try {
-        restaurant = await (prisma as any).restaurant.findUnique({
-          where: { id: requestedRestId },
-          include: { profile: true, offers: true, signals: true },
-        });
-      } catch (err) {
-        console.warn('[TODAY_ROUTE] Erreur recherche restaurant par ID :', err);
-      }
-    }
-
-    if (!restaurant) {
-      try {
-        // Premier restaurant actif en base
-        restaurant = await (prisma as any).restaurant.findFirst({
-          where: { status: 'active' },
-          include: { profile: true, offers: true, signals: true },
-          orderBy: { updatedAt: 'desc' },
-        });
-      } catch (err) {
-        console.warn('[TODAY_ROUTE] Erreur recherche premier restaurant :', err);
-      }
-    }
-
-    // Si toujours aucun restaurant en base, chercher n'importe quel enregistrement existant
-    if (!restaurant) {
-      try {
-        restaurant = await (prisma as any).restaurant.findFirst({
-          include: { profile: true, offers: true, signals: true },
-        });
-      } catch (err) {
-        console.warn('[TODAY_ROUTE] Erreur recherche fallback restaurant :', err);
-      }
-    }
 
     if (!restaurant) {
       return error(

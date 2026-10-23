@@ -2,11 +2,12 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
 import { success, error } from '@/server/lib/api-response';
 import { logAudit } from '@/server/lib/audit';
+import { resolveActiveRestaurant, deriveOffPeakDaysFromSlots } from '@/server/lib/resolve-restaurant';
 import { z } from 'zod';
 
 const UpdateProfileSchema = z.object({
   // Champs directs de l'établissement (Restaurant)
-  name: z.string().optional(),
+  name: z.string().min(1, 'Le nom de l’établissement est requis.').optional(),
   type: z.string().optional(),
   address: z.string().optional(),
   city: z.string().optional(),
@@ -21,10 +22,10 @@ const UpdateProfileSchema = z.object({
   tone: z.string().optional(),
   hasTerrace: z.boolean().optional(),
   hasDelivery: z.boolean().optional(),
-  capacityCovers: z.number().nullable().optional(),
-  averageTicket: z.number().nullable().optional(),
+  capacityCovers: z.number().int().min(0).nullable().optional(),
+  averageTicket: z.number().min(0).nullable().optional(),
   currency: z.string().optional(),
-  baselineCovers: z.number().optional(),
+  baselineCovers: z.number().int().min(0).nullable().optional(),
   foodCostPct: z.number().nullable().optional(),
   drinkCostPct: z.number().nullable().optional(),
   maxDiscountPct: z.number().nullable().optional(),
@@ -47,38 +48,20 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    let restaurant = null;
-
-    if (id && id !== 'current' && id !== 'default') {
-      restaurant = await (prisma as any).restaurant.findUnique({
-        where: { id },
-        include: {
-          profile: true,
-          offers: { where: { status: 'active' } },
-          socialAccounts: true,
-        },
-      });
-    }
+    const restaurant = await resolveActiveRestaurant(req, id, {
+      profile: true,
+      offers: { where: { status: 'active' } },
+      socialAccounts: true,
+    });
 
     if (!restaurant) {
-      restaurant = await (prisma as any).restaurant.findFirst({
-        where: { status: 'active' },
-        orderBy: { createdAt: 'desc' },
-        include: {
-          profile: true,
-          offers: { where: { status: 'active' } },
-          socialAccounts: true,
-        },
-      });
-    }
-
-    if (!restaurant) {
-      return error('Restaurant introuvable', 404);
+      return error('Aucun établissement configuré.', 404);
     }
 
     return success(restaurant);
   } catch (err: any) {
-    return error(err.message, 500);
+    console.error('[RESTAURANT_PROFILE_GET_ERROR]', err);
+    return error('Impossible de charger le profil du restaurant pour le moment.', 500);
   }
 }
 
@@ -92,28 +75,15 @@ export async function PATCH(
     const validated = UpdateProfileSchema.safeParse(body);
 
     if (!validated.success) {
-      return error(validated.error.issues[0]?.message ?? 'Données de profil invalides', 400);
+      return error(validated.error.issues[0]?.message ?? 'Les informations saisies sont invalides.', 400);
     }
 
-    // Résolution de l'ID effectif du restaurant
-    let effectiveRestaurantId = id;
-    let existing = null;
-    if (id && id !== 'current' && id !== 'default') {
-      existing = await (prisma as any).restaurant.findUnique({ where: { id } });
-    }
+    const existing = await resolveActiveRestaurant(req, id, { profile: true });
     if (!existing) {
-      existing = await (prisma as any).restaurant.findFirst({
-        where: { status: 'active' },
-        orderBy: { createdAt: 'desc' },
-      });
-      if (existing) {
-        effectiveRestaurantId = existing.id;
-      }
+      return error('Établissement introuvable.', 404);
     }
 
-    if (!existing) {
-      return error('Restaurant introuvable pour la mise à jour', 404);
-    }
+    const effectiveRestaurantId = existing.id;
 
     // Séparation des champs Restaurant et RestaurantProfile
     const {
@@ -149,9 +119,30 @@ export async function PATCH(
       });
     }
 
-    let updatedProfile = null;
+    // Fusion sans perte de customRules (préserve dishes, menuMetadata, eventPreferences, etc.)
+    if (profileData.customRules !== undefined) {
+      const existingCustomRules =
+        (existing.profile?.customRules as Record<string, any> | undefined) || {};
+      const mergedRules = {
+        ...existingCustomRules,
+        ...profileData.customRules,
+      };
+      profileData.customRules = mergedRules;
+
+      // Synchronise automatiquement la colonne offPeakDays avec les créneaux configurés
+      if (
+        profileData.offPeakDays === undefined &&
+        ('hasOffPeak' in profileData.customRules || 'offPeakSlots' in profileData.customRules)
+      ) {
+        profileData.offPeakDays = deriveOffPeakDaysFromSlots(
+          mergedRules.hasOffPeak,
+          mergedRules.offPeakSlots
+        );
+      }
+    }
+
     if (Object.keys(profileData).length > 0) {
-      updatedProfile = await (prisma as any).restaurantProfile.upsert({
+      await (prisma as any).restaurantProfile.upsert({
         where: { restaurantId: effectiveRestaurantId },
         update: profileData,
         create: {
@@ -169,7 +160,6 @@ export async function PATCH(
       details: validated.data,
     });
 
-    // Retourner le restaurant complet actualisé
     const fullRestaurant = await (prisma as any).restaurant.findUnique({
       where: { id: effectiveRestaurantId },
       include: {
@@ -181,6 +171,7 @@ export async function PATCH(
 
     return success(fullRestaurant);
   } catch (err: any) {
-    return error(err.message, 500);
+    console.error('[RESTAURANT_PROFILE_PATCH_ERROR]', err);
+    return error('Impossible d’enregistrer vos modifications pour le moment. Veuillez réessayer.', 500);
   }
 }

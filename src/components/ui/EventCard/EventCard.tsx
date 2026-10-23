@@ -24,6 +24,25 @@ interface EventCardProps {
   onToggleActive: (id: string) => void;
 }
 
+/**
+ * Formate proprement une date ISO YYYY-MM-DD en français pour l'affichage.
+ */
+function formatDisplayDate(rawDate: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate.trim())) {
+    const [y, m, d] = rawDate.trim().split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    if (!isNaN(dt.getTime())) {
+      return dt.toLocaleDateString('fr-FR', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
+    }
+  }
+  return rawDate;
+}
+
 export default function EventCard({
   event,
   onEdit,
@@ -34,10 +53,9 @@ export default function EventCard({
   const menuRef = useRef<HTMLDivElement>(null);
   const { t } = useLanguage();
 
-  // Close menu on outside click
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setIsMenuOpen(false);
       }
     }
@@ -133,7 +151,7 @@ export default function EventCard({
 
         <div className={styles.dateRow}>
           <Calendar size={12} className={styles.calendarIcon} />
-          <span className={styles.dateText}>{event.date}</span>
+          <span className={styles.dateText}>{formatDisplayDate(event.date)}</span>
           {event.time && (
             <>
               <span className={styles.dotSeparator}>•</span>

@@ -1,8 +1,3 @@
-// Autorise les requêtes de développement local sous Windows si un antivirus ou proxy inspecte les certificats SSL
-if (process.env.NODE_ENV === 'development' && typeof process !== 'undefined') {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-}
-
 export interface GeocodeResult {
   latitude: number;
   longitude: number;
@@ -15,10 +10,49 @@ export interface GeocodeResult {
 }
 
 /**
+ * Déduit le fuseau horaire IANA standard à partir du code pays et de la longitude.
+ */
+export function deduceTimezone(countryCode = 'FR', lon = 2.35): string {
+  const code = (countryCode || 'FR').toUpperCase().trim();
+
+  // Europe de l'Ouest
+  if (['FR', 'BE', 'LU', 'MC', 'NL', 'DE', 'ES', 'IT', 'CH', 'AT'].includes(code)) {
+    return 'Europe/Paris';
+  }
+  if (['GB', 'IE', 'PT'].includes(code)) {
+    return 'Europe/London';
+  }
+
+  // Afrique francophone
+  if (['CI', 'SN', 'ML', 'BF', 'GN', 'TG', 'BJ', 'NE'].includes(code)) {
+    return 'Africa/Abidjan';
+  }
+  if (['CM', 'GA', 'CG', 'CD', 'TD', 'CF'].includes(code)) {
+    return 'Africa/Douala';
+  }
+  if (['MA', 'DZ', 'TN'].includes(code)) {
+    return 'Africa/Casablanca';
+  }
+
+  // Amérique du Nord
+  if (code === 'CA') {
+    return 'America/Toronto';
+  }
+  if (code === 'US') {
+    if (lon <= -114.5) return 'America/Los_Angeles';
+    if (lon <= -102.0) return 'America/Denver';
+    if (lon <= -85.5) return 'America/Chicago';
+    return 'America/New_York';
+  }
+
+  return 'Europe/Paris';
+}
+
+/**
  * Convertit une adresse textuelle en coordonnées géographiques (lat/lng) avec détails d'adresse mondiaux.
  * Utilise Nominatim OpenStreetMap avec support de tous les pays au monde.
  */
-export async function geocodeAddress(address: string): Promise<GeocodeResult> {
+export async function geocodeAddress(address: string, fallbackCountry = 'FR'): Promise<GeocodeResult> {
   if (!address || address.trim().length === 0) {
     throw new Error('Adresse requise pour le géocodage');
   }
@@ -28,6 +62,7 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult> {
     const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1&addressdetails=1`, {
       headers: {
         'User-Agent': 'GetSpecial-App/1.0 (contact@getspecial.dev)',
+        'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
       },
     });
 
@@ -40,7 +75,7 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult> {
       const first = data[0];
       const addr = first.address || {};
       const detectedCity = addr.city || addr.town || addr.village || addr.municipality || addr.county || '';
-      const countryCode = (addr.country_code || 'US').toUpperCase();
+      const countryCode = (addr.country_code || fallbackCountry).toUpperCase();
 
       return {
         latitude: parseFloat(first.lat),
@@ -61,7 +96,10 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult> {
       const retryRes = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(fallbackQuery)}&format=json&limit=1&addressdetails=1`,
         {
-          headers: { 'User-Agent': 'GetSpecial-App/1.0 (contact@getspecial.dev)' },
+          headers: {
+            'User-Agent': 'GetSpecial-App/1.0 (contact@getspecial.dev)',
+            'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
+          },
         }
       );
       if (retryRes.ok) {
@@ -73,7 +111,7 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult> {
             latitude: parseFloat(first.lat),
             longitude: parseFloat(first.lon),
             displayName: address,
-            countryCode: (addr.country_code || 'US').toUpperCase(),
+            countryCode: (addr.country_code || fallbackCountry).toUpperCase(),
             country: addr.country,
             city: addr.city || addr.town || fallbackQuery,
             state: addr.state,
@@ -83,18 +121,18 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult> {
       }
     }
   } catch (err) {
-    console.warn(`[GEOCODING_WARNING] Impossible de géocoder "${address}", utilisation du fallback par défaut`, err);
+    console.warn(`[GEOCODING_WARNING] Impossible de géocoder "${address}", utilisation du fallback`, err);
   }
 
-  // Fallback sécurisé par défaut
+  // Fallback propre (centre de la région / France au lieu de New York !)
+  const cleanFallbackCountry = (fallbackCountry || 'FR').toUpperCase();
   return {
-    latitude: 40.7128,
-    longitude: -74.0060,
+    latitude: cleanFallbackCountry === 'FR' ? 48.8566 : cleanFallbackCountry === 'CI' ? 5.3600 : 48.8566,
+    longitude: cleanFallbackCountry === 'FR' ? 2.3522 : cleanFallbackCountry === 'CI' ? -4.0083 : 2.3522,
     displayName: address,
-    countryCode: 'US',
-    country: 'United States',
-    city: 'New York',
-    state: 'NY',
-    postalCode: '10001',
+    countryCode: cleanFallbackCountry,
+    country: cleanFallbackCountry === 'FR' ? 'France' : cleanFallbackCountry === 'CI' ? 'Côte d’Ivoire' : 'France',
+    city: cleanFallbackCountry === 'FR' ? 'Paris' : cleanFallbackCountry === 'CI' ? 'Abidjan' : '',
+    postalCode: undefined,
   };
 }

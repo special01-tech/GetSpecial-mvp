@@ -5,11 +5,7 @@ import {
   X,
   Plus,
   Edit2,
-  Calendar,
-  Clock,
   Image as ImageIcon,
-  Tag,
-  Check,
 } from 'lucide-react';
 import PrimaryButton from '@/components/ui/PrimaryButton/PrimaryButton';
 import {
@@ -26,22 +22,47 @@ interface EventFormProps {
   onCancel: () => void;
 }
 
+/**
+ * Normalise une date en YYYY-MM-DD pour l'input type="date".
+ */
+function toIsoDateInput(raw?: string): string {
+  if (raw && /^\d{4}-\d{2}-\d{2}$/.test(raw.trim())) {
+    return raw.trim();
+  }
+  if (raw) {
+    const parsed = new Date(raw);
+    if (!isNaN(parsed.getTime())) {
+      return parsed.toISOString().slice(0, 10);
+    }
+  }
+  return new Date().toISOString().slice(0, 10);
+}
+
 export default function EventForm({ initialEvent, onSave, onCancel }: EventFormProps) {
   const { t } = useLanguage();
   const isEditing = Boolean(initialEvent);
 
   const [title, setTitle] = useState(initialEvent?.title || '');
-  const [date, setDate] = useState(initialEvent?.date || '2026-10-02');
-  const [time, setTime] = useState(initialEvent?.time || '20:30');
+  const [date, setDate] = useState(() => toIsoDateInput(initialEvent?.date));
+  const [time, setTime] = useState(initialEvent?.time || '20:00');
   const [category, setCategory] = useState<EventCategory>(
     initialEvent?.category || 'concert'
   );
-  const [imageUrl, setImageUrl] = useState(
-    initialEvent?.imageUrl ||
-      'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80'
-  );
+  const [imageUrl, setImageUrl] = useState(initialEvent?.imageUrl || '');
   const [description, setDescription] = useState(initialEvent?.description || '');
   const [isActive, setIsActive] = useState(initialEvent ? initialEvent.isActive : true);
+
+  useEffect(() => {
+    if (initialEvent) {
+      setTitle(initialEvent.title);
+      setDate(toIsoDateInput(initialEvent.date));
+      setTime(initialEvent.time || '20:00');
+      setCategory(initialEvent.category);
+      setImageUrl(initialEvent.imageUrl || '');
+      setDescription(initialEvent.description || '');
+      setIsActive(initialEvent.isActive);
+    }
+  }, [initialEvent]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,6 +124,7 @@ export default function EventForm({ initialEvent, onSave, onCancel }: EventFormP
               id="evtTitle"
               type="text"
               required
+              minLength={2}
               placeholder={t('common.components.eventForm.namePlaceholder')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -129,7 +151,7 @@ export default function EventForm({ initialEvent, onSave, onCancel }: EventFormP
             </select>
           </div>
 
-          {/* Date & Heure */}
+          {/* Date (ISO YYYY-MM-DD garanti) & Heure */}
           <div className={styles.dateTimeGrid}>
             <div className={styles.fieldGroup}>
               <label htmlFor="evtDate" className={styles.label}>
@@ -137,9 +159,8 @@ export default function EventForm({ initialEvent, onSave, onCancel }: EventFormP
               </label>
               <input
                 id="evtDate"
-                type="text"
+                type="date"
                 required
-                placeholder={t('common.components.eventForm.datePlaceholder')}
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 className={styles.input}
@@ -160,16 +181,17 @@ export default function EventForm({ initialEvent, onSave, onCancel }: EventFormP
             </div>
           </div>
 
-          {/* Image */}
+          {/* Image optionnelle */}
           <div className={styles.fieldGroup}>
             <label htmlFor="evtImage" className={styles.label}>
-              {t('common.components.eventForm.imageLabel')}
+              {t('common.components.eventForm.imageLabel')} (optionnel)
             </label>
             <div className={styles.inputWithIcon}>
               <ImageIcon size={14} className={styles.inputIcon} />
               <input
                 id="evtImage"
                 type="url"
+                placeholder="https://... (optionnel)"
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
                 className={styles.input}

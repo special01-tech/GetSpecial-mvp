@@ -1699,3 +1699,27 @@
 .destructiveBtn:hover {
   background: #B91C1C;
 }
+
+
+/* Correctifs UX : Grille 3 métriques & Bannière d'erreur */
+.economicsCardsGrid {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.errorNotice {
+  background: #7F1D1D !important;
+  color: #FEF2F2 !important;
+  border-color: #DC2626 !important;
+}
+
+.offersList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mainContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}

@@ -1,4 +1,5 @@
 import { prisma } from '@/server/db/prisma.client';
+import { deriveOffPeakDaysFromSlots } from '@/server/lib/resolve-restaurant';
 import { ContextDossier } from './types';
 
 const DAYS_MAP: Record<number, { key: string; fr: string }> = {
@@ -107,18 +108,47 @@ export class ContextBuilder {
       timeOfDayFr = 'Fin de soirée & nuit (Préparation du service de demain)';
     }
 
-    const offPeakDays: string[] = Array.isArray(profile.offPeakDays)
+    // Lecture unifiée des jours creux : colonne offPeakDays + fallback sur customRules.offPeakSlots
+    let offPeakDays: string[] = Array.isArray(profile.offPeakDays)
       ? profile.offPeakDays.map((d: string) => d.toLowerCase())
       : [];
+    if (offPeakDays.length === 0 && customRules.hasOffPeak && Array.isArray(customRules.offPeakSlots)) {
+      offPeakDays = deriveOffPeakDaysFromSlots(customRules.hasOffPeak, customRules.offPeakSlots);
+    }
+
     const isOffPeakDay = offPeakDays.some(
       (d) => d.includes(dayInfo.key) || d.includes(dayInfo.fr)
     );
 
-    const openingHours = (restaurant.openingHours as Record<string, string>) || {};
-    const todayHours = openingHours[dayInfo.key] || openingHours[dayInfo.fr] || '';
-    const isClosed =
-      todayHours.toLowerCase().includes('ferm') ||
-      todayHours.toLowerCase().includes('close');
+    // Lecture unifiée des horaires d'ouverture (format Tableau UI [{ day, isOpen, lunch, dinner }] ou format Objet)
+    let todayHours = '';
+    let isClosed = false;
+    const rawHours = restaurant.openingHours;
+
+    if (Array.isArray(rawHours)) {
+      const dayEntry = rawHours.find((item: any) => {
+        const d = String(item?.day || '').toLowerCase();
+        return d === dayInfo.fr || d.startsWith(dayInfo.key);
+      });
+      if (dayEntry) {
+        if (dayEntry.isOpen === false) {
+          isClosed = true;
+          todayHours = 'Fermé';
+        } else {
+          const slots = [dayEntry.lunch, dayEntry.dinner]
+            .map((s) => String(s || '').trim())
+            .filter((s) => s && !s.toLowerCase().includes('ferm') && !s.toLowerCase().includes('close'));
+          todayHours = slots.join(' / ');
+          isClosed = slots.length === 0 && Boolean(dayEntry.lunch || dayEntry.dinner);
+        }
+      }
+    } else if (rawHours && typeof rawHours === 'object') {
+      const openingHours = rawHours as Record<string, string>;
+      todayHours = openingHours[dayInfo.key] || openingHours[dayInfo.fr] || '';
+      isClosed =
+        todayHours.toLowerCase().includes('ferm') ||
+        todayHours.toLowerCase().includes('close');
+    }
 
     // 3. Météo du jour (Tolérance aux pannes : lecture du contrat unifié data)
     const weatherSignal = (restaurant.signals || []).find((s: any) => s.type === 'weather');
@@ -202,7 +232,7 @@ export class ContextBuilder {
         cur.total_uses += 1;
         counterOffersMap.set(r.offerId, cur);
       }
-    } catch (e) {
+    } catch {
       // Tolérance en cas de table vide
     }
 
@@ -216,7 +246,6 @@ export class ContextBuilder {
         lastPromotedAt: o.lastPromotedAt ? new Date(o.lastPromotedAt).toISOString() : undefined,
       };
     });
-
 
     // 6. Assembler le dossier final
     const dossier: ContextDossier = {

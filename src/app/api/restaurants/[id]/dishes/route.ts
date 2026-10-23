@@ -1,24 +1,43 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
 import { success, error } from '@/server/lib/api-response';
+import { resolveActiveRestaurant } from '@/server/lib/resolve-restaurant';
 import { z } from 'zod';
 
 const DishSchema = z.object({
-  name: z.string().min(1),
-  description: z.string().optional().default(''),
+  id: z.string().optional(),
+  name: z.string().min(1, 'Le nom du plat est requis.'),
+  category: z.string().optional().default('Plats'),
+  price: z.string().optional().default(''),
   priceText: z.string().optional().default(''),
-  photoUrl: z.string().optional(),
+  description: z.string().optional().default(''),
+  isSignature: z.boolean().optional().default(false),
+  photoUrl: z.string().nullable().optional(),
 });
 
+const MenuMetadataSchema = z
+  .object({
+    sourceType: z.enum(['pdf', 'image']),
+    name: z.string(),
+    fileSize: z.string().optional(),
+    uploadedAt: z.string(),
+    detectedCategories: z.array(z.string()).optional(),
+    extractedCount: z.number().optional(),
+  })
+  .nullable()
+  .optional();
+
 const PatchDishesSchema = z.object({
-  dishes: z.array(DishSchema).min(1),
+  dishes: z.array(DishSchema).optional(),
+  rawSummary: z.string().nullable().optional(),
+  menuMetadata: MenuMetadataSchema,
 });
 
 export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/restaurants/[id]/dishes
- * Récupère les plats extraits ou configurés du restaurant.
+ * Récupère les plats extraits, le résumé culinaire et les métadonnées du menu actif.
  */
 export async function GET(
   req: NextRequest,
@@ -26,46 +45,46 @@ export async function GET(
 ) {
   try {
     const { id: restaurantId } = await params;
-    if (!restaurantId) {
-      return error('ID restaurant manquant.', 400);
-    }
-
-    let restaurant = null;
-    if (restaurantId && restaurantId !== 'current' && restaurantId !== 'default') {
-      restaurant = await (prisma as any).restaurant.findUnique({
-        where: { id: restaurantId },
-        include: { profile: true },
-      });
-    }
+    const restaurant = await resolveActiveRestaurant(req, restaurantId, { profile: true });
 
     if (!restaurant) {
-      restaurant = await (prisma as any).restaurant.findFirst({
-        where: { status: 'active' },
-        orderBy: { createdAt: 'desc' },
-        include: { profile: true },
-      });
+      return error('Établissement introuvable.', 404);
     }
 
-    if (!restaurant) {
-      return error('Restaurant introuvable.', 404);
-    }
+    const customRules = (restaurant.profile?.customRules as Record<string, any>) || {};
+    const rawDishes = Array.isArray(customRules.dishes) ? customRules.dishes : [];
 
-    const customRules = (restaurant.profile?.customRules as any) || {};
-    const dishes = Array.isArray(customRules.dishes) ? customRules.dishes : [];
+    // Normalisation rétrocompatible (price / priceText)
+    const dishes = rawDishes.map((d: any, idx: number) => {
+      const resolvedPrice = d.price || d.priceText || '';
+      return {
+        id: d.id || `dish_${idx + 1}`,
+        name: d.name || '',
+        category: d.category || 'Plats',
+        price: resolvedPrice,
+        priceText: resolvedPrice,
+        description: d.description || '',
+        isSignature: Boolean(d.isSignature),
+        photoUrl: d.photoUrl || null,
+      };
+    });
 
     return success({
       restaurantId: restaurant.id,
       dishes,
+      rawSummary: customRules.rawSummary || '',
+      menuMetadata: customRules.menuMetadata || null,
     });
   } catch (err: any) {
-    return error(err.message, 500);
+    console.error('[RESTAURANT_DISHES_GET_ERROR]', err);
+    return error('Impossible de récupérer la carte du restaurant.', 500);
   }
 }
 
 /**
  * PATCH /api/restaurants/[id]/dishes
- * Sauvegarde les plats extraits du menu IA dans le profil du restaurant.
- * Les dishes sont stockés dans profile.customRules.dishes (JSON).
+ * Sauvegarde les plats extraits, le résumé culinaire et les métadonnées du menu
+ * dans profile.customRules sans écraser les autres réglages.
  */
 export async function PATCH(
   req: NextRequest,
@@ -73,74 +92,65 @@ export async function PATCH(
 ) {
   try {
     const { id: restaurantId } = await params;
-    if (!restaurantId) {
-      return error('ID restaurant manquant.', 400);
-    }
-
     const body = await req.json();
     const validated = PatchDishesSchema.safeParse(body);
+
     if (!validated.success) {
-      return error(validated.error.issues[0]?.message ?? 'Payload invalide', 400);
+      return error(validated.error.issues[0]?.message ?? 'Données de carte invalides.', 400);
     }
 
-    const { dishes } = validated.data;
-
-    // Vérifier que le restaurant existe (avec support pour 'current' et fallback vers le restaurant actif)
-    let restaurant = null;
-    if (restaurantId && restaurantId !== 'current' && restaurantId !== 'default') {
-      restaurant = await (prisma as any).restaurant.findUnique({
-        where: { id: restaurantId },
-        include: { profile: true },
-      });
-    }
-
+    const restaurant = await resolveActiveRestaurant(req, restaurantId, { profile: true });
     if (!restaurant) {
-      restaurant = await (prisma as any).restaurant.findFirst({
-        where: { status: 'active' },
-        orderBy: { createdAt: 'desc' },
-        include: { profile: true },
-      });
-    }
-
-    if (!restaurant) {
-      return error(`Restaurant introuvable (id: ${restaurantId}).`, 404);
+      return error('Établissement introuvable.', 404);
     }
 
     const targetRestaurantId = restaurant.id;
+    const existingRules = (restaurant.profile?.customRules as Record<string, any>) || {};
+    const updatedRules: Record<string, any> = { ...existingRules };
 
-    // Mettre à jour ou créer le profil avec les dishes dans customRules
-    const existingRules = (restaurant.profile?.customRules as any) || {};
-    const updatedRules = {
-      ...existingRules,
-      dishes: dishes.map((d) => ({
-        name: d.name,
-        description: d.description || '',
-        priceText: d.priceText || '',
-        photoUrl: d.photoUrl || null,
-      })),
-    };
-
-    if (restaurant.profile) {
-      await (prisma as any).restaurantProfile.update({
-        where: { restaurantId: targetRestaurantId },
-        data: { customRules: updatedRules },
-      });
-    } else {
-      await (prisma as any).restaurantProfile.create({
-        data: {
-          restaurantId: targetRestaurantId,
-          customRules: updatedRules,
-        },
+    if (validated.data.dishes !== undefined) {
+      updatedRules.dishes = validated.data.dishes.map((d, idx) => {
+        const resolvedPrice = d.price || d.priceText || '';
+        return {
+          id: d.id || `dish_${Date.now()}_${idx + 1}`,
+          name: d.name.trim(),
+          category: (d.category || 'Plats').trim(),
+          price: resolvedPrice,
+          priceText: resolvedPrice,
+          description: d.description || '',
+          isSignature: Boolean(d.isSignature),
+          photoUrl: d.photoUrl || null,
+        };
       });
     }
 
+    if (validated.data.rawSummary !== undefined) {
+      updatedRules.rawSummary = validated.data.rawSummary || '';
+    }
+
+    if (validated.data.menuMetadata !== undefined) {
+      updatedRules.menuMetadata = validated.data.menuMetadata;
+    }
+
+    await (prisma as any).restaurantProfile.upsert({
+      where: { restaurantId: targetRestaurantId },
+      update: { customRules: updatedRules },
+      create: {
+        restaurantId: targetRestaurantId,
+        customRules: updatedRules,
+      },
+    });
+
+    const savedCount = Array.isArray(updatedRules.dishes) ? updatedRules.dishes.length : 0;
     return success({
       restaurantId: targetRestaurantId,
-      dishesCount: dishes.length,
-      message: `${dishes.length} plat(s) sauvegardé(s) avec succès.`,
+      dishesCount: savedCount,
+      dishes: updatedRules.dishes || [],
+      rawSummary: updatedRules.rawSummary || '',
+      menuMetadata: updatedRules.menuMetadata || null,
     });
   } catch (err: any) {
     console.error('[RESTAURANT_DISHES_PATCH_ERROR]', err);
-    return error(`Erreur lors de la sauvegarde des plats : ${err.message}`, 500);
+    return error('Impossible de sauvegarder votre carte pour le moment.', 500);
   }
 }

@@ -16,7 +16,7 @@ interface LogoProps {
 export function LogoMark({ className = '' }: { className?: string }) {
   return (
     <img
-      src="/logo.png"
+      src="/favicon.svg"
       alt="GetSpecial"
       className={className}
       style={{ objectFit: 'contain' }}

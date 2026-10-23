@@ -158,6 +158,10 @@ export default function UnifiedOnboardingPage() {
   const [menuFileName, setMenuFileName] = useState('');
   // Extraction IA du menu pendant l'onboarding
   const [isExtractingMenu, setIsExtractingMenu] = useState(false);
+  const [menuRawSummary, setMenuRawSummary] = useState('');
+  const [menuMetadataState, setMenuMetadataState] = useState(null);
+  const [scrapedOpeningHoursRaw, setScrapedOpeningHoursRaw] = useState(null);
+  const addressDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const [menuExtractionNotice, setMenuExtractionNotice] = useState<string | null>(null);
   const [extractedMenuDishes, setExtractedMenuDishes] = useState<any[]>([]);
   const [extractedMenuOffers, setExtractedMenuOffers] = useState<any[]>([]);
@@ -243,6 +247,11 @@ export default function UnifiedOnboardingPage() {
           if (d.menuType) setMenuType(d.menuType);
           if (d.menuUrl) setMenuUrl(d.menuUrl);
           if (d.menuFileName) setMenuFileName(d.menuFileName);
+          if (d.extractedMenuDishes) setExtractedMenuDishes(d.extractedMenuDishes);
+          if (d.extractedMenuOffers) setExtractedMenuOffers(d.extractedMenuOffers);
+          if (d.menuRawSummary) setMenuRawSummary(d.menuRawSummary);
+          if (d.menuMetadataState) setMenuMetadataState(d.menuMetadataState);
+          if (d.scrapedOpeningHoursRaw) setScrapedOpeningHoursRaw(d.scrapedOpeningHoursRaw);
           if (d.connectedPlatforms) setConnectedPlatforms(d.connectedPlatforms);
           if (d.connectedHandles) setConnectedHandles(d.connectedHandles);
           if (d.phone) setPhone(d.phone);
@@ -296,27 +305,9 @@ export default function UnifiedOnboardingPage() {
         }
       }
 
-      const authUserStr = localStorage.getItem('getspecial_auth_user');
       const savedRestName = localStorage.getItem('getspecial_new_restaurant_name');
-      if (savedRestName) {
-        setName(savedRestName);
-      } else if (authUserStr) {
-        const parsedAuth = JSON.parse(authUserStr);
-        if (parsedAuth.name && parsedAuth.name !== 'Gérant GetSpecial') {
-          setName(parsedAuth.name);
-        }
-      } else {
-        fetch('/api/auth/me')
-          .then((r) => (r.ok ? r.json() : null))
-          .then((d) => {
-            if (d?.data?.user) {
-              localStorage.setItem('getspecial_auth_user', JSON.stringify(d.data.user));
-              if (d.data.user.name && d.data.user.name !== 'Gérant GetSpecial') {
-                setName(d.data.user.name);
-              }
-            }
-          })
-          .catch(() => {});
+      if (savedRestName && savedRestName.trim()) {
+        setName(savedRestName.trim());
       }
     } catch {
       // Ignorer
@@ -340,12 +331,10 @@ export default function UnifiedOnboardingPage() {
         setCustomCoords({ lat, lon });
 
         try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`,
-            { headers: { 'User-Agent': 'GetSpecial-App/1.0 (contact@getspecial.dev)' } }
-          );
+          const res = await fetch(`/api/geocode?mode=reverse&lat=${lat}&lon=${lon}`);
           if (res.ok) {
-            const data = await res.json();
+            const json = await res.json();
+            const data = json.data || json;
             const addr = data.address || {};
             const street = [addr.house_number, addr.road].filter(Boolean).join(' ') || data.name || address;
             const detCity = addr.city || addr.town || addr.village || addr.municipality || city;
@@ -374,49 +363,55 @@ export default function UnifiedOnboardingPage() {
     );
   };
 
-  // Autocomplétion d'adresse
-  const handleAddressChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Autocomplétion d'adresse avec proxy serveur et debounce 350ms
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setAddress(val);
 
-    if (val.trim().length >= 4) {
+    if (addressDebounceRef.current) {
+      clearTimeout(addressDebounceRef.current);
+    }
+
+    if (val.trim().length >= 3) {
       setIsSearchingAddress(true);
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(val.trim())}&format=json&limit=4&addressdetails=1`,
-          { headers: { 'User-Agent': 'GetSpecial-App/1.0 (contact@getspecial.dev)' } }
-        );
-        if (res.ok) {
-          const places = await res.json();
-          if (Array.isArray(places)) {
-            const mapped: AddressSuggestion[] = places.map((p: any) => {
-              const a = p.address || {};
-              const street = [a.house_number, a.road].filter(Boolean).join(' ') || p.name || val;
-              const detectedCity = a.city || a.town || a.village || a.municipality || '';
-              const cCode = (a.country_code || 'FR').toUpperCase();
-              const cName = a.country || cCode;
-              return {
-                title: street || detectedCity || p.display_name.split(',')[0],
-                subtitle: p.display_name,
-                street,
-                city: detectedCity,
-                postalCode: a.postcode || '',
-                countryCode: cCode,
-                countryName: cName,
-                lat: parseFloat(p.lat),
-                lon: parseFloat(p.lon),
-              };
-            });
-            setAddressSuggestions(mapped);
+      addressDebounceRef.current = setTimeout(async () => {
+        try {
+          const countryParam = country ? `&country=${country.toLowerCase()}` : '';
+          const res = await fetch(`/api/geocode?mode=search&q=${encodeURIComponent(val.trim())}${countryParam}`);
+          if (res.ok) {
+            const json = await res.json();
+            const places = json.data || json;
+            if (Array.isArray(places)) {
+              const mapped: AddressSuggestion[] = places.map((p: any) => {
+                const a = p.address || {};
+                const street = [a.house_number, a.road].filter(Boolean).join(' ') || p.name || val;
+                const detectedCity = a.city || a.town || a.village || a.municipality || '';
+                const cCode = (a.country_code || country || 'FR').toUpperCase();
+                const cName = a.country || cCode;
+                return {
+                  title: street || detectedCity || p.display_name.split(',')[0],
+                  subtitle: p.display_name,
+                  street,
+                  city: detectedCity,
+                  postalCode: a.postcode || '',
+                  countryCode: cCode,
+                  countryName: cName,
+                  lat: parseFloat(p.lat),
+                  lon: parseFloat(p.lon),
+                };
+              });
+              setAddressSuggestions(mapped);
+            }
           }
+        } catch {
+          // Ignorer
+        } finally {
+          setIsSearchingAddress(false);
         }
-      } catch {
-        // Ignorer
-      } finally {
-        setIsSearchingAddress(false);
-      }
+      }, 350);
     } else {
       setAddressSuggestions([]);
+      setIsSearchingAddress(false);
     }
   };
 
@@ -434,12 +429,10 @@ export default function UnifiedOnboardingPage() {
   const handleCityBlur = async () => {
     if (!city.trim() || city.trim().length < 3) return;
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city.trim())}&format=json&limit=1&addressdetails=1`,
-        { headers: { 'User-Agent': 'GetSpecial-App/1.0 (contact@getspecial.dev)' } }
-      );
+      const res = await fetch(`/api/geocode?mode=search&q=${encodeURIComponent(city.trim())}`);
       if (res.ok) {
-        const places = await res.json();
+        const json = await res.json();
+        const places = json.data || json;
         if (Array.isArray(places) && places.length > 0) {
           const first = places[0];
           const a = first.address || {};
@@ -590,7 +583,15 @@ export default function UnifiedOnboardingPage() {
         if (d.phone) setPhone(d.phone);
         if (d.website) setWebsite(d.website);
         if (d.openingHours) {
-          const oh = typeof d.openingHours === 'string' ? d.openingHours : d.openingHours.rawText || '';
+          setScrapedOpeningHoursRaw(d.openingHours);
+          let oh = '';
+          if (typeof d.openingHours === 'string') {
+            oh = d.openingHours;
+          } else if (Array.isArray(d.openingHours)) {
+            oh = d.openingHours.map((h: any) => `${h.day}: ${h.hours}`).join(' • ');
+          } else if (d.openingHours.rawText) {
+            oh = d.openingHours.rawText;
+          }
           setOpeningHoursText(oh);
         }
         if (d.photoUrl && !d.photoUrl.includes('unsplash.com')) {
@@ -640,8 +641,21 @@ export default function UnifiedOnboardingPage() {
     }
   };
 
-  // Extraction IA du menu lors de l'upload dans l'onboarding
+  // Extraction IA du menu lors de l'upload dans l'onboarding (PDF & Image uniquement)
   const extractMenuFile = async (file: File) => {
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const isImage = file.type.startsWith('image/') || /\.(jpe?g|png|webp)$/i.test(file.name);
+
+    if (!isPdf && !isImage) {
+      setMenuExtractionNotice('Format non supporté. Veuillez importer un fichier PDF ou une image (JPG, PNG, WEBP).');
+      return;
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      setMenuExtractionNotice('Ce fichier dépasse la taille maximale autorisée de 15 Mo.');
+      return;
+    }
+
     setMenuFileName(file.name);
     setIsExtractingMenu(true);
     setMenuExtractionNotice('Analyse IA du menu en cours...');
@@ -654,7 +668,7 @@ export default function UnifiedOnboardingPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            sourceType: file.type.includes('pdf') ? 'pdf' : 'image',
+            sourceType: isPdf ? 'pdf' : 'image',
             fileName: file.name,
             fileBase64: base64,
             restaurantName: name.trim() || 'Restaurant',
@@ -662,17 +676,21 @@ export default function UnifiedOnboardingPage() {
         });
         const json = await res.json();
         if (json.success && json.data) {
-          const { dishes, extractedOffers } = json.data;
+          const { dishes, extractedOffers, rawSummary, menuMetadata } = json.data;
           setExtractedMenuDishes(dishes || []);
           setExtractedMenuOffers(extractedOffers || []);
+          setMenuRawSummary(rawSummary || '');
+          setMenuMetadataState(menuMetadata || null);
           setMenuExtractionNotice(
             `✨ Menu analysé : ${dishes?.length || 0} plat(s) et ${extractedOffers?.length || 0} offre(s) détecté(s).`
           );
         } else {
-          setMenuExtractionNotice('Le menu a été ajouté. L\'analyse IA sera faite au démarrage.');
+          setMenuExtractionNotice(
+            json?.error || 'L’analyse du menu n’a pas abouti. Vous pourrez importer votre carte dans Mon Resto.'
+          );
         }
       } catch {
-        setMenuExtractionNotice('Menu ajouté. L\'analyse se fera après la configuration.');
+        setMenuExtractionNotice('Erreur réseau lors de l’analyse. Vous pourrez réessayer dans Mon Resto.');
       } finally {
         setIsExtractingMenu(false);
       }
@@ -766,9 +784,44 @@ export default function UnifiedOnboardingPage() {
       saveOnboardingDraft();
 
       try {
-        const restId = localStorage.getItem('getspecial_restaurant_id') || 'rest_onboarding_temp';
+        // Enregistrer d'abord l'établissement en base pour avoir son VRAI restaurantId
+        let restId = localStorage.getItem('getspecial_restaurant_id');
+        if (!restId || restId === 'rest_onboarding_temp') {
+          const initRes = await fetch('/api/restaurants', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: name.trim() || 'Mon Restaurant',
+              type: restaurantType,
+              address: address.trim() || `${name.trim() || 'Restaurant'}, ${city.trim() || 'Paris'}`,
+              city: city.trim() || undefined,
+              postalCode: postalCode ? postalCode.trim() : undefined,
+              country: country.trim().toUpperCase() || 'FR',
+              latitude: customCoords?.lat,
+              longitude: customCoords?.lon,
+              timezone: typeof window !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'Europe/Paris',
+              tone,
+              hasTerrace,
+              hasDelivery,
+              capacityCovers: parseInt(capacityCovers, 10) || undefined,
+              averageTicket: parseFloat(averageTicket) || undefined,
+              offPeakDays,
+              marketingGoal,
+              targetAudience: targetAudiences,
+              logoUrl: logoPreview || undefined,
+              brandColors: customColors.filter(Boolean),
+            }),
+          });
+          const initJson = await initRes.json().catch(() => null);
+          if (initRes.ok && initJson?.data?.id) {
+            restId = String(initJson.data.id);
+            localStorage.setItem('getspecial_restaurant_id', restId);
+          }
+        }
+
+        const effectiveRestId = restId || 'rest_onboarding_temp';
         const res = await fetch(
-          `/api/social/connect?platform=${platform}&restaurantId=${restId}&returnUrl=${encodeURIComponent('/onboarding?step=5')}`
+          `/api/social/connect?platform=${platform}&restaurantId=${effectiveRestId}&returnUrl=${encodeURIComponent('/onboarding?step=5')}`
         );
         const json = await res.json();
 
@@ -811,7 +864,47 @@ export default function UnifiedOnboardingPage() {
     }
   };
 
-  // Soumission finale et création en base
+  // Passer et compléter plus tard (non bloquant)
+  const handleSkipLater = async () => {
+    setIsSubmitting(true);
+    try {
+      if (name.trim()) {
+        const clientTz = typeof window !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'Europe/Paris';
+        const res = await fetch('/api/restaurants', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name.trim(),
+            type: restaurantType || 'restaurant',
+            address: address.trim() || `${name.trim()}, ${city.trim() || 'Paris'}`,
+            city: city.trim() || undefined,
+            country: country.trim().toUpperCase() || 'FR',
+            latitude: customCoords?.lat,
+            longitude: customCoords?.lon,
+            timezone: clientTz,
+          }),
+        });
+        const json = await res.json().catch(() => null);
+        if (json?.data?.id) {
+          localStorage.setItem('getspecial_restaurant_id', json.data.id);
+          localStorage.setItem('getspecial_selected_restaurant', JSON.stringify(json.data));
+        }
+      }
+      localStorage.setItem('getspecial_onboarding_completed', 'true');
+      localStorage.setItem('getspecial_restaurant_status', 'active');
+      localStorage.removeItem('getspecial_onboarding_draft');
+      localStorage.removeItem('getspecial_onboarding_step');
+      localStorage.removeItem('getspecial_new_restaurant_name');
+      router.replace('/dashboard');
+    } catch {
+      localStorage.setItem('getspecial_onboarding_completed', 'true');
+      router.replace('/dashboard');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Soumission finale et création vérifiée en base (zéro échec silencieux)
   const handleFinalSubmit = async () => {
     setIsSubmitting(true);
     setErrorMsg(null);
@@ -820,9 +913,9 @@ export default function UnifiedOnboardingPage() {
       const storedUser = localStorage.getItem('getspecial_auth_user');
       const parsedUser = storedUser ? JSON.parse(storedUser) : null;
 
-      // Résolution finale des coordonnées GPS & adresse
-      let lat = customCoords?.lat || selectedGooglePlace?.latitude || 48.8566;
-      let lon = customCoords?.lon || selectedGooglePlace?.longitude || 2.3522;
+      // Coordonnées GPS réelles (pas de fallback 48.8566 qui écrasait la ville saisie)
+      const lat = customCoords?.lat ?? selectedGooglePlace?.latitude;
+      const lon = customCoords?.lon ?? selectedGooglePlace?.longitude;
 
       const formattedAddress =
         address.trim() ||
@@ -839,17 +932,6 @@ export default function UnifiedOnboardingPage() {
           ? [selectedGooglePlace.photoUrl]
           : [];
 
-      // Horaires structurés semaine et week-end
-      const structuredOpeningHours = {
-        week: '11:30 - 14:30 • 18:30 - 22:30',
-        weekend: '12:00 - 23:00',
-        rawText: openingHoursText || (typeof selectedGooglePlace?.openingHours === 'string' ? selectedGooglePlace.openingHours : '') || '11:30 - 22:30 • Mar - Dim',
-        offPeakSlots: ['14:00 - 15:30', '18:30 - 19:30'],
-      };
-
-      // Spécialités : non indispensables, si non trouvées sur Google Maps, on n'invente rien
-      const restaurantSpecialties: string[] = (selectedGooglePlace as any)?.specialties || [];
-
       const parsedCapacity = parseInt(capacityCovers, 10);
       const parsedAverageTicket = parseFloat(averageTicket);
 
@@ -860,6 +942,8 @@ export default function UnifiedOnboardingPage() {
           username: connectedHandles[plat] || undefined,
           status: 'connected',
         }));
+
+      const clientTz = typeof window !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'Europe/Paris';
 
       const response = await fetch('/api/restaurants', {
         method: 'POST',
@@ -873,12 +957,13 @@ export default function UnifiedOnboardingPage() {
           googlePlaceId: (selectedGooglePlace as any)?.placeId || undefined,
           latitude: lat,
           longitude: lon,
+          timezone: clientTz,
           country: country.trim().toUpperCase() || 'FR',
           userId: parsedUser?.id || undefined,
           phone: phone.trim() || undefined,
           website: website.trim() || undefined,
-          openingHours: structuredOpeningHours,
-          specialties: restaurantSpecialties,
+          openingHours: scrapedOpeningHoursRaw || selectedGooglePlace?.openingHours || undefined,
+          specialties: (selectedGooglePlace as any)?.specialties || [],
           tone,
           hasTerrace,
           hasDelivery,
@@ -890,53 +975,40 @@ export default function UnifiedOnboardingPage() {
           logoUrl: logoPreview || undefined,
           photos: finalPhotos,
           brandColors: customColors.filter(Boolean),
-          menuUrl: menuType === 'link' ? menuUrl : menuFileName ? `file://${menuFileName}` : undefined,
+          menuUrl: menuFileName ? `menu://${menuFileName}` : undefined,
+          rawSummary: menuRawSummary || undefined,
+          menuMetadata: menuMetadataState || undefined,
           socialAccounts: socialAccountsPayload,
-          // Plats extraits du menu IA (si le restaurateur a uploadé son menu à l'étape 2)
-          dishes: extractedMenuDishes.length > 0
-            ? extractedMenuDishes.map((d: any) => ({
-                name: d.name,
-                description: d.description || '',
-                priceText: d.price || '',
-              }))
-            : undefined,
+          dishes: extractedMenuDishes.length > 0 ? extractedMenuDishes : undefined,
+          extractedOffers: extractedMenuOffers.length > 0 ? extractedMenuOffers : undefined,
         }),
       });
 
-      if (response.ok) {
-        const json = await response.json();
-        if (json.data?.id) {
-          localStorage.setItem('getspecial_restaurant_id', json.data.id);
-          localStorage.setItem('getspecial_selected_restaurant', JSON.stringify(json.data));
-        }
-        // Sauvegarder les offres extraites du menu pour la page Mon Resto / Offres
-        if (extractedMenuOffers.length > 0) {
-          const mappedOffers = extractedMenuOffers.map((o: any) => ({
-            id: `off_menu_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-            name: o.name,
-            description: o.description || '',
-            discount: o.discount || '',
-            period: o.period || '',
-            image: '',
-            status: 'active' as const,
-            platforms: ['instagram', 'facebook', 'google_business'],
-          }));
-          localStorage.setItem('getspecial_restaurant_offers', JSON.stringify(mappedOffers));
-        }
+      const json = await response.json().catch(() => null);
+
+      if (!response.ok || !json?.success) {
+        throw new Error(
+          json?.error || 'Impossible d’enregistrer votre établissement pour le moment. Veuillez vérifier les champs saisis.'
+        );
       }
 
-      // Marquer l'onboarding comme définitivement terminé
+      if (json.data?.id) {
+        localStorage.setItem('getspecial_restaurant_id', json.data.id);
+        localStorage.setItem('getspecial_selected_restaurant', JSON.stringify(json.data));
+      }
+
+      // Nettoyage définitif du brouillon
       localStorage.setItem('getspecial_onboarding_completed', 'true');
       localStorage.setItem('getspecial_restaurant_status', 'active');
       localStorage.removeItem('getspecial_onboarding_step');
+      localStorage.removeItem('getspecial_onboarding_draft');
+      localStorage.removeItem('getspecial_new_restaurant_name');
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 400));
       router.replace('/dashboard');
     } catch (err: any) {
-      console.warn('[ONBOARDING_ERROR]', err);
-      // Même en cas d'incident réseau temporaire, bascule vers le dashboard
-      localStorage.setItem('getspecial_onboarding_completed', 'true');
-      router.replace('/dashboard');
+      console.error('[ONBOARDING_FINAL_ERROR]', err);
+      setErrorMsg(err.message || 'Une erreur est survenue lors de l’enregistrement. Veuillez réessayer.');
     } finally {
       setIsSubmitting(false);
     }
@@ -1134,18 +1206,22 @@ export default function UnifiedOnboardingPage() {
                             <div className={styles.googleResultContent}>
                               <div className={styles.googleResultHeader}>
                                 <span className={styles.googleResultName}>{place.name}</span>
-                                <span className={styles.googleResultRating}>
-                                  <Star size={11} fill="#FF5A00" stroke="#FF5A00" />
-                                  <span>{place.rating || '4.8'}</span>
-                                  <span style={{ color: '#8A8A8A', fontWeight: 400 }}>({place.reviewsCount || 120})</span>
-                                  {place.isOpenNow !== undefined && (
-                                    <span className={place.isOpenNow ? styles.openBadge : styles.closedBadge}>
-                                      {place.isOpenNow ? t('onboarding.unified.openBadge') : t('onboarding.unified.closedBadge')}
-                                    </span>
-                                  )}
-                                </span>
+                                {place.rating ? (
+                                  <span className={styles.googleResultRating}>
+                                    <Star size={11} fill="#FF5A00" stroke="#FF5A00" />
+                                    <span>{place.rating}</span>
+                                    {place.reviewsCount ? (
+                                      <span style={{ color: '#8A8A8A', fontWeight: 400 }}>({place.reviewsCount})</span>
+                                    ) : null}
+                                  </span>
+                                ) : null}
+                                {place.isOpenNow !== undefined && (
+                                  <span className={place.isOpenNow ? styles.openBadge : styles.closedBadge}>
+                                    {place.isOpenNow ? t('onboarding.unified.openBadge') : t('onboarding.unified.closedBadge')}
+                                  </span>
+                                )}
                               </div>
-                              <div className={styles.googleResultMeta}>
+                            <div className={styles.googleResultMeta}>
                                 <span className={styles.googleResultCategory}>{place.cuisineType || t('onboarding.unified.defaultCategory')}</span>
                               </div>
                               <div className={styles.googleResultAddress}>
@@ -1546,13 +1622,21 @@ export default function UnifiedOnboardingPage() {
               </div>
             )}
 
-            {/* Navigation Section 1 */}
+            {/* Navigation Section 1 avec option passer */}
             <div className={styles.footerActions}>
-              <div />
+              <button
+                type="button"
+                onClick={handleSkipLater}
+                disabled={isSubmitting}
+                className={styles.skipBtn}
+              >
+                Passer et compléter plus tard
+              </button>
               <div className={styles.nextBtnGroup}>
                 <button
                   type="button"
                   onClick={handleNextStep}
+                  disabled={isSubmitting}
                   className={styles.primaryBtn}
                 >
                   <span>{t('onboarding.unified.continue')}</span>
@@ -1626,82 +1710,72 @@ export default function UnifiedOnboardingPage() {
               )}
             </div>
 
-            {/* Menu / Carte (Optionnel : Lien ou Fichier) */}
+            {/* Menu / Carte du restaurant (Direct PDF & Image) */}
             <div className={styles.fieldGroup}>
               <label className={styles.label}>
                 <span>{t('onboarding.unified.menuLabel')}</span>
-                <span className={styles.optionalTag}>{t('onboarding.unified.optional')}</span>
+                <span className={styles.optionalTag}>PDF ou Image (max 15 Mo)</span>
               </label>
-              <div className={styles.menuButtonsRow}>
-                <button
-                  type="button"
-                  className={`${styles.menuCompactBtn} ${menuType === 'link' ? styles.menuCompactBtnActive : ''}`}
-                  onClick={() => setMenuType(menuType === 'link' ? 'none' : 'link')}
-                >
-                  <LinkIcon size={13} strokeWidth={1.75} /> {t('onboarding.unified.pasteLink')}
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.menuCompactBtn} ${menuType === 'file' ? styles.menuCompactBtnActive : ''}`}
-                  onClick={() => setMenuType(menuType === 'file' ? 'none' : 'file')}
-                >
-                  <FileText size={13} strokeWidth={1.75} /> {t('onboarding.unified.importFile')}
-                </button>
-              </div>
 
-              {menuType === 'link' && (
-                <div className={styles.inputWrapper} style={{ marginTop: '4px' }}>
-                  <LinkIcon size={14} strokeWidth={1.75} className={styles.inputIcon} />
+              <div style={{ marginTop: '4px' }}>
+                <label className={styles.dropzone} style={{ padding: '12px 14px', cursor: isExtractingMenu ? 'wait' : 'pointer' }}>
                   <input
-                    type="url"
-                    placeholder={t('onboarding.unified.menuUrlPlaceholder')}
-                    value={menuUrl}
-                    onChange={(e) => setMenuUrl(e.target.value)}
-                    className={styles.input}
+                    type="file"
+                    accept="image/*,application/pdf"
+                    style={{ display: 'none' }}
+                    disabled={isExtractingMenu}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) extractMenuFile(f);
+                    }}
                   />
-                </div>
-              )}
-
-              {menuType === 'file' && (
-                <div style={{ marginTop: '4px' }}>
-                  <label className={styles.dropzone} style={{ padding: '8px 12px', cursor: isExtractingMenu ? 'wait' : 'pointer' }}>
-                    <input
-                      type="file"
-                      accept="image/*,application/pdf"
-                      style={{ display: 'none' }}
-                      disabled={isExtractingMenu}
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) extractMenuFile(f);
-                      }}
-                    />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       {isExtractingMenu ? (
-                        <Loader2 size={16} style={{ color: '#FF5A00', animation: 'spin 1s linear infinite' }} />
+                        <Loader2 size={18} style={{ color: '#FF5A00', animation: 'spin 1s linear infinite' }} />
                       ) : (
-                        <FileText size={16} strokeWidth={1.75} style={{ color: '#FF5A00' }} />
+                        <FileText size={18} strokeWidth={1.75} style={{ color: '#FF5A00' }} />
                       )}
                       <span className={styles.dropzoneTitle}>
-                        {menuFileName ? t('onboarding.unified.menuFileSelected', { file: menuFileName }) : t('onboarding.unified.menuFileCta')}
+                        {menuFileName ? t('onboarding.unified.menuFileSelected', { file: menuFileName }) : 'Importer le menu ou la carte (PDF, JPG, PNG)'}
                       </span>
                     </div>
-                  </label>
-                  {menuExtractionNotice && (
-                    <div style={{
-                      marginTop: '6px',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      fontSize: '0.82rem',
-                      fontWeight: 500,
-                      background: menuExtractionNotice.startsWith('✨') ? '#f0fdf4' : '#fff7ed',
-                      color: menuExtractionNotice.startsWith('✨') ? '#166534' : '#92400e',
-                      border: menuExtractionNotice.startsWith('✨') ? '1px solid #bbf7d0' : '1px solid #fde68a',
-                    }}>
-                      {menuExtractionNotice}
-                    </div>
-                  )}
-                </div>
-              )}
+                    {menuFileName && !isExtractingMenu && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setMenuFileName('');
+                          setExtractedMenuDishes([]);
+                          setExtractedMenuOffers([]);
+                          setMenuRawSummary('');
+                          setMenuExtractionNotice('');
+                        }}
+                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#9CA3AF', padding: '4px' }}
+                        title="Retirer le fichier"
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+                </label>
+
+                {menuExtractionNotice && (
+                  <div style={{
+                    marginTop: '8px',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    fontSize: '0.82rem',
+                    fontWeight: 500,
+                    background: menuExtractionNotice.startsWith('✨') ? '#f0fdf4' : '#fff7ed',
+                    color: menuExtractionNotice.startsWith('✨') ? '#166534' : '#92400e',
+                    border: menuExtractionNotice.startsWith('✨') ? '1px solid #bbf7d0' : '1px solid #fde68a',
+                  }}>
+                    {menuExtractionNotice}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Aménagements : Terrasse & Livraison en format chips compact */}

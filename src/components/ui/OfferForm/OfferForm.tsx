@@ -33,12 +33,11 @@ export default function OfferForm({ initialOffer, onSave, onCancel }: OfferFormP
 
   const [title, setTitle] = useState(initialOffer?.name || '');
   const [description, setDescription] = useState(initialOffer?.description || '');
-  const [discount, setDiscount] = useState(initialOffer?.discount || '-20%');
-  const [image, setImage] = useState(
-    initialOffer?.image ||
-      'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80'
+  const [discount, setDiscount] = useState(initialOffer?.discount || '');
+  const [image, setImage] = useState(initialOffer?.image || '');
+  const [period, setPeriod] = useState(
+    initialOffer?.period || 'Du Mardi au Jeudi • 18h30 - 21h30'
   );
-  const [period, setPeriod] = useState(initialOffer?.period || 'Du Lundi au Vendredi • 12h00 - 14h30');
   const [status, setStatus] = useState<OfferStatus>(initialOffer?.status || 'active');
   const [selectedPlatforms, setSelectedPlatforms] = useState<PlatformType[]>(
     initialOffer?.platforms || ['instagram', 'facebook']
@@ -49,7 +48,7 @@ export default function OfferForm({ initialOffer, onSave, onCancel }: OfferFormP
       setTitle(initialOffer.name);
       setDescription(initialOffer.description);
       setDiscount(initialOffer.discount);
-      setImage(initialOffer.image || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80');
+      setImage(initialOffer.image || '');
       setPeriod(initialOffer.period);
       setStatus(initialOffer.status);
       setSelectedPlatforms(initialOffer.platforms);
@@ -70,9 +69,9 @@ export default function OfferForm({ initialOffer, onSave, onCancel }: OfferFormP
       id: initialOffer ? initialOffer.id : `off_${Date.now()}`,
       name: title.trim(),
       description: description.trim(),
-      image,
+      image: image.trim() || undefined,
       discount: discount.trim(),
-      period: period.trim() || 'Service régulier',
+      period: period.trim() || 'Toute la semaine',
       status,
       platforms: selectedPlatforms.length > 0 ? selectedPlatforms : ['instagram'],
     };
@@ -91,12 +90,12 @@ export default function OfferForm({ initialOffer, onSave, onCancel }: OfferFormP
             </div>
             <div>
               <h2 className={styles.title}>
-                {isEditing ? 'Modifier l’offre principale' : 'Ajouter une offre principale'}
+                {isEditing ? 'Modifier l’offre' : 'Ajouter une offre'}
               </h2>
               <p className={styles.subtitle}>
                 {isEditing
                   ? 'Ajustez les détails et conditions de cette formule.'
-                  : 'Définissez une formule ou réduction phare de votre restaurant.'}
+                  : 'Définissez une formule ou réduction réelle de votre restaurant.'}
               </p>
             </div>
           </div>
@@ -121,6 +120,7 @@ export default function OfferForm({ initialOffer, onSave, onCancel }: OfferFormP
               id="offerTitle"
               type="text"
               required
+              minLength={2}
               placeholder="Ex: Formule Déjeuner Express, Happy Hour Tapas..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -131,7 +131,7 @@ export default function OfferForm({ initialOffer, onSave, onCancel }: OfferFormP
           {/* Réduction / Prix */}
           <div className={styles.fieldGroup}>
             <label htmlFor="offerDiscount" className={styles.label}>
-              Tarif ou Réduction affichée
+              Tarif ou avantage affiché
             </label>
             <div className={styles.inputWithIcon}>
               <Percent size={14} className={styles.inputIcon} />
@@ -139,7 +139,7 @@ export default function OfferForm({ initialOffer, onSave, onCancel }: OfferFormP
                 id="offerDiscount"
                 type="text"
                 required
-                placeholder="Ex: 16,50 €, -20%, 8 € le cocktail..."
+                placeholder="Ex: 16,50 €, -20%, Dessert offert..."
                 value={discount}
                 onChange={(e) => setDiscount(e.target.value)}
                 className={styles.input}
@@ -155,6 +155,7 @@ export default function OfferForm({ initialOffer, onSave, onCancel }: OfferFormP
             <textarea
               id="offerDesc"
               required
+              minLength={3}
               rows={3}
               placeholder="Détaillez ce qui est inclus dans cette offre..."
               value={description}
@@ -166,29 +167,30 @@ export default function OfferForm({ initialOffer, onSave, onCancel }: OfferFormP
           {/* Période / Horaires */}
           <div className={styles.fieldGroup}>
             <label htmlFor="offerPeriod" className={styles.label}>
-              Période ou Horaires d’application
+              Période ou créneaux d’application
             </label>
             <input
               id="offerPeriod"
               type="text"
               required
-              placeholder="Ex: Du Lundi au Vendredi • 12h00 - 14h30"
+              placeholder="Ex: Du Mardi au Jeudi • 18h30 - 21h30"
               value={period}
               onChange={(e) => setPeriod(e.target.value)}
               className={styles.input}
             />
           </div>
 
-          {/* Image URL */}
+          {/* Image URL (Optionnelle) */}
           <div className={styles.fieldGroup}>
             <label htmlFor="offerImage" className={styles.label}>
-              {t('common.components.offerForm.imageLabel')}
+              {t('common.components.offerForm.imageLabel')} (optionnel)
             </label>
             <div className={styles.inputWithIcon}>
               <ImageIcon size={14} className={styles.inputIcon} />
               <input
                 id="offerImage"
                 type="url"
+                placeholder="https://... (laisser vide si non applicable)"
                 value={image}
                 onChange={(e) => setImage(e.target.value)}
                 className={styles.input}
@@ -204,9 +206,9 @@ export default function OfferForm({ initialOffer, onSave, onCancel }: OfferFormP
               onChange={(e) => setStatus(e.target.value as OfferStatus)}
               className={styles.input}
             >
-              <option value="active">Active (mise en avant immédiate)</option>
+              <option value="active">Active (utilisable par l’IA)</option>
               <option value="scheduled">Programmée</option>
-              <option value="draft">Brouillon / En pause</option>
+              <option value="draft">En pause / Brouillon</option>
             </select>
           </div>
 
@@ -237,11 +239,7 @@ export default function OfferForm({ initialOffer, onSave, onCancel }: OfferFormP
 
           {/* Actions Footer */}
           <div className={styles.modalFooter}>
-            <button
-              type="button"
-              onClick={onCancel}
-              className={styles.cancelBtn}
-            >
+            <button type="button" onClick={onCancel} className={styles.cancelBtn}>
               {t('common.components.offerForm.cancel')}
             </button>
             <PrimaryButton type="submit" fullWidth={false}>

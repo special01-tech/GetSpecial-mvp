@@ -217,6 +217,7 @@ class AuthClientService implements IAuthClientService {
       localStorage.removeItem('getspecial_establishment_types');
       localStorage.removeItem('getspecial_onboarding_step');
       localStorage.removeItem('getspecial_restaurant_status');
+      localStorage.removeItem('getspecial_onboarding_draft');
       document.cookie = 'getspecial_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       document.cookie = 'getspecial_restaurant_id=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     }

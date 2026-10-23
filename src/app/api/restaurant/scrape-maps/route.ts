@@ -291,129 +291,80 @@ function formatSingleRestaurant(item: any, fallbackTarget?: any) {
 }
 
 /**
- * Recherche légère et quasi-instantanée de lieux (Nom, Adresse, GPS, URL Maps)
- * sans consommer de scraping lourd (Google Places API / Nominatim)
+ * Recherche réelle sur Google Maps via Apify (Actor: compass/crawler-google-places).
+ * Si aucun établissement n'est trouvé, renvoie un tableau vide [] (aucun faux fallback).
  */
-async function searchPlacesLightweight(name: string, city: string, country = 'FR') {
-  const queryText = [name, city].filter(Boolean).join(' ');
-  const googleApiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+async function searchPlacesViaApify(name: string, city: string, country = 'FR', customToken?: string): Promise<any[]> {
+  const queryText = [name, city, country].filter(Boolean).join(' ').trim();
+  if (!queryText) return [];
 
-  // 1. Tentative rapide via Google Places API (New searchText)
-  if (googleApiKey) {
-    try {
-      const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': googleApiKey,
-          'X-Goog-FieldMask':
-            'places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.googleMapsUri,places.websiteUri',
-        },
-        body: JSON.stringify({
-          textQuery: queryText,
-          languageCode: 'fr',
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data.places) && data.places.length > 0) {
-          return data.places.slice(0, 5).map((p: any, idx: number) => ({
-            id: p.id || `place_${idx}`,
-            name: p.displayName?.text || name,
-            address: p.formattedAddress || [name, city].filter(Boolean).join(', '),
-            city: city,
-            country: country,
-            latitude: p.location?.latitude || null,
-            longitude: p.location?.longitude || null,
-            rating: p.rating || null,
-            reviewsCount: p.userRatingCount || null,
-            googlePlaceId: p.id,
-            mapsUrl: p.googleMapsUri || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.displayName?.text || name)}&query_place_id=${p.id}`,
-          }));
-        }
-      }
-    } catch (e: any) {
-      console.warn('[SEARCH_LIGHT_GOOGLE_NEW_ERR]', e.message);
-    }
-
-    // Fallback Google Places Legacy
-    try {
-      const legacyRes = await fetch(
-        `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(queryText)}&key=${googleApiKey}&language=fr`
-      );
-      if (legacyRes.ok) {
-        const legacyData = await legacyRes.json();
-        if (Array.isArray(legacyData.results) && legacyData.results.length > 0) {
-          return legacyData.results.slice(0, 5).map((p: any, idx: number) => ({
-            id: p.place_id || `place_${idx}`,
-            name: p.name || name,
-            address: p.formatted_address || [name, city].filter(Boolean).join(', '),
-            city: city,
-            country: country,
-            latitude: p.geometry?.location?.lat || null,
-            longitude: p.geometry?.location?.lng || null,
-            rating: p.rating || null,
-            reviewsCount: p.user_ratings_total || null,
-            googlePlaceId: p.place_id,
-            mapsUrl: `https://www.google.com/maps/place/?q=place_id:${p.place_id}`,
-          }));
-        }
-      }
-    } catch (e: any) {
-      console.warn('[SEARCH_LIGHT_GOOGLE_LEGACY_ERR]', e.message);
-    }
+  const apifyToken = customToken || process.env.APIFY_API_TOKEN || process.env.APIFY_DEFAULT_TOKEN;
+  if (!apifyToken) {
+    console.warn('[MAPS_SEARCH_APIFY_WARN] Aucun jeton APIFY configuré dans .env.local.');
+    return [];
   }
 
-  // 2. Fallback Mondial Gratuit OpenStreetMap Nominatim
+  const actor = 'compass~crawler-google-places';
+  const apifyEndpoint = `https://api.apify.com/v2/acts/${actor}/run-sync-get-dataset-items?token=${apifyToken}&timeout=60`;
+
   try {
-    const nomRes = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryText)}&format=json&limit=5&addressdetails=1`,
-      { headers: { 'User-Agent': 'GetSpecial-App/1.0' } }
-    );
-    if (nomRes.ok) {
-      const nomData = await nomRes.json();
-      if (Array.isArray(nomData) && nomData.length > 0) {
-        return nomData.map((p: any, idx: number) => {
-          const lat = parseFloat(p.lat);
-          const lng = parseFloat(p.lon);
-          const detectedName = p.display_name?.split(',')[0]?.trim() || name;
-          return {
-            id: `osm_${p.place_id || idx}`,
-            name: detectedName,
-            address: p.display_name,
-            city: p.address?.city || p.address?.town || p.address?.village || city,
-            country: (p.address?.country_code || country).toUpperCase(),
-            latitude: lat || null,
-            longitude: lng || null,
-            rating: null,
-            reviewsCount: null,
-            googlePlaceId: null,
-            mapsUrl: (lat && lng)
-              ? `https://www.google.com/maps/search/${encodeURIComponent(detectedName + ' ' + (p.address?.city || city || ''))}/@${lat},${lng},17z`
-              : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(detectedName)}&center=${lat},${lng}`,
-          };
-        });
-      }
-    }
-  } catch (e: any) {
-    console.warn('[SEARCH_LIGHT_NOMINATIM_ERR]', e.message);
-  }
+    const apifyPayload = {
+      searchStringsArray: [queryText],
+      maxCrawledPlacesPerSearch: 3,
+      language: 'fr',
+      maxReviews: 0,
+      maxImages: 1,
+      skipClosedPlaces: false,
+    };
 
-  // Fallback direct constructible
-  return [{
-    id: 'direct_1',
-    name: name,
-    address: city ? `${name}, ${city}` : name,
-    city: city,
-    country: country,
-    latitude: null,
-    longitude: null,
-    rating: null,
-    reviewsCount: null,
-    googlePlaceId: null,
-    mapsUrl: `https://www.google.com/maps/search/${encodeURIComponent([name, city].filter(Boolean).join(' '))}`,
-  }];
+    console.log(`[MAPS_SEARCH_APIFY] Recherche Google Maps lancée pour : "${queryText}"`);
+    const res = await fetch(apifyEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(apifyPayload),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      console.warn(`[MAPS_SEARCH_APIFY_HTTP_ERR] Code ${res.status}: ${errText.slice(0, 200)}`);
+      return [];
+    }
+
+    const items = await res.json();
+    if (!Array.isArray(items) || items.length === 0) {
+      console.log(`[MAPS_SEARCH_APIFY] Aucun lieu Google Maps trouvé pour "${queryText}".`);
+      return [];
+    }
+
+    return items.map((item: any, idx: number) => {
+      const formatted = formatSingleRestaurant(item);
+      return {
+        id: item.placeId || item.cid || `apify_${idx}`,
+        name: formatted.name,
+        address: formatted.address || (formatted.city ? `${formatted.name}, ${formatted.city}` : formatted.name),
+        city: formatted.city || city,
+        country: formatted.country || country,
+        postalCode: formatted.postalCode,
+        latitude: formatted.latitude,
+        longitude: formatted.longitude,
+        rating: formatted.rating,
+        reviewsCount: formatted.reviewsCount,
+        photoUrl: formatted.photoUrl,
+        cuisineType: formatted.type || 'Restaurant',
+        googlePlaceId: formatted.googlePlaceId,
+        mapsUrl: formatted.googleMapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formatted.name)}`,
+        phone: formatted.phone,
+        openingHours: formatted.openingHours,
+        hasTerrace: formatted.hasTerrace,
+        hasDelivery: formatted.hasDelivery,
+        features: formatted.features,
+        rawScraped: formatted,
+      };
+    });
+  } catch (err: any) {
+    console.error('[MAPS_SEARCH_APIFY_EXCEPTION]', err?.message || err);
+    return [];
+  }
 }
 
 /**
@@ -489,7 +440,7 @@ export async function POST(req: NextRequest) {
     // =========================================================================
     if (action === 'search' || (!hasUrl && (computedName || computedCity))) {
       console.log(`[MAPS_SEARCH_LIGHT] Recherche rapide des occurrences pour : "${computedName}" (${computedCity})`);
-      const placesFound = await searchPlacesLightweight(computedName, computedCity, computedCountry);
+      const placesFound = await searchPlacesViaApify(computedName, computedCity, computedCountry, tokenFromRequest);
 
       const topCandidate = placesFound[0] || null;
       const defaultRestaurant = topCandidate
@@ -530,6 +481,17 @@ export async function POST(req: NextRequest) {
     // =========================================================================
     // ÉTAPE 2 : SCRAPING CIBLÉ APIFY SUR 1 SEULE FICHE VALIDÉE PAR LE USER
     // =========================================================================
+    if (resolvedCandidate?.rawScraped || (resolvedCandidate?.openingHours && resolvedCandidate?.phone)) {
+      const data = resolvedCandidate.rawScraped || resolvedCandidate;
+      return NextResponse.json({
+        success: true,
+        data,
+        restaurant: data,
+        payload: data,
+        message: 'Données Google Maps récupérées instantanément depuis la sélection.',
+      });
+    }
+
     if (!hasUrl) {
       return NextResponse.json(
         {

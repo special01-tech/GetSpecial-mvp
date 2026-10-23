@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Clock, Percent, AlertCircle, Edit2, Trash2 } from 'lucide-react';
+import { Clock, Percent, AlertCircle, Edit2, Trash2, Tag } from 'lucide-react';
 import { RestaurantOffer, OfferStatus } from '@/services/restaurant/restaurant-offers.data';
 import { PlatformType } from '@/services/planning/planning.data';
 import { useLanguage } from '@/i18n';
@@ -35,7 +35,7 @@ export default function OfferCard({
               e.stopPropagation();
               onToggleStatus?.(offer.id);
             }}
-            title="Cliquez pour changer le statut"
+            title="Cliquez pour mettre en pause"
           >
             <span className={styles.statusDot} />
             <span>Active</span>
@@ -50,7 +50,7 @@ export default function OfferCard({
               e.stopPropagation();
               onToggleStatus?.(offer.id);
             }}
-            title="Cliquez pour changer le statut"
+            title="Cliquez pour activer ou mettre en pause"
           >
             <Clock size={11} />
             <span>{t('common.components.offerCard.scheduled')}</span>
@@ -65,7 +65,7 @@ export default function OfferCard({
               e.stopPropagation();
               onToggleStatus?.(offer.id);
             }}
-            title="Cliquez pour changer le statut"
+            title="Cliquez pour activer cette offre"
           >
             <AlertCircle size={11} />
             <span>{t('common.components.offerCard.draft')}</span>
@@ -100,8 +100,24 @@ export default function OfferCard({
       }}
     >
       <div className={styles.imageCol}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={offer.image} alt={offer.name} className={styles.cardImage} />
+        {offer.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={offer.image} alt={offer.name} className={styles.cardImage} />
+        ) : (
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: '#FFF4EE',
+              color: '#FF5A00',
+            }}
+          >
+            <Tag size={24} />
+          </div>
+        )}
         {offer.discount && (
           <span className={styles.discountBadge}>
             <Percent size={10} strokeWidth={2.5} />
@@ -157,7 +173,7 @@ export default function OfferCard({
         </div>
 
         <div className={styles.platformsRow}>
-          {offer.platforms.map((p) => (
+          {(offer.platforms || []).map((p) => (
             <span key={p} className={styles.platformBadge}>
               {getPlatformLabel(p)}
             </span>

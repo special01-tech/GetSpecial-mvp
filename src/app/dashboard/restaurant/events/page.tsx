@@ -8,6 +8,7 @@ import {
   Calendar,
   Plus,
   CheckCircle2,
+  AlertCircle,
   Sparkles,
   CalendarDays,
 } from 'lucide-react';
@@ -17,162 +18,171 @@ import { useLanguage } from '@/i18n';
 import { RestaurantEvent } from '@/services/restaurant/restaurant-events.data';
 import styles from '../restaurant.module.css';
 
+interface NoticeState {
+  text: string;
+  type: 'success' | 'error';
+}
+
 /**
  * Mon Resto — Événements Personnalisés du Restaurant (/dashboard/restaurant/events)
- *
- * Règles :
- * - Affiche STRICTEMENT et UNIQUEMENT les événements créés / définis par le restaurateur lui-même.
- * - Aucun signal externe ni événement national injecté automatiquement ici.
- * - Gestion CRUD complète (Création, Consultation, Modification, Suppression, Activation/Pause).
- * - Synchronisation avec le planning (gs_user_events).
+ * Connecté intégralement à la table Signal (source='manual') via /api/events/manual.
  */
-
-const DEFAULT_USER_EVENTS: RestaurantEvent[] = [
-  {
-    id: 'uevt_tasting_9',
-    title: 'Soirée Dégustation Vins & Tapas',
-    date: '2026-10-09',
-    time: '19:30',
-    category: 'culture',
-    imageUrl: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=800&q=80',
-    isActive: true,
-    description: 'Menu 4 plats avec accords mets et vins bios du sommelier.',
-  },
-  {
-    id: 'uevt_match_17',
-    title: 'Diffusion Match sur Écran Géant',
-    date: '2026-10-17',
-    time: '20:45',
-    category: 'sport',
-    imageUrl: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=800&q=80',
-    isActive: true,
-    description: 'Soirée supporters en terrasse avec formules bières pression et wings.',
-  },
-];
-
 export default function RestaurantEventsPage() {
   const { t } = useLanguage();
-  const [restaurantName, setRestaurantName] = useState('Mon Restaurant');
-  const [events, setEvents] = useState<RestaurantEvent[]>(DEFAULT_USER_EVENTS);
+  const [events, setEvents] = useState<RestaurantEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<RestaurantEvent | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<NoticeState | null>(null);
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('getspecial_selected_restaurant');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.name) setRestaurantName(parsed.name);
-      }
-
-      // Priorité 1 : Événements stockés dans getspecial_restaurant_events
-      const storedEvents = localStorage.getItem('getspecial_restaurant_events');
-      if (storedEvents) {
-        const parsed = JSON.parse(storedEvents);
-        if (Array.isArray(parsed)) {
-          setEvents(parsed);
-          return;
-        }
-      }
-
-      // Priorité 2 : Synchronisation depuis gs_user_events (Planning)
-      const storedPlanningEvents = localStorage.getItem('gs_user_events');
-      if (storedPlanningEvents) {
-        const parsedPlanning = JSON.parse(storedPlanningEvents);
-        if (Array.isArray(parsedPlanning) && parsedPlanning.length > 0) {
-          const converted: RestaurantEvent[] = parsedPlanning.map((pe: any) => ({
-            id: pe.id,
-            title: pe.title,
-            date: pe.dateStr || '2026-10-15',
-            time: pe.timeStr || '19:30',
-            category:
-              pe.category === 'sport'
-                ? 'sport'
-                : pe.category === 'concert'
-                ? 'concert'
-                : pe.category === 'festival'
-                ? 'festival'
-                : 'culture',
-            imageUrl:
-              pe.category === 'sport'
-                ? 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=800&q=80'
-                : 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=800&q=80',
-            isActive: true,
-            description: pe.description || '',
-          }));
-          setEvents(converted);
-          return;
-        }
-      }
-    } catch {
-      // Ignorer
-    }
-  }, []);
-
-  const saveEventsList = (updated: RestaurantEvent[], message: string) => {
-    setEvents(updated);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('getspecial_restaurant_events', JSON.stringify(updated));
-
-      // Synchronisation bi-directionnelle avec le planning (gs_user_events)
-      try {
-        const planningFormat = updated.map((e) => ({
-          id: e.id,
-          title: e.title,
-          dateStr: e.date,
-          timeStr: e.time,
-          category:
-            e.category === 'sport'
-              ? 'sport'
-              : e.category === 'concert'
-              ? 'concert'
-              : 'theme',
-          description: e.description,
-          createdAt: Date.now(),
-        }));
-        localStorage.setItem('gs_user_events', JSON.stringify(planningFormat));
-      } catch (err) {
-        console.warn('Erreur sync planning storage:', err);
-      }
-    }
-    setNotice(message);
-    setTimeout(() => setNotice(null), 3500);
+  const showNotice = (text: string, type: 'success' | 'error' = 'success') => {
+    setNotice({ text, type });
+    setTimeout(() => setNotice(null), 4000);
   };
 
-  // 1. Création ou Édition (CRUD)
-  const handleSaveEvent = async (savedEvent: RestaurantEvent) => {
-    if (editingEvent) {
-      const updated = events.map((e) => (e.id === savedEvent.id ? savedEvent : e));
-      saveEventsList(updated, `Événement « ${savedEvent.title} » mis à jour.`);
-    } else {
-      const updated = [savedEvent, ...events];
-      saveEventsList(updated, `Événement « ${savedEvent.title} » ajouté.`);
-
-      // Synchronisation API backend
+  /**
+   * Synchronise le cache local utilisé par le calendrier Planning (gs_user_events)
+   * à partir de la source de vérité serveur.
+   */
+  const syncPlanningCache = (updated: RestaurantEvent[]) => {
+    setEvents(updated);
+    if (typeof window !== 'undefined') {
       try {
-        const restaurantId =
-          localStorage.getItem('getspecial_restaurant_id') || 'rest_paris_atelier_1';
-        await fetch('/api/events/manual', {
+        localStorage.setItem('getspecial_restaurant_events', JSON.stringify(updated));
+        const activePlanningEvents = updated
+          .filter((e) => e.isActive)
+          .map((e) => ({
+            id: e.id,
+            title: e.title,
+            dateStr: e.date,
+            timeStr: e.time,
+            category:
+              e.category === 'sport'
+                ? 'sport'
+                : e.category === 'concert'
+                ? 'concert'
+                : 'theme',
+            description: e.description,
+            createdAt: Date.now(),
+          }));
+        localStorage.setItem('gs_user_events', JSON.stringify(activePlanningEvents));
+      } catch (err) {
+        console.warn('[EVENTS_PLANNING_CACHE_WARN]', err);
+      }
+    }
+  };
+
+  // Chargement réel depuis la base de données
+  useEffect(() => {
+    let cancelled = false;
+    const restaurantId =
+      (typeof window !== 'undefined' ? localStorage.getItem('getspecial_restaurant_id') : null) ||
+      'current';
+
+    async function loadEvents() {
+      setIsLoading(true);
+      try {
+        const res = await fetch(`/api/events/manual?restaurantId=${encodeURIComponent(restaurantId)}`);
+        const json = await res.json().catch(() => null);
+        if (cancelled) return;
+
+        if (res.ok && json?.success && Array.isArray(json.data)) {
+          syncPlanningCache(json.data);
+        } else {
+          console.error('[MANUAL_EVENTS_LOAD_ERROR]', res.status, json);
+          showNotice('Impossible de charger vos événements enregistrés.', 'error');
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error('[MANUAL_EVENTS_NETWORK_ERROR]', err);
+          showNotice('Connexion au serveur indisponible.', 'error');
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    loadEvents();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // 1. Création ou Édition persistée en base
+  const handleSaveEvent = async (savedEvent: RestaurantEvent) => {
+    const restaurantId =
+      (typeof window !== 'undefined' ? localStorage.getItem('getspecial_restaurant_id') : null) ||
+      'current';
+
+    try {
+      if (editingEvent) {
+        const res = await fetch('/api/events/manual', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: savedEvent.id,
+            title: savedEvent.title,
+            description: savedEvent.description || '',
+            date: savedEvent.date,
+            time: savedEvent.time || '20:00',
+            category: savedEvent.category,
+            imageUrl: savedEvent.imageUrl || null,
+            isActive: savedEvent.isActive,
+          }),
+        });
+        const json = await res.json().catch(() => null);
+
+        if (!res.ok || !json?.success || !json?.data) {
+          if (res.status >= 400 && res.status < 500 && json?.error) {
+            showNotice(json.error, 'error');
+          } else {
+            console.error('[EVENT_PATCH_ERROR]', res.status, json);
+            showNotice('Impossible de modifier cet événement pour le moment.', 'error');
+          }
+          return;
+        }
+
+        const updated = events.map((e) => (e.id === savedEvent.id ? json.data : e));
+        syncPlanningCache(updated);
+        showNotice(`Événement « ${json.data.title} » mis à jour.`, 'success');
+      } else {
+        const res = await fetch('/api/events/manual', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             restaurantId,
             title: savedEvent.title,
-            description:
-              savedEvent.description && savedEvent.description.length >= 5
-                ? savedEvent.description
-                : `Événement spécial : ${savedEvent.title}`,
-            dateTime: `${savedEvent.date} ${savedEvent.time || '20:00'}`,
+            description: savedEvent.description || '',
+            date: savedEvent.date,
+            time: savedEvent.time || '20:00',
+            category: savedEvent.category,
+            imageUrl: savedEvent.imageUrl,
+            isActive: savedEvent.isActive,
             intensity: 1.0,
           }),
         });
-      } catch (err) {
-        console.warn('[MANUAL_EVENT_API_ERROR]', err);
+        const json = await res.json().catch(() => null);
+
+        if (!res.ok || !json?.success || !json?.data) {
+          if (res.status >= 400 && res.status < 500 && json?.error) {
+            showNotice(json.error, 'error');
+          } else {
+            console.error('[EVENT_POST_ERROR]', res.status, json);
+            showNotice('Impossible d’ajouter cet événement pour le moment.', 'error');
+          }
+          return;
+        }
+
+        syncPlanningCache([json.data, ...events]);
+        showNotice(`Événement « ${json.data.title} » ajouté.`, 'success');
       }
+
+      setIsModalOpen(false);
+      setEditingEvent(null);
+    } catch (err) {
+      console.error('[EVENT_SAVE_NETWORK_ERROR]', err);
+      showNotice('Connexion interrompue. Votre événement n’a pas pu être enregistré.', 'error');
     }
-    setIsModalOpen(false);
-    setEditingEvent(null);
   };
 
   // 2. Ouvrir en mode édition
@@ -181,25 +191,61 @@ export default function RestaurantEventsPage() {
     setIsModalOpen(true);
   };
 
-  // 3. Suppression
-  const handleDelete = (id: string) => {
+  // 3. Suppression réelle en base
+  const handleDelete = async (id: string) => {
     const target = events.find((e) => e.id === id);
-    const updated = events.filter((e) => e.id !== id);
-    saveEventsList(updated, `Événement « ${target?.title || ''} » supprimé.`);
+    try {
+      const res = await fetch(`/api/events/manual?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+      const json = await res.json().catch(() => null);
+
+      if (!res.ok || !json?.success) {
+        console.error('[EVENT_DELETE_ERROR]', res.status, json);
+        showNotice('Impossible de supprimer cet événement pour le moment.', 'error');
+        return;
+      }
+
+      syncPlanningCache(events.filter((e) => e.id !== id));
+      showNotice(`Événement « ${target?.title || ''} » supprimé.`, 'success');
+    } catch (err) {
+      console.error('[EVENT_DELETE_NETWORK_ERROR]', err);
+      showNotice('Impossible de joindre le serveur pour supprimer cet événement.', 'error');
+    }
   };
 
-  // 4. Toggle activation / désactivation
-  const handleToggleActive = (id: string) => {
-    const updated = events.map((e) =>
-      e.id === id ? { ...e, isActive: !e.isActive } : e
-    );
-    const target = updated.find((e) => e.id === id);
-    saveEventsList(
-      updated,
-      target?.isActive
-        ? `Événement « ${target.title} » activé.`
-        : `Événement « ${target?.title || ''} » mis en pause.`
-    );
+  // 4. Toggle activation / mise en pause réelle en base
+  const handleToggleActive = async (id: string) => {
+    const target = events.find((e) => e.id === id);
+    if (!target) return;
+    const nextState = !target.isActive;
+
+    try {
+      const res = await fetch('/api/events/manual', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, isActive: nextState }),
+      });
+      const json = await res.json().catch(() => null);
+
+      if (!res.ok || !json?.success || !json?.data) {
+        console.error('[EVENT_TOGGLE_ERROR]', res.status, json);
+        showNotice('Le changement de statut n’a pas pu être enregistré.', 'error');
+        return;
+      }
+
+      const updated = events.map((e) => (e.id === id ? json.data : e));
+      syncPlanningCache(updated);
+      showNotice(
+        nextState
+          ? `Événement « ${target.title} » activé.`
+          : `Événement « ${target.title} » mis en pause.`,
+        'success'
+      );
+    } catch (err) {
+      console.error('[EVENT_TOGGLE_NETWORK_ERROR]', err);
+      showNotice('Connexion interrompue lors du changement de statut.', 'error');
+    }
   };
 
   const activeCount = events.filter((e) => e.isActive).length;
@@ -207,9 +253,6 @@ export default function RestaurantEventsPage() {
   return (
     <div className={styles.screenWrapper}>
       <div className={styles.container}>
-        {/* ========================================================= */}
-        {/* EN-TÊTE DE LA PAGE                                        */}
-        {/* ========================================================= */}
         <header className={styles.header}>
           <div className={styles.headerTexts}>
             <h1 className={styles.pageMainTitle}>Mon Resto</h1>
@@ -219,17 +262,20 @@ export default function RestaurantEventsPage() {
           </div>
         </header>
 
-        {/* Notice temporaire de confirmation */}
+        {/* Bannière de retour honnête */}
         {notice && (
-          <div className={styles.savedNotice}>
-            <CheckCircle2 size={16} />
-            <span>{notice}</span>
+          <div
+            className={`${styles.savedNotice} ${
+              notice.type === 'error' ? styles.errorNotice : ''
+            }`}
+            role="status"
+          >
+            {notice.type === 'error' ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
+            <span>{notice.text}</span>
           </div>
         )}
 
-        {/* ========================================================= */}
-        {/* ONGLETS INTERNES DE NAVIGATION                           */}
-        {/* ========================================================= */}
+        {/* ONGLETS INTERNES DE NAVIGATION */}
         <nav className={styles.tabsNav} aria-label={t('restaurant.tabs.label')}>
           <Link href="/dashboard/restaurant" className={styles.tabBtn}>
             <Store size={15} />
@@ -238,7 +284,7 @@ export default function RestaurantEventsPage() {
 
           <Link href="/dashboard/restaurant/offers" className={styles.tabBtn}>
             <Tag size={15} />
-            <span>Offres & Formules</span>
+            <span>Plats ou Offres</span>
           </Link>
 
           <Link
@@ -250,18 +296,16 @@ export default function RestaurantEventsPage() {
           </Link>
         </nav>
 
-        {/* ========================================================= */}
-        {/* CONTENU ONGLET ÉVÉNEMENTS                                 */}
-        {/* ========================================================= */}
         <main className={styles.mainContent}>
-          {/* Header d'actions des événements */}
           <div className={styles.offersHeaderRow}>
             <div>
               <h2 className={styles.tabSectionTitle}>Mes événements personnalisés</h2>
               <p className={styles.tabSectionSubtitle}>
                 {events.length === 0
                   ? 'Aucun événement défini pour l’instant.'
-                  : `${activeCount} événement${activeCount > 1 ? 's' : ''} actif${activeCount > 1 ? 's' : ''} sur ${events.length} au total.`}
+                  : `${activeCount} événement${activeCount > 1 ? 's' : ''} actif${
+                      activeCount > 1 ? 's' : ''
+                    } sur ${events.length} au total.`}
               </p>
             </div>
 
@@ -295,20 +339,25 @@ export default function RestaurantEventsPage() {
                 className={styles.addOfferBtn}
               >
                 <Plus size={15} />
-                <span>+ Nouvel événement</span>
+                <span>Nouvel événement</span>
               </button>
             </div>
           </div>
 
-          {/* Liste des événements ou État vide */}
-          {events.length === 0 ? (
+          {isLoading ? (
+            <div className={styles.emptyOffersBox}>
+              <p className={styles.emptyOffersText}>Chargement de vos événements...</p>
+            </div>
+          ) : events.length === 0 ? (
             <div className={styles.emptyOffersBox}>
               <div className={styles.emptyOffersIcon}>
                 <CalendarDays size={24} />
               </div>
               <h3 className={styles.emptyOffersTitle}>Aucun événement programmé</h3>
               <p className={styles.emptyOffersText}>
-                Ajoutez les événements propres à votre établissement (concert live, retransmission de match, soirée dégustation, brunch à thème). Ils s’afficheront aussi dans votre planning !
+                Ajoutez les événements propres à votre établissement (concert live, retransmission
+                de match, soirée dégustation, brunch à thème). Ils s’afficheront aussi dans votre
+                planning !
               </p>
               <div className={styles.emptyOffersActions}>
                 <button
@@ -339,7 +388,6 @@ export default function RestaurantEventsPage() {
           )}
         </main>
 
-        {/* Modale de Création / Édition (EventForm) */}
         {isModalOpen && (
           <EventForm
             initialEvent={editingEvent}
@@ -351,7 +399,6 @@ export default function RestaurantEventsPage() {
           />
         )}
 
-        {/* Spacer pour Bottom Navigation mobile */}
         <div className={styles.bottomSpacer} />
       </div>
     </div>
