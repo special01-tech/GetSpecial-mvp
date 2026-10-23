@@ -9,7 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.128.0",
     "@prisma/client": "^6.4.1",
     "@supabase/supabase-js": "^2.117.2",
     "@types/qrcode": "^1.5.6",
