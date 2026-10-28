@@ -15,7 +15,8 @@ export interface DataStore {
   auditLogs: any[];
 }
 
-const DATA_DIR = path.join(process.cwd(), '.data');
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const DATA_DIR = isServerless ? path.join('/tmp', '.data') : path.join(process.cwd(), '.data');
 const STORE_FILE = path.join(DATA_DIR, 'getspecial_store.json');
 
 const INITIAL_DATA: DataStore = {
@@ -70,15 +71,27 @@ class LocalFallbackStore {
   get user() {
     return {
       findUnique: async ({ where }: any) => {
+        if (!where) return null;
         if (where.id) return this.data.users.find((u) => u.id === where.id) || null;
-        if (where.email) return this.data.users.find((u) => u.email.toLowerCase() === where.email.toLowerCase()) || null;
+        if (where.email) return this.data.users.find((u) => u.email && u.email.toLowerCase() === where.email.toLowerCase()) || null;
         return null;
       },
       findFirst: async ({ where }: any = {}) => {
         if (!where) return this.data.users[0] || null;
+        if (where.OR && Array.isArray(where.OR)) {
+          for (const cond of where.OR) {
+            const found = this.data.users.find((u) => {
+              if (cond.id && u.id === cond.id) return true;
+              if (cond.email && u.email && u.email.toLowerCase() === cond.email.toLowerCase()) return true;
+              return false;
+            });
+            if (found) return found;
+          }
+          return null;
+        }
         if (where.id) return this.data.users.find((u) => u.id === where.id) || null;
-        if (where.email) return this.data.users.find((u) => u.email.toLowerCase() === where.email.toLowerCase()) || null;
-        return this.data.users[0] || null;
+        if (where.email) return this.data.users.find((u) => u.email && u.email.toLowerCase() === where.email.toLowerCase()) || null;
+        return null;
       },
       findMany: async () => [...this.data.users],
       create: async ({ data }: any) => {
@@ -93,11 +106,18 @@ class LocalFallbackStore {
         return item;
       },
       update: async ({ where, data }: any) => {
-        const idx = this.data.users.findIndex((u) => u.id === where.id || u.email === where.email);
+        const idx = this.data.users.findIndex((u) => u.id === where.id || (where.email && u.email && u.email.toLowerCase() === where.email.toLowerCase()));
         if (idx === -1) throw new Error('Utilisateur non trouvé');
         this.data.users[idx] = { ...this.data.users[idx], ...data, updatedAt: new Date() };
         this.persist();
         return this.data.users[idx];
+      },
+      upsert: async ({ where, update, create }: any) => {
+        const existing = await this.user.findFirst({ where });
+        if (existing) {
+          return this.user.update({ where: { id: existing.id }, data: update });
+        }
+        return this.user.create({ data: create });
       },
     };
   }
@@ -532,6 +552,16 @@ class LocalFallbackStore {
         this.data.opportunities.push(item);
         this.persist();
         return item;
+      },
+      count: async ({ where }: any = {}) => {
+        let list = [...this.data.opportunities];
+        if (where?.restaurantId) list = list.filter((o) => o.restaurantId === where.restaurantId);
+        if (where?.status) list = list.filter((o) => o.status === where.status);
+        if (where?.suggestedAt?.gte) {
+          const gteDate = new Date(where.suggestedAt.gte).getTime();
+          list = list.filter((o) => new Date(o.suggestedAt || o.createdAt).getTime() >= gteDate);
+        }
+        return list.length;
       },
       update: async ({ where, data }: any) => {
         const idx = this.data.opportunities.findIndex((o) => o.id === where.id);

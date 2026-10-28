@@ -8,7 +8,6 @@ import { weatherCollector } from '../src/server/modules/signal-collector/weather
 import { ticketmasterCollector } from '../src/server/modules/signal-collector/ticketmaster.collector';
 import { opportunityEngineService } from '../src/server/modules/opportunity-engine/opportunity-engine.service';
 import { postSafetyService } from '../src/server/modules/publisher/post-safety.service';
-import { zernioService } from '../src/server/modules/publisher/zernio.service';
 
 async function runFullUserJourneyAndIsolationTest() {
   console.log('========================================================================');

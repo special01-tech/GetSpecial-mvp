@@ -1,14 +1,16 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
 import { success, error } from '@/server/lib/api-response';
+import { resolveActiveRestaurant } from '@/server/lib/resolve-restaurant';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    const restaurant = await (prisma.restaurant as any).findFirst({
-      where: { status: 'active' },
-    });
+    const { searchParams } = new URL(req.url);
+    const requestedId = searchParams.get('restaurantId');
+
+    const restaurant = await resolveActiveRestaurant(req, requestedId, { profile: false });
 
     if (!restaurant) {
       return success({
@@ -17,7 +19,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const [opportunities, feedbackEvents, publications] = await Promise.all([
+    const [opportunities, feedbackEvents, publications, posts] = await Promise.all([
       (prisma.opportunity as any).findMany({
         where: { restaurantId: restaurant.id },
         include: {
@@ -36,6 +38,15 @@ export async function GET(req: NextRequest) {
           post: true,
         },
         orderBy: { createdAt: 'desc' },
+      }),
+      (prisma.post as any).findMany({
+        where: { restaurantId: restaurant.id },
+        include: {
+          opportunity: true,
+          publications: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
       }),
     ]);
 
@@ -72,6 +83,36 @@ export async function GET(req: NextRequest) {
       };
     });
 
+    // Formater toutes les affiches et posts générés
+    const formattedPosters = posts.map((post: any) => {
+      const payload = post.generationPayload || {};
+      return {
+        id: post.id,
+        title: post.headline || post.opportunity?.title || 'Affiche GetSpecial',
+        headline: post.headline || '',
+        text: post.text || post.instagramCaption || post.facebookCaption || '',
+        instagramCaption: post.instagramCaption || post.text || '',
+        facebookCaption: post.facebookCaption || post.text || '',
+        hashtags: Array.isArray(post.hashtags) ? post.hashtags : [],
+        imageUrl: post.imageUrl || (post.mediaUrls && post.mediaUrls[0]) || null,
+        mediaUrls: post.mediaUrls || [],
+        aspectRatio: post.aspectRatio || '4:5',
+        platform: post.platform || 'instagram',
+        status: post.status || 'ready',
+        origin: post.origin || 'generated',
+        campaignType: post.campaignType || 'promotion',
+        createdAt: post.createdAt,
+        daFamilyId: payload.da_family_id || null,
+        daFamilyName: payload.da_family_name || payload.advertising_concept?.poster_family || null,
+        servingTemperature: payload.serving_temperature || null,
+        materials: Array.isArray(payload.materials) ? payload.materials : [],
+        variety: payload.variety || null,
+        opportunityTitle: post.opportunity?.title || null,
+        isPublished: (post.publications && post.publications.length > 0) || post.status === 'published',
+        publicationsCount: post.publications?.length || 0,
+      };
+    });
+
     // Formater les publications avec plateformes et canaux
     const formattedPublications = publications.map((pub: any) => ({
       id: pub.id,
@@ -85,6 +126,7 @@ export async function GET(req: NextRequest) {
     }));
 
     return success({
+      posters: formattedPosters,
       proposals: formattedProposals,
       publications: formattedPublications,
     });

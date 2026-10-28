@@ -68,6 +68,91 @@ const CATEGORY_OPTIONS: { id: UserEvent['category']; label: string; icon: string
   { id: 'other', label: 'Autre événement', icon: '📌' },
 ];
 
+function formatIsoDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function getYearlyHolidays(year: number): NationalEvent[] {
+  // Algorithme de Gauss / Meeus pour le calcul exact du dimanche de Pâques
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const easterMonth = Math.floor((h + l - 7 * m + 114) / 31) - 1;
+  const easterDay = ((h + l - 7 * m + 114) % 31) + 1;
+  const easterSunday = new Date(year, easterMonth, easterDay);
+
+  const easterMonday = new Date(easterSunday);
+  easterMonday.setDate(easterSunday.getDate() + 1);
+
+  const ascension = new Date(easterSunday);
+  ascension.setDate(easterSunday.getDate() + 39);
+
+  const pentecostMonday = new Date(easterSunday);
+  pentecostMonday.setDate(easterSunday.getDate() + 50);
+
+  // 1er dimanche d'octobre (Fête des Grands-Pères)
+  let octFirstSunday = 1;
+  while (new Date(year, 9, octFirstSunday).getDay() !== 0) {
+    octFirstSunday++;
+  }
+
+  // 3e jeudi de novembre (Beaujolais Nouveau)
+  let novThursdays = 0;
+  let beaujolaisDay = 1;
+  for (let day = 1; day <= 30; day++) {
+    if (new Date(year, 10, day).getDay() === 4) {
+      novThursdays++;
+      if (novThursdays === 3) {
+        beaujolaisDay = day;
+        break;
+      }
+    }
+  }
+
+  const makeEvent = (id: string, title: string, category: string, d: Date): NationalEvent => {
+    const dateStr = formatIsoDate(d);
+    const dateBadge = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    return { id: `${id}_${year}`, title, category, dateStr, dateBadge };
+  };
+
+  return [
+    makeEvent('evt_nouvel_an', "Jour de l'An", 'JOUR FÉRIÉ', new Date(year, 0, 1)),
+    makeEvent('evt_epiphanie', 'Épiphanie & Galette', 'TEMPS FORT FOOD', new Date(year, 0, 6)),
+    makeEvent('evt_chandeleur', 'Chandeleur (Crêpes en fête)', 'TEMPS FORT FOOD', new Date(year, 1, 2)),
+    makeEvent('evt_valentin', 'Saint-Valentin (Menu Duo)', 'ÉVÉNEMENT MARKETING', new Date(year, 1, 14)),
+    makeEvent('evt_patrick', 'Saint-Patrick (Soirée Festive)', 'ÉVÉNEMENT FESTIF', new Date(year, 2, 17)),
+    makeEvent('evt_paques', 'Lundi de Pâques', 'JOUR FÉRIÉ', easterMonday),
+    makeEvent('evt_travail', 'Fête du Travail', 'JOUR FÉRIÉ', new Date(year, 4, 1)),
+    makeEvent('evt_victoire', 'Victoire 1945', 'JOUR FÉRIÉ', new Date(year, 4, 8)),
+    makeEvent('evt_ascension', 'Jeudi de l’Ascension', 'JOUR FÉRIÉ', ascension),
+    makeEvent('evt_pentecote', 'Lundi de Pentecôte', 'JOUR FÉRIÉ', pentecostMonday),
+    makeEvent('evt_musique', 'Fête de la Musique', 'CONCERT & TERRASSE', new Date(year, 5, 21)),
+    makeEvent('evt_nationale', 'Fête Nationale (14 Juillet)', 'FÊTE NATIONALE', new Date(year, 6, 14)),
+    makeEvent('evt_assomption', 'Assomption', 'JOUR FÉRIÉ', new Date(year, 7, 15)),
+    makeEvent('evt_grand_pere', 'Fête des Grands-Pères', 'ÉVÉNEMENT NATIONAL', new Date(year, 9, octFirstSunday)),
+    makeEvent('evt_food_day', "Journée Mondiale de l'Alimentation", 'TEMPS FORT FOOD', new Date(year, 9, 16)),
+    makeEvent('evt_halloween', 'Halloween & Soirée Spéciale', 'ÉVÉNEMENT MARKETING', new Date(year, 9, 31)),
+    makeEvent('evt_toussaint', 'La Toussaint', 'JOUR FÉRIÉ', new Date(year, 10, 1)),
+    makeEvent('evt_armistice', 'Armistice 1918', 'JOUR FÉRIÉ', new Date(year, 10, 11)),
+    makeEvent('evt_beaujolais', 'Beaujolais Nouveau', 'TEMPS FORT VINS', new Date(year, 10, beaujolaisDay)),
+    makeEvent('evt_reveillon_noel', 'Réveillon de Noël', 'FÊTE & CÉLÉBRATION', new Date(year, 11, 24)),
+    makeEvent('evt_noel', 'Noël', 'JOUR FÉRIÉ', new Date(year, 11, 25)),
+    makeEvent('evt_sylvestre', 'Réveillon Saint-Sylvestre', 'RÉVEILLON NOUVEL AN', new Date(year, 11, 31)),
+  ];
+}
+
 export default function PlanningPage() {
   const router = useRouter();
   const { t } = useLanguage();
@@ -92,96 +177,181 @@ export default function PlanningPage() {
   // Mode d'affichage : 'agenda' (semaine + jour, mobile-first), 'month' (grille 42 jours), 'timeline' (flux continu)
   const [viewMode, setViewMode] = useState<'agenda' | 'month' | 'timeline'>('agenda');
 
-  // Date de référence (initialisée sur octobre 2026 selon la maquette)
-  const [currentDate, setCurrentDate] = useState(() => new Date(2026, 9, 9));
-  const [selectedDateStr, setSelectedDateStr] = useState<string>('2026-10-09');
+  // Date de référence (initialisée dynamiquement sur aujourd'hui)
+  const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
+  const [selectedDateStr, setSelectedDateStr] = useState<string>(() => formatIsoDate(new Date()));
 
   // Localisation du restaurant pour la carte d'événements à venir
-  const [restaurantCity] = useState('Lomé, Togo');
+  const [restaurantCity, setRestaurantCity] = useState('Votre ville');
+  const [externalSignals, setExternalSignals] = useState<NationalEvent[]>([]);
+
+  // Année et mois courants affichés
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth();
 
   // ---------------------------------------------------------------------------
-  // Événements Nationaux / Marketing fixes (Violet)
+  // Événements Nationaux / Marketing fixes + signaux réels externes
   // ---------------------------------------------------------------------------
-  const nationalEvents: NationalEvent[] = useMemo(
-    () => [
-      {
-        id: 'evt_grand_pere',
-        title: 'Fête des Grands-Pères',
-        category: 'ÉVÉNEMENT NATIONAL',
-        dateBadge: '4 oct.',
-        dateStr: '2026-10-04',
-      },
-      {
-        id: 'evt_food_day',
-        title: "Journée Mondiale de l'Alimentation",
-        category: 'TEMPS FORT FOOD',
-        dateBadge: '16 oct.',
-        dateStr: '2026-10-16',
-      },
-      {
-        id: 'evt_halloween',
-        title: 'Halloween & Soirée Spéciale',
-        category: 'ÉVÉNEMENT MARKETING',
-        dateBadge: '31 oct.',
-        dateStr: '2026-10-31',
-      },
-      {
-        id: 'evt_all_saints',
-        title: "All Saints' Day (Toussaint)",
-        category: t('content.planning.upcomingEvents.holidayBadge') || 'JOUR FÉRIÉ',
-        dateBadge: '1 nov.',
-        dateStr: '2026-11-01',
-      },
-      {
-        id: 'evt_armistice',
-        title: 'Armistice',
-        category: 'JOUR FÉRIÉ',
-        dateBadge: '11 nov.',
-        dateStr: '2026-11-11',
-      },
-    ],
-    [t]
-  );
+  const nationalEvents: NationalEvent[] = useMemo(() => {
+    const calculated = getYearlyHolidays(currentYear);
+    const map = new Map<string, NationalEvent>();
+    calculated.forEach((e) => map.set(`${e.dateStr}_${e.title.toLowerCase()}`, e));
+    externalSignals.forEach((s) => {
+      const key = `${s.dateStr}_${s.title.toLowerCase()}`;
+      if (!map.has(key)) {
+        map.set(key, s);
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => a.dateStr.localeCompare(b.dateStr));
+  }, [currentYear, externalSignals]);
+
+  const upcomingNationalEvents = useMemo(() => {
+    const todayStr = formatIsoDate(new Date());
+    const upcoming = nationalEvents.filter((e) => e.dateStr >= todayStr);
+    return (upcoming.length > 0 ? upcoming : nationalEvents).slice(0, 4);
+  }, [nationalEvents]);
+
+  // Chargement de la ville de l'établissement et des signaux météo/festivals réels
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadRestaurantAndSignals = async () => {
+      try {
+        const storedRest = localStorage.getItem('getspecial_selected_restaurant');
+        if (storedRest) {
+          try {
+            const parsed = JSON.parse(storedRest);
+            const cityCandidate =
+              parsed.city ||
+              (parsed.address ? parsed.address.split(',')[1]?.trim() || parsed.address : '') ||
+              parsed.name;
+            if (cityCandidate) setRestaurantCity(cityCandidate);
+          } catch {}
+        }
+
+        const restId = localStorage.getItem('getspecial_restaurant_id') || 'current';
+        const res = await fetch(`/api/signals/today?restaurantId=${encodeURIComponent(restId)}`);
+        const json = await res.json().catch(() => null);
+
+        if (!isCancelled && res.ok && json?.success && json.data) {
+          const rest = json.data.restaurant;
+          if (rest?.city) {
+            setRestaurantCity(rest.city);
+          } else if (rest?.name) {
+            setRestaurantCity(rest.name);
+          }
+
+          if (Array.isArray(json.data.events) && json.data.events.length > 0) {
+            const liveSignals: NationalEvent[] = json.data.events.map((ev: any) => {
+              let evDateStr = formatIsoDate(new Date());
+              if (ev.startsAt) {
+                try {
+                  evDateStr = new Date(ev.startsAt).toISOString().split('T')[0];
+                } catch {}
+              }
+              const dateObj = new Date(evDateStr + 'T12:00:00');
+              const dayNum = dateObj.getDate();
+              const monthShort = dateObj.toLocaleDateString('fr-FR', { month: 'short' });
+              return {
+                id: ev.id || `sig_${Math.random()}`,
+                title: ev.title,
+                dateStr: evDateStr,
+                category:
+                  ev.category === 'holiday'
+                    ? 'JOUR FÉRIÉ'
+                    : (ev.category || 'ÉVÉNEMENT LOCAL').toUpperCase(),
+                dateBadge: `${dayNum} ${monthShort}`,
+                description: ev.summary || ev.venue,
+              };
+            });
+            setExternalSignals(liveSignals);
+          }
+        }
+      } catch (err) {
+        console.warn('[PLANNING_SIGNALS_FETCH_WARN]', err);
+      }
+    };
+
+    loadRestaurantAndSignals();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   // ---------------------------------------------------------------------------
-  // Événements Personnalisés du Restaurant (Orange - Persisté & CRUD)
+  // Événements Personnalisés du Restaurant (Orange - Persisté & Connecté API)
   // ---------------------------------------------------------------------------
   const [userEvents, setUserEvents] = useState<UserEvent[]>([]);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('gs_user_events');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          setUserEvents(parsed);
+    let isCancelled = false;
+
+    const loadUserEvents = async () => {
+      const restId = localStorage.getItem('getspecial_restaurant_id') || 'current';
+      try {
+        const res = await fetch(`/api/events/manual?restaurantId=${encodeURIComponent(restId)}`);
+        const json = await res.json().catch(() => null);
+
+        if (!isCancelled && res.ok && json?.success && Array.isArray(json.data)) {
+          const apiEvents: UserEvent[] = json.data.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            dateStr: item.date,
+            timeStr: item.time || '',
+            category: (['tasting', 'concert', 'sport', 'theme', 'promo', 'other'].includes(item.category)
+              ? item.category
+              : 'other') as UserEvent['category'],
+            description: item.description || '',
+            createdAt: Date.now(),
+          }));
+
+          setUserEvents(apiEvents);
+          try {
+            localStorage.setItem('gs_user_events', JSON.stringify(apiEvents));
+          } catch {}
           return;
         }
+      } catch (err) {
+        console.warn('[PLANNING_LOAD_EVENTS_API_WARN]', err);
       }
-      // Données initiales par défaut
-      const initialUserEvents: UserEvent[] = [
-        {
-          id: 'uevt_tasting_9',
-          title: 'Soirée Dégustation Vins & Tapas',
-          dateStr: '2026-10-09',
-          timeStr: '19:30',
-          category: 'tasting',
-          description: 'Menu 4 plats avec accords mets et vins bios du sommelier.',
-          createdAt: Date.now(),
-        },
-        {
-          id: 'uevt_concert_24',
-          title: 'Concert Acoustique Live',
-          dateStr: '2026-10-24',
-          timeStr: '20:00',
-          category: 'concert',
-          description: 'Duo acoustique guitare et voix en terrasse lounge.',
-          createdAt: Date.now() + 1000,
-        },
-      ];
-      setUserEvents(initialUserEvents);
-      localStorage.setItem('gs_user_events', JSON.stringify(initialUserEvents));
-    } catch {}
+
+      // Fallback LocalStorage si API inaccessible
+      try {
+        const stored = localStorage.getItem('gs_user_events');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            if (!isCancelled) setUserEvents(parsed);
+            return;
+          }
+        }
+        // Données d'exemple dynamiques basées sur aujourd'hui si aucun événement
+        const today = new Date();
+        const inThreeDays = new Date(today);
+        inThreeDays.setDate(today.getDate() + 3);
+
+        const initialUserEvents: UserEvent[] = [
+          {
+            id: 'uevt_welcome',
+            title: 'Soirée Dégustation & Découverte',
+            dateStr: formatIsoDate(inThreeDays),
+            timeStr: '19:30',
+            category: 'tasting',
+            description: 'Menu dégustation avec accords mets et boissons de saison.',
+            createdAt: Date.now(),
+          },
+        ];
+        if (!isCancelled) {
+          setUserEvents(initialUserEvents);
+          localStorage.setItem('gs_user_events', JSON.stringify(initialUserEvents));
+        }
+      } catch {}
+    };
+
+    loadUserEvents();
+    return () => {
+      isCancelled = true;
+    };
   }, []);
 
   // ---------------------------------------------------------------------------
@@ -309,9 +479,6 @@ export default function PlanningPage() {
   // ---------------------------------------------------------------------------
   // Date Helpers & Navigation
   // ---------------------------------------------------------------------------
-  const currentYear = currentDate.getFullYear();
-  const currentMonth = currentDate.getMonth();
-
   const monthName = useMemo(() => {
     return currentDate.toLocaleDateString('fr-FR', {
       month: 'long',
@@ -338,6 +505,8 @@ export default function PlanningPage() {
       hasScheduledPost: boolean;
     }[] = [];
 
+    const todayStr = formatIsoDate(new Date());
+
     for (let i = 0; i < 7; i++) {
       const cur = new Date(monday);
       cur.setDate(monday.getDate() + i);
@@ -346,7 +515,7 @@ export default function PlanningPage() {
       const d = String(cur.getDate()).padStart(2, '0');
       const dateStr = `${y}-${m}-${d}`;
 
-      const isToday = y === 2026 && cur.getMonth() === 9 && cur.getDate() === 9;
+      const isToday = dateStr === todayStr;
       const isSelected = dateStr === selectedDateStr;
 
       days.push({
@@ -399,8 +568,9 @@ export default function PlanningPage() {
   };
 
   const handleJumpToToday = () => {
-    setSelectedDateStr('2026-10-09');
-    setCurrentDate(new Date(2026, 9, 9));
+    const now = new Date();
+    setSelectedDateStr(formatIsoDate(now));
+    setCurrentDate(now);
   };
 
   // Navigation mois (pour vue mois)
@@ -422,9 +592,10 @@ export default function PlanningPage() {
   const calendarCells = useMemo(() => {
     const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
     // En JS 0 = Dimanche, 1 = Lundi. Pour aligner LUN en première colonne :
-    const firstDayIndex = (firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1);
+    const firstDayIndex = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
     const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
+    const todayStr = formatIsoDate(new Date());
 
     const cells: {
       key: string;
@@ -456,8 +627,8 @@ export default function PlanningPage() {
 
     // Jours du mois courant
     for (let day = 1; day <= daysInCurrentMonth; day++) {
-      const isToday = currentYear === 2026 && currentMonth === 9 && day === 9;
       const cellDateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const isToday = cellDateStr === todayStr;
       const isSelected = selectedDateStr === cellDateStr;
 
       cells.push({
@@ -518,6 +689,7 @@ export default function PlanningPage() {
     scheduledPosts.forEach((p) => datesSet.add(p.dateStr));
 
     const sortedDates = Array.from(datesSet).sort();
+    const todayStr = formatIsoDate(new Date());
 
     return sortedDates.map((dateStr) => {
       const dateObj = new Date(dateStr + 'T12:00:00');
@@ -529,7 +701,7 @@ export default function PlanningPage() {
       return {
         dateStr,
         formatted,
-        isToday: dateStr === '2026-10-09',
+        isToday: dateStr === todayStr,
         national: nationalEvents.filter((e) => e.dateStr === dateStr),
         user: userEvents.filter((e) => e.dateStr === dateStr),
         posts: scheduledPosts.filter((p) => p.dateStr === dateStr),
@@ -538,7 +710,7 @@ export default function PlanningPage() {
   }, [nationalEvents, userEvents, scheduledPosts]);
 
   // ---------------------------------------------------------------------------
-  // Modale / Drawer d'Ajout & Modification (CRUD)
+  // Modale / Drawer d'Ajout & Modification (CRUD Connecté)
   // ---------------------------------------------------------------------------
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
@@ -551,7 +723,7 @@ export default function PlanningPage() {
   const handleOpenCreateModal = (defaultDate?: string) => {
     setEditingEventId(null);
     setFormTitle('');
-    setFormDateStr(defaultDate || selectedDateStr || '2026-10-09');
+    setFormDateStr(defaultDate || selectedDateStr || formatIsoDate(new Date()));
     setFormTimeStr('19:30');
     setFormCategory('tasting');
     setFormDescription('');
@@ -568,9 +740,11 @@ export default function PlanningPage() {
     setIsModalOpen(true);
   };
 
-  const handleSaveEvent = (e: React.FormEvent) => {
+  const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formTitle.trim()) return;
+
+    const restId = localStorage.getItem('getspecial_restaurant_id') || 'current';
 
     if (editingEventId) {
       // Modification
@@ -587,10 +761,30 @@ export default function PlanningPage() {
           : evt
       );
       saveUserEventsToStorage(updated);
+      setSelectedDateStr(formDateStr);
+      setIsModalOpen(false);
+
+      try {
+        await fetch('/api/events/manual', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: editingEventId,
+            title: formTitle.trim(),
+            date: formDateStr,
+            time: formTimeStr,
+            category: formCategory,
+            description: formDescription.trim(),
+          }),
+        });
+      } catch (err) {
+        console.warn('[PLANNING_EVENT_PATCH_ERROR]', err);
+      }
     } else {
       // Création
+      const tempId = `uevt_${Date.now()}`;
       const newEvent: UserEvent = {
-        id: `uevt_${Date.now()}`,
+        id: tempId,
         title: formTitle.trim(),
         dateStr: formDateStr,
         timeStr: formTimeStr,
@@ -599,23 +793,66 @@ export default function PlanningPage() {
         createdAt: Date.now(),
       };
       saveUserEventsToStorage([newEvent, ...userEvents]);
-    }
+      setSelectedDateStr(formDateStr);
+      setIsModalOpen(false);
 
-    setSelectedDateStr(formDateStr);
-    setIsModalOpen(false);
+      try {
+        const res = await fetch('/api/events/manual', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            restaurantId: restId,
+            title: formTitle.trim(),
+            date: formDateStr,
+            time: formTimeStr,
+            category: formCategory,
+            description: formDescription.trim(),
+          }),
+        });
+        const json = await res.json().catch(() => null);
+        if (res.ok && json?.success && json.data?.id) {
+          const realId = json.data.id;
+          setUserEvents((prev) => {
+            const replaced = prev.map((ev) => (ev.id === tempId ? { ...ev, id: realId } : ev));
+            try {
+              localStorage.setItem('gs_user_events', JSON.stringify(replaced));
+            } catch {}
+            return replaced;
+          });
+        }
+      } catch (err) {
+        console.warn('[PLANNING_EVENT_POST_ERROR]', err);
+      }
+    }
   };
 
-  const handleDeleteUserEvent = (id: string) => {
+  const handleDeleteUserEvent = async (id: string) => {
     const updated = userEvents.filter((e) => e.id !== id);
     saveUserEventsToStorage(updated);
     if (editingEventId === id) {
       setIsModalOpen(false);
     }
+
+    try {
+      await fetch(`/api/events/manual?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+    } catch (err) {
+      console.warn('[PLANNING_EVENT_DELETE_ERROR]', err);
+    }
   };
 
-  const handleDeleteScheduledPost = (id: string) => {
+  const handleDeleteScheduledPost = async (id: string) => {
     const updated = scheduledPosts.filter((p) => p.id !== id);
     saveScheduledPostsToStorage(updated);
+
+    try {
+      await fetch(`/api/posts/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+    } catch (err) {
+      console.warn('[PLANNING_POST_DELETE_ERROR]', err);
+    }
   };
 
   const handleCreatePostInStudio = (title: string, desc?: string) => {
@@ -1284,7 +1521,7 @@ export default function PlanningPage() {
               </p>
 
               <div className={styles.eventsListStack}>
-                {nationalEvents.slice(0, 3).map((evt) => (
+                {upcomingNationalEvents.map((evt) => (
                   <div key={evt.id} className={styles.eventListItem}>
                     <div className={styles.eventItemInfo}>
                       <h4 className={styles.eventItemTitle}>{evt.title}</h4>

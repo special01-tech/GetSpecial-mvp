@@ -157,8 +157,11 @@ export default function DashboardPage() {
 
     fetchLiveSignals(true);
 
+    const storedRestId = typeof window !== 'undefined' ? localStorage.getItem('getspecial_restaurant_id') : null;
+    const analyticsUrl = storedRestId ? `/api/analytics?restaurantId=${encodeURIComponent(storedRestId)}` : '/api/analytics';
+
     // Chargement des analytics pour les 4 statistiques et publications
-    fetch('/api/analytics')
+    fetch(analyticsUrl)
       .then((res) => res.json())
       .then((json) => {
         if (json.success && json.data) {
@@ -176,8 +179,8 @@ export default function DashboardPage() {
               title: p.content ? (p.content.slice(0, 60) + (p.content.length > 60 ? '...' : '')) : 'Publication du restaurant',
               views: `${(p.views || 0).toLocaleString('fr-FR')} vues`,
               interactions: `${p.likes || 0} réactions`,
-              imageUrl: p.thumbnailUrl || 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?auto=format&fit=crop&w=400&q=80',
-              engagement: `${p.engagementRate || 7.5}%`,
+              imageUrl: p.thumbnailUrl || p.imageUrl || null,
+              engagement: (p.engagementRate !== undefined && p.engagementRate !== null && p.engagementRate > 0) ? `${p.engagementRate}%` : null,
               platform: p.platform || 'instagram',
               date: p.publishedAt
                 ? new Date(p.publishedAt).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })
@@ -500,11 +503,17 @@ export default function DashboardPage() {
                   <div key={post.id} className={styles.postItemRow}>
                     <div className={styles.postItemLeft}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={post.imageUrl}
-                        alt={post.title}
-                        className={styles.postThumbnail}
-                      />
+                      {post.imageUrl ? (
+                        <img
+                          src={post.imageUrl}
+                          alt={post.title}
+                          className={styles.postThumbnail}
+                        />
+                      ) : (
+                        <div className={styles.postThumbnail} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F3F4F6' }}>
+                          <ImageIcon size={18} color="#9CA3AF" />
+                        </div>
+                      )}
                       <div className={styles.postMetaGroup}>
                         <span className={styles.postTitle}>{post.title}</span>
                         <span className={styles.postSubmeta}>

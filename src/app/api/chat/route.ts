@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
 import { success, error } from '@/server/lib/api-response';
-import { weatherCollector } from '@/server/modules/signal-collector/weather.collector';
+import { weatherService } from '@/server/modules/signal-collector/weather/weather.service';
 
 export async function POST(req: NextRequest) {
   try {
@@ -45,7 +45,8 @@ export async function POST(req: NextRequest) {
     let weatherSummary = 'Clear sky and pleasant temperatures (75°F / 24°C)';
     try {
       if (restaurant?.latitude && restaurant?.longitude) {
-        const weatherSignals = await weatherCollector.collect(restaurant.latitude, restaurant.longitude);
+        const country = (restaurant.country || restaurant.profile?.country || 'FR').toUpperCase();
+        const weatherSignals = await weatherService.getSignals(restaurant.latitude, restaurant.longitude, country);
         if (weatherSignals.length > 0) {
           weatherSummary = weatherSignals[0].summary;
         }

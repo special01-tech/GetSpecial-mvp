@@ -58,13 +58,13 @@ export interface CatalogItem {
 export function loadLocalInspirations(
   catalogFile = join(process.cwd(), "public", "ai-pipeline-assets", "inspirations", "catalog.json"),
 ): InspirationRef[] {
-  if (!existsSync(catalogFile)) {
+  if (!existsSync(/*turbopackIgnore: true*/ catalogFile)) {
     const fallbackPath = join(process.cwd(), "assets", "inspirations", "catalog.json");
-    if (existsSync(fallbackPath)) catalogFile = fallbackPath;
+    if (existsSync(/*turbopackIgnore: true*/ fallbackPath)) catalogFile = fallbackPath;
     else return [];
   }
   try {
-    const data = JSON.parse(readFileSync(catalogFile, "utf-8")) as { items: CatalogItem[] };
+    const data = JSON.parse(readFileSync(/*turbopackIgnore: true*/ catalogFile, "utf-8")) as { items: CatalogItem[] };
     return data.items.map((item) => ({
       id: item.id,
       ownerRestaurantId: null, // catalogue global GetSpecial
@@ -98,9 +98,9 @@ export async function loadLocalReferenceImages(
   // 1. Photo de plat réelle (si disponible)
   const dishCandidates = [join(restoDir, "dish.jpg"), join(restoDir, "dish.png")];
   for (const dishPath of dishCandidates) {
-    if (existsSync(dishPath)) {
+    if (existsSync(/*turbopackIgnore: true*/ dishPath)) {
       const mime = dishPath.endsWith(".png") ? "image/png" : "image/jpeg";
-      refs.push({ role: "subject_photo", data: readFileSync(dishPath), mime });
+      refs.push({ role: "subject_photo", data: readFileSync(/*turbopackIgnore: true*/ dishPath), mime });
       break;
     }
   }
@@ -108,9 +108,9 @@ export async function loadLocalReferenceImages(
   // 2. Logo officiel (si disponible)
   const logoCandidates = [join(restoDir, "logo.png"), join(restoDir, "logo.jpg")];
   for (const logoPath of logoCandidates) {
-    if (existsSync(logoPath)) {
+    if (existsSync(/*turbopackIgnore: true*/ logoPath)) {
       const mime = logoPath.endsWith(".png") ? "image/png" : "image/jpeg";
-      refs.push({ role: "logo", data: readFileSync(logoPath), mime });
+      refs.push({ role: "logo", data: readFileSync(/*turbopackIgnore: true*/ logoPath), mime });
       break;
     }
   }
@@ -118,15 +118,15 @@ export async function loadLocalReferenceImages(
   // 3. Affiche d'inspiration (style)
   if (chosenInspirations.length > 0) {
     const catalogFile = join(assetsDir, "inspirations", "catalog.json");
-    if (existsSync(catalogFile)) {
-      const catalog = JSON.parse(readFileSync(catalogFile, "utf-8")) as { items: CatalogItem[] };
+    if (existsSync(/*turbopackIgnore: true*/ catalogFile)) {
+      const catalog = JSON.parse(readFileSync(/*turbopackIgnore: true*/ catalogFile, "utf-8")) as { items: CatalogItem[] };
       const topChoice = chosenInspirations[0];
       const match = catalog.items.find((it) => it.id === topChoice.id);
       if (match) {
         const styleImgPath = join(assetsDir, "inspirations", match.filename);
         if (existsSync(styleImgPath)) {
           const mime = styleImgPath.endsWith(".png") ? "image/png" : "image/jpeg";
-          refs.push({ role: "style", data: readFileSync(styleImgPath), mime });
+          refs.push({ role: "style", data: readFileSync(/*turbopackIgnore: true*/ styleImgPath), mime });
         }
       }
     }

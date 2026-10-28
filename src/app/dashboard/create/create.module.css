@@ -1647,3 +1647,325 @@
   opacity: 0.65;
   cursor: not-allowed;
 }
+
+/* ========================================================= */
+/* BANDEAU CONTEXTE & SIGNAUX MÉTÉO / ÉVÉNEMENTS RÉELS       */
+/* ========================================================= */
+.contextBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, rgba(255, 90, 0, 0.05) 0%, rgba(245, 158, 11, 0.08) 100%);
+  border: 1px solid rgba(255, 90, 0, 0.15);
+  border-radius: 10px;
+  font-size: 0.78rem;
+  margin-bottom: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.contextPillsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.contextWeatherPill,
+.contextEventsPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.75rem;
+}
+
+.contextActionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  color: #FF5A00;
+  border: none;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.contextActionBtn:hover {
+  background: rgba(255, 90, 0, 0.08);
+  text-decoration: underline;
+}
+
+/* ========================================================= */
+/* TYPES D'ANNONCE MANUELLE (Plat, Promo, Soirée, Général)   */
+/* ========================================================= */
+.announcementTypeGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 0.5rem;
+}
+
+@media (max-width: 600px) {
+  .announcementTypeGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.announcementTypeChip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 4px;
+  border-radius: 8px;
+  background-color: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  color: #4B5563;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.announcementTypeChip:hover {
+  border-color: #D1D5DB;
+  background-color: #F3F4F6;
+}
+
+.announcementTypeChipActive {
+  background-color: #FFF4ED;
+  border-color: #FF5A00;
+  color: #FF5A00;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(255, 90, 0, 0.12);
+}
+
+/* Alerte de proposition IA appliquée */
+.proposalHintAlert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: #F0FDF4;
+  border: 1px solid #86EFAC;
+  border-radius: 9px;
+  font-size: 0.78rem;
+  color: #166534;
+  margin-bottom: 0.5rem;
+  animation: slideDown 0.2s ease-out;
+}
+
+.proposalHintLeft {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+}
+
+.proposalResetBtn {
+  background: transparent;
+  border: none;
+  color: #15803D;
+  font-size: 0.73rem;
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 2px 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.proposalResetBtn:hover {
+  color: #166534;
+  background-color: rgba(22, 101, 52, 0.08);
+}
+
+/* ========================================================= */
+/* ONGLET SUGGESTIONS & PROPOSITIONS IA (Météo & Événements) */
+/* ========================================================= */
+.suggestionsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeInStep 0.22s ease-out;
+}
+
+.suggestionsIntro {
+  font-size: 0.78rem;
+  color: #6B7280;
+  line-height: 1.45;
+  margin: 0 0 4px 0;
+}
+
+.suggestionCategoryTitle {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 2px 0;
+}
+
+.suggestionCard {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.suggestionCard:hover {
+  border-color: #FFB380;
+  box-shadow: 0 4px 12px rgba(255, 90, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.weatherSuggestionCard {
+  border-left: 3px solid #F59E0B;
+  background: linear-gradient(180deg, #FFFDF8 0%, #FFFFFF 100%);
+}
+
+.eventSuggestionCard {
+  border-left: 3px solid #8B5CF6;
+  background: linear-gradient(180deg, #FDFBFF 0%, #FFFFFF 100%);
+}
+
+.oppSuggestionCard {
+  border-left: 3px solid #FF5A00;
+  background: linear-gradient(180deg, #FFF9F5 0%, #FFFFFF 100%);
+}
+
+.suggestionCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.suggestionTitleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.suggestionTitle {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.suggestionSubtitle {
+  font-size: 0.74rem;
+  color: #6B7280;
+}
+
+.suggestionBadge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.weatherBadge {
+  background-color: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FDE68A;
+}
+
+.eventBadge {
+  background-color: #EDE9FE;
+  color: #6D28D9;
+  border: 1px solid #DDD6FE;
+}
+
+.oppBadge {
+  background-color: #FFF4ED;
+  color: #EA580C;
+  border: 1px solid #FFEDD5;
+}
+
+.suggestionDescription {
+  font-size: 0.79rem;
+  color: #4B5563;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.suggestionOfferPreview {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background-color: #F9FAFB;
+  border: 1px dashed #D1D5DB;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  color: #1F2937;
+  font-weight: 600;
+}
+
+.suggestionActionBtn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #111827;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  margin-top: 2px;
+}
+
+.suggestionActionBtn:hover {
+  background-color: #FF5A00;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(255, 90, 0, 0.25);
+}
+
+.suggestionEmptyState {
+  padding: 16px;
+  background-color: #F9FAFB;
+  border: 1px dashed #E5E7EB;
+  border-radius: 10px;
+  text-align: center;
+  color: #6B7280;
+  font-size: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}

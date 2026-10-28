@@ -71,7 +71,10 @@ export default function InsightsPage() {
       // Récupérer le restaurant stocké si disponible
       let savedRestId = '';
       if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem('currentRestaurantId') || localStorage.getItem('onboarding_restaurant_draft');
+        const stored = localStorage.getItem('getspecial_restaurant_id')
+          || localStorage.getItem('getspecial_selected_restaurant')
+          || localStorage.getItem('getspecial_created_restaurant')
+          || localStorage.getItem('onboarding_restaurant_draft');
         if (stored) {
           try {
             const parsed = JSON.parse(stored);
@@ -114,8 +117,8 @@ export default function InsightsPage() {
   }, []);
 
   const restaurant = data?.restaurant || {
-    name: "L'Atelier Culinaire",
-    slug: 'atelier-culinaire',
+    name: "Mon Restaurant",
+    slug: 'mon-restaurant',
     brand_color: '#ff6600',
     timezone: 'Europe/Paris'
   };

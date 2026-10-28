@@ -117,6 +117,7 @@ Produis la réponse JSON au format exact suivant :
           body: JSON.stringify({
             model: modelToUse,
             temperature: 0.2,
+            response_format: { type: 'json_object' },
             messages: [
               { role: 'system', content: systemPrompt },
               { role: 'user', content: userPrompt },
@@ -145,9 +146,13 @@ Produis la réponse JSON au format exact suivant :
         const errorText = await response.text();
         console.warn(`[OPENROUTER_ERROR] Statut HTTP ${response.status}: ${errorText}`);
         return {
-          output: this.generateDeterministicFallback(dossier),
-          isMock: true,
-          mockReason: `Erreur API OpenRouter (${response.status}): ${errorText.slice(0, 150)}. Fallback local actif.`,
+          output: {
+            hasOpportunity: false,
+            opportunities: [],
+            summaryRationale: `Service IA temporairement indisponible (${response.status}). Aucune donnée fictive n'a été insérée.`,
+          },
+          isMock: false,
+          mockReason: `Erreur API OpenRouter (${response.status}): ${errorText.slice(0, 150)}`,
         };
       }
 

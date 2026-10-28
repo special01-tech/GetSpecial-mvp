@@ -3,33 +3,36 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --webpack",
+    "dev": "node --tls-max-v1.2 ./node_modules/next/dist/bin/next dev --webpack",
     "build": "prisma generate && next build",
-    "start": "next start",
+    "start": "node --tls-max-v1.2 ./node_modules/next/dist/bin/next start",
     "lint": "eslint"
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",
     "@supabase/supabase-js": "^2.117.2",
-    "@types/qrcode": "^1.5.6",
     "bcryptjs": "^3.0.3",
     "lucide-react": "^1.48.0",
-    "next": "16.3.6",
+    "next": "16.4.3",
     "next-auth": "^5.0.0-beta.32",
     "prisma": "^6.4.1",
     "qrcode": "^1.5.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "zod": "^3.24.2"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.3.6",
+    "eslint-config-next": "16.4.3",
     "tsx": "^4.23.15",
     "typescript": "^5"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.2"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

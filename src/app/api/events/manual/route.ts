@@ -7,7 +7,17 @@ import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
-const VALID_CATEGORIES = ['concert', 'sport', 'festival', 'special_day', 'culture'] as const;
+const VALID_CATEGORIES = [
+  'concert',
+  'sport',
+  'festival',
+  'special_day',
+  'culture',
+  'tasting',
+  'theme',
+  'promo',
+  'other',
+] as const;
 
 const CreateManualEventSchema = z.object({
   restaurantId: z.string().optional(),

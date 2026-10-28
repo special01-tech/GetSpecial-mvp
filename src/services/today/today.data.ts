@@ -7,6 +7,8 @@ export interface WeatherData {
   terraceAdvice: string;
   isReal?: boolean;
   source?: string;
+  isRain?: boolean;
+  isSunny?: boolean;
 }
 
 export interface LocalEventData {

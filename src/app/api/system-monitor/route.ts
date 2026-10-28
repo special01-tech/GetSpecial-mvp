@@ -10,37 +10,24 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const restaurantIdParam = searchParams.get('restaurantId');
 
-    // Récupérer le restaurant ciblé ou le premier restaurant enregistré
-    let restaurant = null;
-    if (restaurantIdParam) {
-      restaurant = await (prisma as any).restaurant.findUnique({
-        where: { id: restaurantIdParam },
-        include: {
-          profile: true,
-          offers: true,
-          socialAccounts: true,
-          opportunities: {
-            orderBy: { createdAt: 'desc' },
-            take: 5,
-          },
+    const authCheck = await verifyRestaurantOwnership(req, restaurantIdParam, {
+      allowFallbackInDev: true,
+      include: {
+        profile: true,
+        offers: true,
+        socialAccounts: true,
+        opportunities: {
+          orderBy: { createdAt: 'desc' },
+          take: 5,
         },
-      });
+      },
+    });
+
+    if (!authCheck.allowed) {
+      return error(authCheck.error || 'Accès non autorisé', authCheck.status);
     }
 
-    if (!restaurant) {
-      restaurant = await (prisma as any).restaurant.findFirst({
-        orderBy: { createdAt: 'desc' },
-        include: {
-          profile: true,
-          offers: true,
-          socialAccounts: true,
-          opportunities: {
-            orderBy: { createdAt: 'desc' },
-            take: 5,
-          },
-        },
-      });
-    }
+    const restaurant = authCheck.restaurant;
 
     // Coordonnées GPS réelles du restaurant
     const lat = restaurant?.latitude || 48.8566;

@@ -1,6 +1,6 @@
 export type AspectRatio = '4:5' | '9:16' | '1:1' | '16:9';
 export type CampaignType = 'promotion' | 'new_dish' | 'drink' | 'event' | 'daily_menu' | 'custom';
-export type GenerationMode = 'generate' | 'regenerate_different';
+export type GenerationMode = 'generate' | 'regenerate_different' | 'regenerate_same';
 export type VisualStyle = 'gourmet' | 'festive' | 'chic' | 'deal';
 export type TargetPlatform = 'instagram' | 'facebook' | 'google_business';
 

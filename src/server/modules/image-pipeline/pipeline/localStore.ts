@@ -32,19 +32,27 @@ export class LocalImageStore implements ImageStore {
   private readonly usageFile: string;
   private readonly imagesDir: string;
 
-  constructor(private readonly baseDir: string = join(process.cwd(), "public", "generated-posters")) {
-    this.imagesDir = this.baseDir;
-    this.resultsFile = join(process.cwd(), "outputs", "results.json");
-    this.usageFile = join(process.cwd(), "outputs", "usage.json");
+  constructor(private readonly baseDir?: string) {
+    const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+    const root = isServerless ? '/tmp' : process.cwd();
+    this.imagesDir = this.baseDir || (isServerless ? join('/tmp', 'generated-posters') : join(process.cwd(), "public", "generated-posters"));
+    this.resultsFile = join(root, "outputs", "results.json");
+    this.usageFile = join(root, "outputs", "usage.json");
     this.ensureDirs();
   }
 
   private ensureDirs() {
-    if (!existsSync(this.imagesDir)) mkdirSync(this.imagesDir, { recursive: true });
-    const outDir = join(process.cwd(), "outputs");
-    if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
-    if (!existsSync(this.resultsFile)) writeFileSync(this.resultsFile, "{}", "utf-8");
-    if (!existsSync(this.usageFile)) writeFileSync(this.usageFile, "{}", "utf-8");
+    try {
+      if (!existsSync(this.imagesDir)) mkdirSync(this.imagesDir, { recursive: true });
+      const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+      const root = isServerless ? '/tmp' : process.cwd();
+      const outDir = join(root, "outputs");
+      if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
+      if (!existsSync(this.resultsFile)) writeFileSync(this.resultsFile, "{}", "utf-8");
+      if (!existsSync(this.usageFile)) writeFileSync(this.usageFile, "{}", "utf-8");
+    } catch (err) {
+      console.warn('[LOCAL_IMAGE_STORE] Warning: Could not initialize directories:', err);
+    }
   }
 
   private readJson<T>(file: string, fallback: T): T {
@@ -57,9 +65,13 @@ export class LocalImageStore implements ImageStore {
   }
 
   private writeJson(file: string, data: unknown) {
-    const dir = dirname(file);
-    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-    writeFileSync(file, JSON.stringify(data, null, 2), "utf-8");
+    try {
+      const dir = dirname(file);
+      if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+      writeFileSync(file, JSON.stringify(data, null, 2), "utf-8");
+    } catch (err) {
+      console.warn('[LOCAL_IMAGE_STORE] Warning: Could not write JSON:', err);
+    }
   }
 
   async getResult(key: string): Promise<ImageResult | null> {
@@ -77,9 +89,13 @@ export class LocalImageStore implements ImageStore {
     const ext = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
     const safeKey = key.replace(/[/\\?%*:|"<>]/g, "_");
     const filename = `${safeKey}.${ext}`;
-    const targetPath = join(this.imagesDir, filename);
+    const targetPath = join(/*turbopackIgnore: true*/ this.imagesDir, filename);
 
-    writeFileSync(targetPath, data);
+    try {
+      writeFileSync(targetPath, data);
+    } catch (err) {
+      console.warn('[LOCAL_IMAGE_STORE] Warning: Could not save image to disk:', err);
+    }
     return `/generated-posters/${filename}`;
   }
 

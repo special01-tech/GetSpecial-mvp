@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
 import { success, error } from '@/server/lib/api-response';
+import { resolveActiveRestaurant } from '@/server/lib/resolve-restaurant';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,25 +11,33 @@ export async function GET(req: NextRequest) {
     const slug = searchParams.get('slug');
     const restaurantId = searchParams.get('restaurantId');
 
-    // Recherche de l'établissement
-    const restaurant = await (prisma.restaurant as any).findFirst({
-      where: restaurantId
-        ? { id: restaurantId }
-        : slug && slug !== 'demo'
-        ? {
-            OR: [
-              { id: slug },
-              { name: { contains: slug, mode: 'insensitive' } },
-            ],
-          }
-        : { status: 'active' },
-      include: {
-        profile: true,
-        offers: {
-          where: { status: 'active' },
-        },
+    const requested = restaurantId || (slug && slug !== 'demo' ? slug : null);
+
+    // Résolution multi-tenant sécurisée (ID explicite ou session utilisateur)
+    let restaurant = await resolveActiveRestaurant(req, requested, {
+      profile: true,
+      offers: {
+        where: { status: 'active' },
       },
     });
+
+    // Fallback recherche par slug pour les accès QR codes / pages publiques
+    if (!restaurant && slug && slug !== 'demo') {
+      restaurant = await (prisma.restaurant as any).findFirst({
+        where: {
+          OR: [
+            { id: slug },
+            { name: { contains: slug, mode: 'insensitive' } },
+          ],
+        },
+        include: {
+          profile: true,
+          offers: {
+            where: { status: 'active' },
+          },
+        },
+      });
+    }
 
     if (!restaurant) {
       return error('Restaurant non trouvé', 404);

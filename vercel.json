@@ -3,6 +3,11 @@
     {
       "path": "/api/cron/sync-signals",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/publications/run",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
+

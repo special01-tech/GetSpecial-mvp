@@ -1,18 +1,20 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
 import { success, error } from '@/server/lib/api-response';
+import { resolveActiveRestaurant } from '@/server/lib/resolve-restaurant';
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const restaurantId = searchParams.get('restaurantId');
+    const requestedId = searchParams.get('restaurantId');
 
-    if (!restaurantId) {
-      return error('restaurantId requis', 400);
+    const restaurant = await resolveActiveRestaurant(req, requestedId, { profile: false });
+    if (!restaurant) {
+      return error('Restaurant non trouvé ou non autorisé', 404);
     }
 
     const posts = await (prisma as any).post.findMany({
-      where: { restaurantId },
+      where: { restaurantId: restaurant.id },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -21,3 +23,4 @@ export async function GET(req: NextRequest) {
     return error(err.message, 500);
   }
 }
+

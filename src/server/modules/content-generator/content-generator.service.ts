@@ -14,6 +14,19 @@ import {
   AdvertisingConcept,
   CreativeDNA,
 } from './engine/types';
+import {
+  selectDAFamily,
+  inferServingTemperature,
+  selectMaterials,
+  analyzeOffer,
+  selectVariety,
+  buildRealismDirective,
+  DA_FAMILIES,
+  mentionsFood,
+  runCreativePipeline,
+  PipelineInput,
+  PipelineResult,
+} from '@/server/modules/creative';
 
 export class ContentGeneratorService {
   /**
@@ -165,6 +178,93 @@ export class ContentGeneratorService {
     }
 
     // =========================================================================
+    // ORIENTATIONS CRÉATIVES & DIRECTION ARTISTIQUE (Module Creative)
+    // =========================================================================
+    const offerText = `${enrichedOffer} ${details}`.trim();
+    const dateStr = new Date().toISOString().slice(0, 10);
+
+    // Extraction des familles DA récentes et des notations utilisateur pour l'anti-répétition
+    const recentFamilies = recentPosts
+      .map((p) => p.generationPayload?.da_family_id || p.generationPayload?.advertising_concept?.poster_family)
+      .filter(Boolean);
+
+    const familyRatings: Record<string, number[]> = {};
+    for (const p of recentPosts) {
+      const famId = p.generationPayload?.da_family_id;
+      if (famId && p.rating) {
+        (familyRatings[famId] ||= []).push(p.rating);
+      }
+    }
+
+    // 1. Sélection intelligente de la famille DA
+    let daSelection = selectDAFamily({
+      accountId: restaurant.id,
+      offerId: postId || `gen_${Date.now()}`,
+      dateStr,
+      offerText,
+      campaignType,
+      recentFamilies,
+      familyRatings,
+      history: recentPosts.map((p) => ({
+        id: p.generationPayload?.da_family_id || 'terracotta_sunlit',
+        rating: p.rating,
+      })),
+    });
+
+    if (mode === 'regenerate_same' && existingPost?.generationPayload?.da_family_id) {
+      const same = DA_FAMILIES[existingPost.generationPayload.da_family_id];
+      if (same) {
+        daSelection = { ...daSelection, family: same, reason: "Régénération à l'identique" };
+      }
+    }
+
+    // 2. Température de service physique (hot, cold, frozen, room)
+    const temperature = inferServingTemperature(offerText);
+
+    // 3. Preuves physiques de fraîcheur (materials pool)
+    const recentMaterials = recentPosts.flatMap((p) => p.generationPayload?.materials || []);
+    const materials = selectMaterials({
+      temperature,
+      offerText,
+      campaignType,
+      recentIds: recentMaterials,
+      seed: `${restaurant.id}|${dateStr}|${postId || Date.now()}`,
+    });
+
+    // 4. Structure de l'offre (single hero, duo, 1+1, combo, menu)
+    const offerStructure = analyzeOffer(offerText, campaignType);
+
+    // 5. Variété créative (caméra, placement, bouton CTA, échelle texte)
+    const variety = selectVariety({
+      seed: `${restaurant.id}|${dateStr}|${postId || Date.now()}`,
+      history: {
+        headlineStyles: recentPosts.map((p) => p.generationPayload?.variety?.headlineStyle).filter(Boolean),
+        ctaPresentations: recentPosts.map((p) => p.generationPayload?.variety?.cta).filter(Boolean),
+        textScales: recentPosts.map((p) => p.generationPayload?.variety?.textScale).filter(Boolean),
+        cameras: recentPosts.map((p) => p.generationPayload?.variety?.camera).filter(Boolean),
+        placements: recentPosts.map((p) => p.generationPayload?.variety?.placement).filter(Boolean),
+      },
+      audience: (restaurant.profile as any)?.targetAudience || null,
+      businessType: restaurant.type,
+    });
+
+    // 6. Directive stricte de réalisme photographique (5000-5600K daylight, no amber/yellow cast)
+    const realismDirective = buildRealismDirective({
+      temperature,
+      roles: {
+        dish: referenceImages.length,
+        brandGuide: 0,
+        taste: 0,
+        logo: restaurant.profile?.logoUrl ? 1 : 0,
+      },
+      dishNotes: strategistResult.food_profile?.authenticity_notes
+        ? { presentation: strategistResult.food_profile.authenticity_notes.join(', ') }
+        : null,
+      event: campaignType === 'event',
+      withFood: mentionsFood(offerText),
+    });
+
+    // =========================================================================
     // CERVEAU 2 : DIRECTEUR ARTISTIQUE & COPYWRITER (Claude 3.5 Sonnet / Haiku)
     // =========================================================================
     let copyResult;
@@ -177,8 +277,18 @@ export class ContentGeneratorService {
         style,
         platform,
         foodProfile: strategistResult.food_profile,
-        advertisingConcept: strategistResult.advertising_concept,
+        advertisingConcept: {
+          ...strategistResult.advertising_concept,
+          poster_family: daSelection.family.name,
+          da_family_id: daSelection.family.id,
+        },
         creativeDNA: strategistResult.creative_dna,
+        daFamily: daSelection.family,
+        servingTemperature: temperature,
+        materials,
+        offerStructure,
+        variety,
+        realismDirective,
       });
     } catch (artErr: any) {
       console.warn('[ART_DIRECTOR_FALLBACK]', artErr?.message);
@@ -193,13 +303,13 @@ export class ContentGeneratorService {
       copyResult = {
         creative_concept: 'Mise en avant gourmande du plat',
         dominant_emotion: 'Désir',
-        artistic_direction: 'Photographie naturelle de restaurant',
+        artistic_direction: `Direction artistique "${daSelection.family.name}" avec lumière neutre 5000-5600K`,
         headline: defaultHeadline,
         instagram_caption: `✨ Découvrez notre création du jour : ${offer} !\n\n${details || 'Préparé avec passion par notre équipe.'}\n\n📍 ${restaurant.name}, ${restaurant.address || 'centre-ville'}\n👉 Rendez-vous au restaurant pour vous régaler !\n\n${cleanRestTag} #restaurant #bonneadresse #faitmaison`,
         facebook_caption: `Envie d'un moment gourmand chez ${restaurant.name} ? 🍽️\n\nAujourd'hui, profitez de notre spécialité : ${offer}.\n${details ? `\n${details}\n` : ''}\nPrenez place dans notre salle chaleureuse ou contactez-nous pour réserver. À très vite !\n\n${cleanRestTag} #restaurant #convivialite #foodlover`,
         hashtags: [cleanRestTag, '#restaurant', '#foodie', '#bonneadresse'],
         cta: `Rendez-vous chez ${restaurant.name}`,
-        poster_prompt: `Commercial high-end food photography of ${offer}, appetizing presentation, warm natural bistro lighting, 8k professional promo flyer layout, negative space for text, aspect ratio ${aspectRatio}.`,
+        poster_prompt: `Commercial advertising food photography of ${offer}, served whole and appetizing. Artistic direction: "${daSelection.family.name}" - ${daSelection.family.description}. Layer order: ${daSelection.family.orderOfLayers}. Soft neutral natural daylight (5000-5600K), neutral white balance with pure clean whites. Strict prohibition of orange, amber, golden or yellow color cast, and no warm tungsten glow. Real food photography with visible pores, crumbs and natural imperfections. Intact dish, zero plastic gloss, zero 3D CGI sheen. ${materials.length ? `Freshness signals: ${materials.map((m) => m.text).join('; ')}.` : ''} Aspect ratio ${aspectRatio}. Avoid: ${daSelection.counterExample}.`,
       };
     }
 
@@ -257,6 +367,17 @@ export class ContentGeneratorService {
       food_profile: strategistResult.food_profile,
       advertising_concept: strategistResult.advertising_concept,
       creative_dna: strategistResult.creative_dna,
+      da_family_id: daSelection.family.id,
+      da_family_name: daSelection.family.name,
+      serving_temperature: temperature,
+      materials: materials.map((m) => m.id),
+      variety: {
+        headlineStyle: variety.headlineStyle.id,
+        cta: variety.cta.id,
+        textScale: variety.textScale.id,
+        camera: variety.camera.id,
+        placement: variety.placement.id,
+      },
       poster_prompt: copyResult.poster_prompt,
       headline: copyResult.headline,
       cta: copyResult.cta,
@@ -476,7 +597,7 @@ export class ContentGeneratorService {
   }
 
   /**
-   * Wrapper de compatibilité pour l'ancienne route /api/posts/generate-image
+   * Wrapper enrichi avec les orientations créatives pour la génération d'images directe
    */
   async generateAiImage(params: {
     title: string;
@@ -485,16 +606,51 @@ export class ContentGeneratorService {
     restaurantName?: string;
     platform?: string;
     discountValue?: string;
+    aspectRatio?: AspectRatio;
   }): Promise<{ imageUrl: string; visualPrompt: string }> {
-    const prompt = `Commercial advertising poster photograph of ${params.title}, appetizing presentation, natural restaurant lighting, high resolution.`;
+    const offerText = params.discountValue ? `${params.title} - ${params.discountValue}` : params.title;
+    const fullText = `${offerText} ${params.description || ''}`.trim();
+    const temperature = inferServingTemperature(fullText);
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const materials = selectMaterials({
+      temperature,
+      offerText: fullText,
+      seed: `${params.restaurantName || 'resto'}|${dateStr}|${Date.now()}`,
+    });
+    const daSelection = selectDAFamily({
+      accountId: params.restaurantName || 'default',
+      offerId: `img_${Date.now()}`,
+      dateStr,
+      offerText: fullText,
+    });
+    const ratio = params.aspectRatio || '4:5';
+
+    const prompt = [
+      `Vertical ${ratio} social commercial advertising food poster photograph of ${params.title}.`,
+      `Artistic direction: "${daSelection.family.name}" - ${daSelection.family.description}.`,
+      `Layer order: ${daSelection.family.orderOfLayers}.`,
+      `Photorealism: Soft neutral natural daylight (5000-5600K), neutral white balance with pure clean whites. Strict prohibition of orange, amber, golden or yellow color cast, and no warm tungsten glow. Real food photography with natural pores, crumbs and authentic textures. Intact and whole dish, zero plastic gloss, zero 3D CGI sheen.`,
+      materials.length ? `Freshness signals: ${materials.map((m) => m.text).join('; ')}.` : '',
+      params.restaurantName ? `Restaurant: ${params.restaurantName}.` : '',
+      `Avoid: ${daSelection.counterExample}`,
+    ].filter(Boolean).join('\n');
+
     const res = await generatePostImage(prompt, {
-      aspectRatio: '4:5',
+      aspectRatio: ratio,
       restaurantName: params.restaurantName,
     });
+
     return {
       imageUrl: res.imageUrl,
       visualPrompt: prompt,
     };
+  }
+
+  /**
+   * Pipeline créatif autonome unifié basé sur les 15 modules de direction artistique
+   */
+  async generateWithCreativePipeline(params: PipelineInput): Promise<PipelineResult> {
+    return await runCreativePipeline(params);
   }
 
   /**

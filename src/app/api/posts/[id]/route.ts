@@ -89,3 +89,18 @@ export async function PATCH(
     return error(err.message, 500);
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    await (prisma as any).post.delete({
+      where: { id },
+    });
+    return success({ deletedId: id });
+  } catch (err: any) {
+    return error(err.message, 500);
+  }
+}

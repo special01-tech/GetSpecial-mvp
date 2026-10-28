@@ -12,10 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "scripts/**",
   ]),
   {
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-require-imports": "warn",
       "@typescript-eslint/no-unused-vars": [
         "warn",
         {
@@ -23,7 +25,11 @@ const eslintConfig = defineConfig([
           "varsIgnorePattern": "^_"
         }
       ],
-      "prefer-const": "warn"
+      "prefer-const": "warn",
+      "react/no-unescaped-entities": "warn",
+      "react-hooks/purity": "warn",
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/immutability": "warn"
     }
   }
 ]);

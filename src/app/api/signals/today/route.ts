@@ -65,19 +65,34 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 3. LECTURE DES SIGNAUX ACTIFS EN BASE
-    let activeSignals = await (prisma as any).signal.findMany({
+    // 3. LECTURE DES SIGNAUX ACTIFS EN BASE (Séparée pour garantir que ni la météo ni les événements ne s'étouffent)
+    const sixHoursAgo = new Date(Date.now() - 6 * 3600 * 1000);
+    const dbWeatherSignals = await (prisma as any).signal.findMany({
       where: {
         restaurantId: restaurant.id,
         status: 'active',
+        type: 'weather',
+        detectedAt: { gte: sixHoursAgo },
       },
       orderBy: { detectedAt: 'desc' },
-      take: 30,
+      take: 5,
     });
 
-    // Si aucun signal météo ou événement en base, charger directement depuis les APIs réelles
-    const hasWeatherInDb = activeSignals.some((s: any) => s.type === 'weather');
-    const hasEventsInDb = activeSignals.some((s: any) => s.type === 'event' || s.type === 'holiday');
+    const yesterday = new Date(Date.now() - 24 * 3600 * 1000);
+    const dbEventSignals = await (prisma as any).signal.findMany({
+      where: {
+        restaurantId: restaurant.id,
+        status: 'active',
+        type: { in: ['event', 'holiday'] },
+        endsAt: { gte: yesterday },
+      },
+      orderBy: { startsAt: 'asc' },
+      take: 60,
+    });
+
+    let activeSignals = [...dbWeatherSignals, ...dbEventSignals];
+    const hasWeatherInDb = dbWeatherSignals.length > 0;
+    const hasEventsInDb = dbEventSignals.length > 0;
 
     if (!hasWeatherInDb || !hasEventsInDb || activeSignals.length === 0) {
       try {

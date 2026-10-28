@@ -1,3 +1,5 @@
+import { resilientOpenrouterFetch } from '@/server/lib/openrouter-fetch';
+
 const OPENROUTER_BASE = process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1';
 
 export const TEXT_MODEL = process.env.OPENROUTER_TEXT_MODEL || 'anthropic/claude-3.5-sonnet';
@@ -111,7 +113,7 @@ export async function rodiumChat<T = any>(
   const timeoutId = setTimeout(() => controller.abort(), 45000);
 
   try {
-    const res = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
+    const res = await resilientOpenrouterFetch(`${OPENROUTER_BASE}/chat/completions`, {
       method: 'POST',
       signal: controller.signal,
       headers: {

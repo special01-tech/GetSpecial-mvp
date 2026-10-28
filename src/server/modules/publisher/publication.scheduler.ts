@@ -51,11 +51,17 @@ export class PublicationScheduler {
 
         let result: { success: boolean; publicationId: string; error?: string };
 
-        // 1. Priorité 1 : OAuth Direct (si compte connecté avec Page Access Token)
+        // 1. Priorité 1 : OAuth Direct Meta (Facebook / Instagram)
         if (directAccount && (platform === 'facebook' || platform === 'instagram')) {
           result = await metaPublisherService.publishPost(post.id);
         }
-        // 2. Publication standard via connecteur Outstand
+        // 2. Google Business Profile : API en cours de certification
+        else if (platform === 'google_business' && !process.env.OUTSTAND_API_KEY) {
+          console.warn(`[PUBLICATION_SCHEDULER] Google Business Profile en cours de validation API Google. Post ${post.id} temporairement mis en attente.`);
+          failed++;
+          continue;
+        }
+        // 3. Connecteur multi-réseaux Outstand
         else {
           result = await outstandService.publishPost(post.id);
         }

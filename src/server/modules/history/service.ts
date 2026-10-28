@@ -1,7 +1,13 @@
 import { prisma } from '@/server/db/prisma.client';
 
 export async function getRestaurantHistory(restaurantId: string) {
-  const [publications, opportunities] = await Promise.all([
+  const [posts, publications, opportunities] = await Promise.all([
+    (prisma.post as any).findMany({
+      where: { restaurantId },
+      include: { opportunity: true, publications: true },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    }),
     (prisma.publication as any).findMany({
       where: { restaurantId },
       include: { post: true },
@@ -16,6 +22,7 @@ export async function getRestaurantHistory(restaurantId: string) {
   ]);
 
   return {
+    posts,
     publications,
     opportunities,
   };

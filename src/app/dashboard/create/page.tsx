@@ -27,8 +27,16 @@ import {
   Maximize2,
   Sparkles,
   Store,
+  Sun,
+  CloudRain,
+  CloudSun,
+  Cloud,
+  Ticket,
+  Megaphone,
+  RotateCcw,
 } from 'lucide-react';
 import { useLanguage } from '@/i18n';
+import { WeatherData, LocalEventData, TodayOpportunity } from '@/services/today/today.data';
 import styles from './create.module.css';
 
 export interface EventItem {
@@ -42,6 +50,8 @@ export interface EventItem {
 }
 
 type SourceType = 'custom' | 'event';
+type CreationTab = 'manual' | 'suggestions' | 'event';
+type AnnouncementType = 'dish' | 'promo' | 'event' | 'general';
 type Platform = 'instagram' | 'facebook' | 'google_business';
 type VisualStyle = 'gourmet' | 'festive' | 'chic' | 'deal';
 
@@ -57,12 +67,24 @@ function StudioCreateContent() {
   // Événements réels disponibles
   const [availableEvents, setAvailableEvents] = useState<EventItem[]>([]);
 
-  // Formulaire de configuration : 2 modes (Saisie Libre ou Mon Événement)
+  // Formulaire de configuration : 3 onglets (Mon Annonce Manuelle, Propositions IA Contexte, Mon Événement)
+  const [creationTab, setCreationTab] = useState<CreationTab>('manual');
   const [sourceType, setSourceType] = useState<SourceType>('custom');
   const [selectedOfferId, setSelectedOfferId] = useState<string>('');
   const [selectedEventId, setSelectedEventId] = useState<string>('');
+
+  // Champs de l'annonce manuelle (l'utilisateur garde 100% la main)
+  const [announcementType, setAnnouncementType] = useState<AnnouncementType>('dish');
+  const [customTitle, setCustomTitle] = useState('');
   const [customDescription, setCustomDescription] = useState('');
   const [customDiscount, setCustomDiscount] = useState('');
+
+  // Signaux réels (Météo du jour, Événements locaux réels, Opportunités IA)
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+  const [liveEvents, setLiveEvents] = useState<LocalEventData[]>([]);
+  const [opportunities, setOpportunities] = useState<TodayOpportunity[]>([]);
+  const [isLoadingSignals, setIsLoadingSignals] = useState(false);
+  const [appliedProposalHint, setAppliedProposalHint] = useState<string | null>(null);
 
   const [platform, setPlatform] = useState<Platform>('instagram');
   const [visualStyle, setVisualStyle] = useState<VisualStyle>('gourmet');
@@ -183,12 +205,42 @@ function StudioCreateContent() {
       .catch(() => { });
   };
 
+  const loadLiveSignals = (rId?: string) => {
+    setIsLoadingSignals(true);
+    const targetId = rId || (typeof window !== 'undefined' ? localStorage.getItem('getspecial_restaurant_id') : null);
+    const query = targetId ? `?restaurantId=${encodeURIComponent(targetId)}` : '';
+    fetch(`/api/signals/today${query}`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && json.data) {
+          if (json.data.weather) {
+            setWeatherData(json.data.weather);
+          }
+          if (Array.isArray(json.data.events)) {
+            setLiveEvents(json.data.events);
+          } else if (json.data.event) {
+            setLiveEvents([json.data.event]);
+          }
+          if (Array.isArray(json.data.opportunities)) {
+            setOpportunities(json.data.opportunities);
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn('[STUDIO_LOAD_SIGNALS_ERROR]', err);
+      })
+      .finally(() => {
+        setIsLoadingSignals(false);
+      });
+  };
+
   const handleSelectRestaurant = (newId: string) => {
     const target = availableRestaurants.find((r) => r.id === newId);
     if (!target) return;
     setRestaurantId(target.id);
     setRestaurantName(target.name);
     loadRestaurantDishes(target.id);
+    loadLiveSignals(target.id);
     try {
       localStorage.setItem(
         'getspecial_selected_restaurant',
@@ -214,8 +266,9 @@ function StudioCreateContent() {
       const storedId = localStorage.getItem('getspecial_restaurant_id');
       if (storedId) setRestaurantId(storedId);
 
-      // Charger les plats de la carte du restaurant
+      // Charger les plats et les signaux réels (météo & événements)
       loadRestaurantDishes(storedId || restaurantId);
+      loadLiveSignals(storedId || restaurantId);
 
       // Charger les restaurants dynamiques de l'utilisateur
       fetch('/api/restaurants')
@@ -232,6 +285,7 @@ function StudioCreateContent() {
               setRestaurantId(found.id);
               setRestaurantName(found.name);
               loadRestaurantDishes(found.id);
+              loadLiveSignals(found.id);
             }
           }
         })
@@ -253,19 +307,123 @@ function StudioCreateContent() {
         setAvailableEvents([]);
       }
 
-      // Query params éventuels (?type=event&id=...)
+      // Query params éventuels (?type=event&id=..., ?topic=..., ?title=..., ?desc=..., ?discount=...)
       const pType = searchParams.get('type');
       const pId = searchParams.get('id');
+      const pTopic = searchParams.get('topic');
+      const pTitle = searchParams.get('title') || pTopic;
+      const pDesc = searchParams.get('desc') || searchParams.get('description');
+      const pDiscount = searchParams.get('discount');
+
       if (pType === 'event') {
         setSourceType('event');
+        setCreationTab('event');
         if (pId) setSelectedEventId(pId);
+      } else if (pType === 'suggestions') {
+        setSourceType('custom');
+        setCreationTab('suggestions');
       } else {
         setSourceType('custom');
+        setCreationTab('manual');
+      }
+
+      if (pTitle) {
+        setCustomTitle(pTitle);
+        setCustomDescription(pDesc || `Spécial ${pTitle} chez ${restaurantName || 'notre restaurant'}.`);
+        setCreationTab('manual');
+        setSourceType('custom');
+      }
+      if (pDiscount) {
+        setCustomDiscount(pDiscount);
       }
     } catch {
       // Ignorer
     }
   }, [searchParams]);
+
+  // Gestionnaires de proposition IA (Météo, Événements réels, Opportunités)
+  const renderWeatherIcon = (iconType?: string, size = 16) => {
+    switch (iconType) {
+      case 'sun':
+        return <Sun size={size} style={{ color: '#F59E0B' }} />;
+      case 'cloud-rain':
+      case 'rain':
+        return <CloudRain size={size} style={{ color: '#3B82F6' }} />;
+      case 'cloud-sun':
+        return <CloudSun size={size} style={{ color: '#F59E0B' }} />;
+      default:
+        return <Cloud size={size} style={{ color: '#94A3B8' }} />;
+    }
+  };
+
+  const handleApplyWeatherProposal = (w: WeatherData) => {
+    let t = '';
+    let d = '';
+    let disc = '';
+    let style: VisualStyle = 'gourmet';
+
+    if (w.isSunny || (w.temperature && w.temperature >= 20)) {
+      t = restaurantName ? `Terrasse au soleil chez ${restaurantName}` : 'Déjeuner & Verre en Terrasse';
+      d = `Grand soleil et ${w.temperature}${w.tempUnit || '°C'} aujourd'hui ! Venez profiter de notre terrasse extérieure et savourer nos boissons fraîches et nos spécialités du jour.`;
+      disc = 'Boisson fraîche ou café offert';
+      style = 'gourmet';
+    } else if (w.isRain) {
+      t = restaurantName ? `Pause réconfortante chez ${restaurantName}` : 'Plats Chauds & Réconfort';
+      d = `Météo pluvieuse aujourd'hui ? Venez vous réchauffer au restaurant autour de nos plats gourmands et réconfortants cuisinés avec amour.`;
+      disc = 'Dessert maison à prix doux';
+      style = 'gourmet';
+    } else {
+      t = restaurantName ? `Pause gourmande chez ${restaurantName}` : 'Créations du Jour';
+      d = `Conditions douces aujourd'hui (${w.temperature ? `${w.temperature}${w.tempUnit || '°C'}, ` : ''}${w.condition}). Découvrez nos suggestions du chef cuisinées avec des produits frais du marché.`;
+      disc = 'Formule déjeuner express';
+      style = 'gourmet';
+    }
+
+    setCustomTitle(t);
+    setCustomDescription(d);
+    setCustomDiscount(disc);
+    setVisualStyle(style);
+    setAnnouncementType('dish');
+    setSourceType('custom');
+    setCreationTab('manual');
+    setAppliedProposalHint('Proposition Météo appliquée ! Vous avez la main pour modifier le titre et le texte selon vos envies.');
+    setTimeout(() => setAppliedProposalHint(null), 8000);
+  };
+
+  const handleApplyEventProposal = (evt: LocalEventData) => {
+    const t = `Spécial ${evt.title}`;
+    const d = `Vous assistez à ${evt.title} (${evt.time || 'ce soir'}) ? Venez déjeuner, dîner ou prendre un verre chez ${restaurantName || 'nous'} à deux pas ! Service rapide et accueil chaleureux garantis.`;
+    const disc = '-10% sur présentation de votre billet';
+
+    setCustomTitle(t);
+    setCustomDescription(d);
+    setCustomDiscount(disc);
+    setVisualStyle('festive');
+    setAnnouncementType('event');
+    setSourceType('custom');
+    setCreationTab('manual');
+    setAppliedProposalHint(`Proposition pour l'événement « ${evt.title} » appliquée ! Vous avez la main pour ajuster votre message.`);
+    setTimeout(() => setAppliedProposalHint(null), 8000);
+  };
+
+  const handleApplyOpportunityProposal = (opp: TodayOpportunity) => {
+    setCustomTitle(opp.title);
+    setCustomDescription(opp.description);
+    setCustomDiscount(opp.offer?.label || opp.offer?.details || '');
+    setVisualStyle(opp.category === 'WEATHER_BOOST' ? 'gourmet' : opp.category === 'LOCAL_EVENT' ? 'festive' : 'deal');
+    setAnnouncementType(opp.category === 'LOCAL_EVENT' ? 'event' : opp.category === 'WEATHER_BOOST' ? 'dish' : 'promo');
+    setSourceType('custom');
+    setCreationTab('manual');
+    setAppliedProposalHint(`Opportunité « ${opp.title} » chargée ! Vous pouvez librement adapter chaque élément ci-dessous.`);
+    setTimeout(() => setAppliedProposalHint(null), 8000);
+  };
+
+  const handleResetManualForm = () => {
+    setCustomTitle('');
+    setCustomDescription('');
+    setCustomDiscount('');
+    setAppliedProposalHint(null);
+  };
 
   // Synchronisation des variantes par plateforme et écoute Escape
   useEffect(() => {
@@ -322,8 +480,13 @@ function StudioCreateContent() {
     } else {
       const text = customDescription.trim();
       descToUse = text || 'Plat du jour préparé avec des produits frais de saison';
-      const firstLine = text.split('\n')[0].replace(/^[-*•\s]+/, '').slice(0, 50);
-      titleToUse = firstLine.length > 3 ? firstLine : (restaurantName ? `Spécialité chez ${restaurantName}` : 'Création du Chef');
+      const trimmedCustomTitle = customTitle.trim();
+      if (trimmedCustomTitle) {
+        titleToUse = trimmedCustomTitle;
+      } else {
+        const firstLine = text.split('\n')[0].replace(/^[-*•\s]+/, '').slice(0, 50);
+        titleToUse = firstLine.length > 3 ? firstLine : (restaurantName ? `Spécialité chez ${restaurantName}` : 'Création du Chef');
+      }
       discountToUse = customDiscount.trim() || undefined;
     }
 
@@ -757,34 +920,159 @@ function StudioCreateContent() {
                   </select>
                 </div>
 
-                {/* Sélecteur de mode : 2 modes (Saisie Libre ou Mon Événement) */}
+                {/* Bandeau Contexte & Signaux en direct (Météo & Événements) */}
+                {(weatherData || liveEvents.length > 0) && (
+                  <div className={styles.contextBanner}>
+                    <div className={styles.contextPillsRow}>
+                      {weatherData && (
+                        <span className={styles.contextWeatherPill} title={weatherData.terraceAdvice || weatherData.condition}>
+                          {renderWeatherIcon(weatherData.iconType, 14)}
+                          <span>
+                            {weatherData.temperature ? `${weatherData.temperature}${weatherData.tempUnit || '°C'} ` : ''}
+                            {weatherData.condition}
+                          </span>
+                        </span>
+                      )}
+                      {liveEvents.length > 0 && (
+                        <span className={styles.contextEventsPill} title={`${liveEvents.length} événement(s) local(aux) détecté(s)`}>
+                          <Ticket size={13} style={{ color: '#8B5CF6' }} />
+                          <span>{liveEvents.length} événement(s)</span>
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCreationTab('suggestions');
+                        setSourceType('custom');
+                      }}
+                      className={styles.contextActionBtn}
+                      title="Découvrir les propositions IA basées sur la météo et les événements"
+                    >
+                      <Sparkles size={13} />
+                      <span>Propositions IA météo &amp; événements &rarr;</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Sélecteur de mode : 3 modes (Mon Annonce Manuelle, Propositions IA Météo/Événements, Mon Événement) */}
                 <div className={styles.typeSelector}>
                   <button
                     type="button"
-                    onClick={() => setSourceType('custom')}
-                    className={`${styles.typeBtn} ${sourceType === 'custom' ? styles.typeBtnActive : ''}`}
+                    onClick={() => {
+                      setCreationTab('manual');
+                      setSourceType('custom');
+                    }}
+                    className={`${styles.typeBtn} ${creationTab === 'manual' ? styles.typeBtnActive : ''}`}
+                    title="Composer votre propre annonce librement avec 100% de contrôle"
                   >
-                    <PenTool size={15} />
-                    <span>Saisie libre / Plat du jour</span>
+                    <PenTool size={14} />
+                    <span>Mon annonce manuelle</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setSourceType('event')}
-                    className={`${styles.typeBtn} ${sourceType === 'event' ? styles.typeBtnActive : ''}`}
+                    onClick={() => {
+                      setCreationTab('suggestions');
+                      setSourceType('custom');
+                    }}
+                    className={`${styles.typeBtn} ${creationTab === 'suggestions' ? styles.typeBtnActive : ''}`}
+                    title="Propositions intelligentes de l'IA basées sur la météo et les événements locaux réels"
                   >
-                    <Calendar size={15} />
+                    <Sparkles size={14} />
+                    <span>Propositions IA Météo/Événements</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCreationTab('event');
+                      setSourceType('event');
+                    }}
+                    className={`${styles.typeBtn} ${creationTab === 'event' ? styles.typeBtnActive : ''}`}
+                    title="Sélectionner un événement enregistré dans votre planning"
+                  >
+                    <Calendar size={14} />
                     <span>Mon événement</span>
                   </button>
                 </div>
 
-                {/* CAS 1 : Saisie libre / Plat du jour (Champ unifié) */}
-                {sourceType === 'custom' && (
+                {/* CAS 1 : Mon Annonce Manuelle (L'utilisateur a la main libre) */}
+                {creationTab === 'manual' && (
                   <>
+                    {/* Alerte si une proposition IA a été chargée */}
+                    {appliedProposalHint && (
+                      <div className={styles.proposalHintAlert}>
+                        <div className={styles.proposalHintLeft}>
+                          <CheckCircle2 size={16} />
+                          <span>{appliedProposalHint}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleResetManualForm}
+                          className={styles.proposalResetBtn}
+                          title="Effacer le texte et repartir de zéro"
+                        >
+                          Effacer / Réinitialiser
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Type d'annonce manuelle */}
                     <div className={styles.fieldGroup}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <label className={styles.label}>Type d&apos;annonce</label>
+                      <div className={styles.announcementTypeGrid}>
+                        {[
+                          { id: 'dish', label: 'Plat & Carte', icon: UtensilsCrossed },
+                          { id: 'promo', label: 'Offre & Promo flash', icon: Zap },
+                          { id: 'event', label: 'Soirée & Ambiance', icon: PartyPopper },
+                          { id: 'general', label: 'Annonce générale', icon: Megaphone },
+                        ].map((item) => {
+                          const ItemIcon = item.icon;
+                          const isActive = announcementType === item.id;
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => setAnnouncementType(item.id as AnnouncementType)}
+                              className={`${styles.announcementTypeChip} ${isActive ? styles.announcementTypeChipActive : ''}`}
+                            >
+                              <ItemIcon size={13} />
+                              <span>{item.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Titre de l'annonce */}
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.label}>
+                        <span>Titre de votre annonce</span>
+                        <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 400 }}> (Plat, Événement ou Objet)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={customTitle}
+                        onChange={(e) => setCustomTitle(e.target.value)}
+                        placeholder={
+                          announcementType === 'dish'
+                            ? 'Ex: Pavé de saumon croustillant, Côte de bœuf maturée...'
+                            : announcementType === 'promo'
+                            ? 'Ex: Formule Midi Express, -20% sur les commandes...'
+                            : announcementType === 'event'
+                            ? 'Ex: Soirée Tapas & Cocktails, Afterwork Live Music...'
+                            : 'Ex: Réouverture de la terrasse, Nouvelle carte de saison...'
+                        }
+                        className={styles.input}
+                      />
+                    </div>
+
+                    {/* Description / Message de l'annonce */}
+                    <div className={styles.fieldGroup}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                         <label className={styles.label} style={{ marginBottom: 0 }}>
-                          <span>Votre annonce, plat ou création du jour</span>
+                          <span>Message &amp; détails de l&apos;annonce</span>
                         </label>
                         {menuDishes.length > 0 && (
                           <span style={{ fontSize: '0.75rem', color: 'var(--color-primary, #FF6B35)', fontWeight: 600 }}>
@@ -804,6 +1092,7 @@ function StudioCreateContent() {
                                 const desc = dish.description
                                   ? `${dish.name} : ${dish.description}`
                                   : dish.name;
+                                setCustomTitle((prev) => prev || dish.name);
                                 setCustomDescription(desc);
                                 if (dish.priceText) {
                                   setCustomDiscount(`Prix : ${dish.priceText}`);
@@ -825,27 +1114,183 @@ function StudioCreateContent() {
                       <textarea
                         value={customDescription}
                         onChange={(e) => setCustomDescription(e.target.value)}
-                        placeholder="Décrivez simplement ce que vous souhaitez promouvoir (ex : Plat du jour : Pavé de saumon croustillant, mousseline de patates douces et sauce aneth. Ou : Formule déjeuner express entrée + plat à 19€)..."
+                        placeholder="Rédigez librement le message de votre annonce ou décrivez votre offre avec vos propres mots (ex: Plat du jour, ingrédients frais, formule spéciale)..."
                         className={styles.textarea}
                         rows={4}
                       />
                     </div>
 
+                    {/* Avantage ou réduction */}
                     <div className={styles.fieldGroup}>
                       <label className={styles.label}>Avantage ou réduction (facultatif)</label>
                       <input
                         type="text"
                         value={customDiscount}
                         onChange={(e) => setCustomDiscount(e.target.value)}
-                        placeholder="Ex: -20% le midi, Dessert offert, Menu à 19€..."
+                        placeholder="Ex: -15% le midi, Dessert offert, Menu à 19€..."
                         className={styles.input}
                       />
                     </div>
                   </>
                 )}
 
-                {/* CAS 2 : Choisir parmi les événements du restaurant */}
-                {sourceType === 'event' && (
+                {/* CAS 2 : Onglet Propositions IA (Météo & Événements locaux) */}
+                {creationTab === 'suggestions' && (
+                  <div className={styles.suggestionsSection}>
+                    <p className={styles.suggestionsIntro}>
+                      L&apos;IA analyse la météo du jour et les événements locaux pour vous proposer des annonces ciblées. Cliquez sur une proposition pour la charger : <strong>vous conservez 100% la main</strong> pour retoucher chaque mot.
+                    </p>
+
+                    {/* 1. MÉTÉO DU JOUR */}
+                    {weatherData && (
+                      <div>
+                        <span className={styles.suggestionCategoryTitle}>
+                          {renderWeatherIcon(weatherData.iconType, 15)}
+                          <span>Opportunité Météo en direct</span>
+                        </span>
+                        <div className={`${styles.suggestionCard} ${styles.weatherSuggestionCard}`}>
+                          <div className={styles.suggestionCardHeader}>
+                            <div className={styles.suggestionTitleGroup}>
+                              <h4 className={styles.suggestionTitle}>
+                                {renderWeatherIcon(weatherData.iconType, 16)}
+                                <span>
+                                  {weatherData.temperature ? `${weatherData.temperature}${weatherData.tempUnit || '°C'} ` : ''}
+                                  {weatherData.condition}
+                                </span>
+                              </h4>
+                              <span className={styles.suggestionSubtitle}>
+                                {weatherData.terraceAdvice || 'Conditions météo réelles du jour'}
+                              </span>
+                            </div>
+                            <span className={`${styles.suggestionBadge} ${styles.weatherBadge}`}>
+                              Météo
+                            </span>
+                          </div>
+
+                          <p className={styles.suggestionDescription}>
+                            {weatherData.isSunny || (weatherData.temperature && weatherData.temperature >= 20)
+                              ? "Météo idéale pour attirer les clients en terrasse et booster les consommations fraîches."
+                              : weatherData.isRain
+                              ? "Temps pluvieux propice aux plats chauds, aux plats réconfortants et aux livraisons."
+                              : "Conditions douces idéales pour valoriser les spécialités du jour et la carte du chef."}
+                          </p>
+
+                          <div className={styles.suggestionOfferPreview}>
+                            <span>Offre suggérée :</span>
+                            <strong style={{ color: '#FF5A00' }}>
+                              {weatherData.isSunny ? 'Boisson fraîche ou café offert en terrasse' : 'Café ou dessert maison offert'}
+                            </strong>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleApplyWeatherProposal(weatherData)}
+                            className={styles.suggestionActionBtn}
+                          >
+                            <Sparkles size={13} />
+                            <span>Charger cette annonce Météo &amp; Personnaliser &rarr;</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 2. ÉVÉNEMENTS LOCAUX */}
+                    {liveEvents.length > 0 && (
+                      <div>
+                        <span className={styles.suggestionCategoryTitle}>
+                          <Ticket size={15} style={{ color: '#8B5CF6' }} />
+                          <span>Événements locaux à proximité ({liveEvents.length})</span>
+                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {liveEvents.slice(0, 3).map((evt, idx) => (
+                            <div key={evt.id || idx} className={`${styles.suggestionCard} ${styles.eventSuggestionCard}`}>
+                              <div className={styles.suggestionCardHeader}>
+                                <div className={styles.suggestionTitleGroup}>
+                                  <h4 className={styles.suggestionTitle}>{evt.title}</h4>
+                                  <span className={styles.suggestionSubtitle}>
+                                    {evt.time || 'Aujourd’hui'} {evt.distance ? `• À ${evt.distance}` : ''}
+                                  </span>
+                                </div>
+                                <span className={`${styles.suggestionBadge} ${styles.eventBadge}`}>
+                                  {evt.category || 'Événement'}
+                                </span>
+                              </div>
+                              <p className={styles.suggestionDescription}>
+                                Captez le flux de spectateurs avant ou après l&apos;événement avec un accueil chaleureux et un service rapide.
+                              </p>
+                              <div className={styles.suggestionOfferPreview}>
+                                <span>Offre suggérée :</span>
+                                <strong style={{ color: '#8B5CF6' }}>-10% sur présentation du billet</strong>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleApplyEventProposal(evt)}
+                                className={styles.suggestionActionBtn}
+                                style={{ backgroundColor: '#6D28D9' }}
+                              >
+                                <Ticket size={13} />
+                                <span>Créer une annonce pour cet événement &rarr;</span>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 3. OPPORTUNITÉS STRATÉGIQUES IA */}
+                    {opportunities.length > 0 && (
+                      <div>
+                        <span className={styles.suggestionCategoryTitle}>
+                          <Zap size={15} style={{ color: '#FF5A00' }} />
+                          <span>Opportunités IA du jour ({opportunities.length})</span>
+                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {opportunities.slice(0, 2).map((opp) => (
+                            <div key={opp.id} className={`${styles.suggestionCard} ${styles.oppSuggestionCard}`}>
+                              <div className={styles.suggestionCardHeader}>
+                                <div className={styles.suggestionTitleGroup}>
+                                  <h4 className={styles.suggestionTitle}>{opp.title}</h4>
+                                  <span className={styles.suggestionSubtitle}>
+                                    {opp.signalOrigin || 'Moteur d’opportunités IA'}
+                                  </span>
+                                </div>
+                                <span className={`${styles.suggestionBadge} ${styles.oppBadge}`}>
+                                  Opportunité
+                                </span>
+                              </div>
+                              <p className={styles.suggestionDescription}>{opp.description}</p>
+                              {opp.offer?.label && (
+                                <div className={styles.suggestionOfferPreview}>
+                                  <span>Offre suggérée :</span>
+                                  <strong style={{ color: '#EA580C' }}>{opp.offer.label}</strong>
+                                </div>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleApplyOpportunityProposal(opp)}
+                                className={styles.suggestionActionBtn}
+                                style={{ backgroundColor: '#EA580C' }}
+                              >
+                                <Sparkles size={13} />
+                                <span>Reprendre cette opportunité &rarr;</span>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {!weatherData && liveEvents.length === 0 && opportunities.length === 0 && (
+                      <div className={styles.suggestionEmptyState}>
+                        <Loader2 size={20} className={styles.spin} />
+                        <span>Analyse des signaux météo et événements en direct...</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* CAS 3 : Choisir parmi les événements planifiés du restaurant */}
+                {creationTab === 'event' && (
                   <div className={styles.fieldGroup}>
                     <label className={styles.label}>{t('content.studio.eventLabel')}</label>
                     {availableEvents.length > 0 ? (

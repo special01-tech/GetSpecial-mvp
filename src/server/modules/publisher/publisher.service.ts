@@ -28,7 +28,7 @@ export class PublisherService {
         status: 'pending',
         postId: validated.data.contentId,
         restaurantId: validated.data.restaurantId,
-        sendIdempotencyKey: `legacy_pub_${Date.now()}`,
+        sendIdempotencyKey: `pub_${validated.data.restaurantId}_${validated.data.contentId}_${validated.data.platform}`,
       },
     });
 

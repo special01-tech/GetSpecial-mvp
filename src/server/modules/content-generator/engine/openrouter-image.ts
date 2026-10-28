@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { mediaStorage } from '@/lib/storage/media-storage';
 import { AspectRatio } from './types';
+import { resilientOpenrouterFetch } from '@/server/lib/openrouter-fetch';
 
 const OPENROUTER_BASE = process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1';
 const OPENROUTER_IMAGE_MODEL = process.env.IMAGE_MODEL || process.env.OPENROUTER_IMAGE_MODEL || 'openai/gpt-image-2';
@@ -89,6 +90,37 @@ async function resolveReferencesToBase64(refs: string[]): Promise<string[]> {
   return resolved;
 }
 
+function enforceCreativeOrientations(prompt: string): string {
+  let enhanced = prompt.trim();
+
+  const hasNeutralLight = /5000|5600|neutral.*daylight|white balance/i.test(enhanced);
+  const hasAntiCgi = /natural imperfections|no plastic|no cgi|pores/i.test(enhanced);
+  const hasAntiAmber = /no orange.*cast|no amber|no tungsten|forbid.*amber/i.test(enhanced);
+
+  const additions: string[] = [];
+  if (!hasNeutralLight || !hasAntiAmber) {
+    additions.push(
+      '- Lighting: Soft neutral natural daylight (5000-5600K), neutral white balance with pure clean whites. Strict prohibition of orange, amber, golden or yellow color cast, and no warm tungsten glow.'
+    );
+  }
+  if (!hasAntiCgi) {
+    additions.push(
+      '- Authentic food photography: Real food photograph with natural textures, visible pores, and appetizing imperfections. Zero plastic gloss, zero 3D CGI render sheen, zero artificial saturation. The dish is intact and whole.'
+    );
+  }
+  if (!/avoid/i.test(enhanced)) {
+    additions.push(
+      '- Counter-example to avoid: Generic brown/orange golden background, repetitive blurry bokeh, red price bubbles, yellow cast on the food, and heavy full-width bottom banners.'
+    );
+  }
+
+  if (additions.length > 0) {
+    enhanced = `${enhanced}\n\n[CREATIVE ORIENTATIONS & REALISM DIRECTIVES]\n${additions.join('\n')}`;
+  }
+
+  return enhanced;
+}
+
 export async function generatePostImage(
   prompt: string,
   options: {
@@ -102,6 +134,8 @@ export async function generatePostImage(
   if (!apiKey) {
     throw new Error('OPENROUTER_API_KEY non configurée.');
   }
+
+  const finalPrompt = enforceCreativeOrientations(prompt);
 
   const aspectRatio = options.aspectRatio || '4:5';
   const size = mapAspectRatioToSize(aspectRatio);
@@ -121,7 +155,7 @@ export async function generatePostImage(
     try {
       const body: Record<string, any> = {
         model: OPENROUTER_IMAGE_MODEL,
-        prompt,
+        prompt: finalPrompt,
       };
 
       if (includeAspectRatioParam && openRouterAspectRatio) {
@@ -142,7 +176,7 @@ export async function generatePostImage(
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 55000);
 
-      let res = await fetch(`${OPENROUTER_BASE}/images`, {
+      let res = await resilientOpenrouterFetch(`${OPENROUTER_BASE}/images`, {
         method: 'POST',
         signal: controller.signal,
         headers: {
@@ -162,7 +196,7 @@ export async function generatePostImage(
           modalities: ['image', 'text'],
           stream: false,
         };
-        res = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
+        res = await resilientOpenrouterFetch(`${OPENROUTER_BASE}/chat/completions`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${apiKey}`,

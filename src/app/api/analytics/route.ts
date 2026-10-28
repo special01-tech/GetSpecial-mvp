@@ -1,16 +1,40 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/prisma.client';
 import { success, error } from '@/server/lib/api-response';
+import { resolveActiveRestaurant } from '@/server/lib/resolve-restaurant';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const restaurantId = searchParams.get('restaurantId');
+    const requestedId = searchParams.get('restaurantId');
 
-    // Agrégation RÉELLE depuis la base de données locale (Zéro faux chiffres inventés)
-    const restaurantWhere = restaurantId ? { restaurantId } : {};
+    // Résolution sécurisée de l'établissement actif pour éviter toute fuite multi-tenant
+    const restaurant = await resolveActiveRestaurant(req, requestedId, { profile: false });
+    if (!restaurant) {
+      return success({
+        isReal: true,
+        source: 'Base de données locale (aucun établissement sélectionné)',
+        overview: {
+          totalPosts: 0,
+          publishedPosts: 0,
+          scheduledPosts: 0,
+          pendingPosts: 0,
+          thisWeek: 0,
+          totalViews: 0,
+          totalReach: 0,
+          totalLikes: 0,
+          engagementRate: 0,
+          followersCount: 0,
+          lastSync: new Date().toISOString(),
+        },
+        posts: [],
+        publications: [],
+      });
+    }
+
+    const restaurantWhere = { restaurantId: restaurant.id };
 
     const [allPosts, allPublications] = await Promise.all([
       (prisma as any).post.findMany({

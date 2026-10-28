@@ -533,6 +533,258 @@
   color: var(--gs-cream);
 }
 
+/* Liste déroulante pour le type d'établissement */
+.selectWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--gs-surface-2);
+  border: 1.5px solid var(--gs-border);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.selectWrapper:hover {
+  border-color: var(--gs-border-hover);
+  background: var(--gs-surface-3);
+}
+
+.selectWrapper:focus-within {
+  border-color: var(--gs-orange-dark);
+  box-shadow: 0 0 0 2.5px var(--gs-orange-ring);
+}
+
+.selectInput {
+  width: 100%;
+  padding: 11px 40px 11px 36px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--gs-cream);
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.selectInput option,
+.selectOption {
+  background-color: #1a1a24;
+  color: #f8fafc;
+  padding: 10px 12px;
+}
+
+.selectArrow {
+  position: absolute;
+  right: 12px;
+  color: var(--gs-warm-grey);
+  pointer-events: none;
+  transition: color 0.15s ease;
+}
+
+.selectWrapper:focus-within .selectArrow {
+  color: var(--gs-orange);
+}
+
+/* Multi-select Dropdown pour les cibles prioritaires */
+.multiSelectContainer {
+  position: relative;
+  width: 100%;
+}
+
+.multiSelectTrigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--gs-surface-2);
+  border: 1.5px solid var(--gs-border);
+  border-radius: 8px;
+  padding: 10px 14px 10px 36px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  min-height: 42px;
+}
+
+.multiSelectTrigger:hover {
+  border-color: var(--gs-border-hover);
+  background: var(--gs-surface-3);
+}
+
+.multiSelectTriggerOpen {
+  border-color: var(--gs-orange-dark);
+  box-shadow: 0 0 0 2.5px var(--gs-orange-ring);
+}
+
+.multiSelectValue {
+  flex: 1;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--gs-cream);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 8px;
+}
+
+.multiSelectPlaceholder {
+  color: var(--gs-warm-grey);
+  font-weight: 400;
+}
+
+.multiSelectRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.multiSelectBadgeCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--gs-orange);
+  color: var(--gs-on-orange);
+  border-radius: 9999px;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+}
+
+.selectArrowStatic {
+  color: var(--gs-warm-grey);
+  transition: transform 0.2s ease, color 0.15s ease;
+}
+
+.selectArrowOpen {
+  transform: rotate(180deg);
+  color: var(--gs-orange);
+}
+
+.multiSelectDropdown {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  background: #181924;
+  border: 1.5px solid var(--gs-border-strong);
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  z-index: 50;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.multiSelectOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.multiSelectOption:hover {
+  background: var(--gs-surface-3);
+}
+
+.multiSelectOptionSelected {
+  background: rgba(255, 90, 0, 0.12);
+}
+
+.multiSelectOptionSelected:hover {
+  background: rgba(255, 90, 0, 0.18);
+}
+
+.multiSelectOptionLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.multiSelectCheckbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1.5px solid var(--gs-border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gs-surface-2);
+  color: #fff;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.multiSelectCheckboxActive {
+  background: var(--gs-orange);
+  border-color: var(--gs-orange);
+}
+
+.multiSelectOptionIcon {
+  color: var(--gs-warm-grey);
+}
+
+.multiSelectOptionSelected .multiSelectOptionIcon {
+  color: var(--gs-orange);
+}
+
+.multiSelectOptionLabel {
+  font-size: 0.88rem;
+  color: var(--gs-cream);
+  font-weight: 500;
+}
+
+.selectedTargetsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.selectedTargetChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: var(--gs-surface-2);
+  border: 1px solid var(--gs-border);
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--gs-cream);
+}
+
+.removeTargetChipBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 2px;
+  color: var(--gs-warm-grey);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.removeTargetChipBtn:hover {
+  color: #ef4444;
+}
+
 /* Badges de types de restaurant */
 .typeBadgesRow {
   display: flex;

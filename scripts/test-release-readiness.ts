@@ -9,7 +9,6 @@ import { ticketmasterCollector } from '../src/server/modules/signal-collector/ti
 import { calendarificCollector } from '../src/server/modules/signal-collector/calendarific.collector';
 import { opportunityEngineService } from '../src/server/modules/opportunity-engine/opportunity-engine.service';
 import { postSafetyService } from '../src/server/modules/publisher/post-safety.service';
-import { zernioService } from '../src/server/modules/publisher/zernio.service';
 import { fallbackStore } from '../src/server/db/fallback-store';
 
 export type ReadinessRating = 'REAL' | 'MOCK' | 'FALLBACK' | 'BROKEN' | 'NOT TESTABLE';
@@ -218,12 +217,11 @@ async function runReadinessAudit() {
   });
 
   // 16. Planning
-  // Let's check how Planning displays data
   auditReport.push({
     id: 16,
     name: 'Planning',
-    rating: 'MOCK',
-    evidence: 'Displays MOCK_PLANNING_ITEMS client data; does not yet query /api/posts for dynamic live calendar entries',
+    rating: 'REAL',
+    evidence: 'Dynamic calendar engine connected to /api/posts, /api/events/manual (full CRUD) and /api/signals/today',
   });
 
   // 17. Zernio

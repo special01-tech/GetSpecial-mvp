@@ -18,7 +18,7 @@ export type EnvConfig = z.infer<typeof EnvSchema>;
 export function validateEnv(): EnvConfig {
   const result = EnvSchema.safeParse(process.env);
   if (!result.success) {
-    const errorDetails = result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+    const errorDetails = (result.error.issues || []).map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ');
     console.error(`[CONFIG_FATAL] Erreur de validation de configuration : ${errorDetails}`);
     // En production, lever une erreur bloquante
     if (process.env.NODE_ENV === 'production') {

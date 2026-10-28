@@ -105,12 +105,11 @@ interface TicketmasterCacheEntry {
 }
 
 export class TicketmasterCollector {
-  private readonly apiKey: string | undefined;
   private cache = new Map<string, TicketmasterCacheEntry>();
   private readonly CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes de cache
 
-  constructor() {
-    this.apiKey = process.env.TICKETMASTER_API_KEY;
+  private get apiKey(): string | undefined {
+    return (process.env.TICKETMASTER_API_KEY || '').replace(/^["']|["']$/g, '').trim();
   }
 
   /**
@@ -130,7 +129,7 @@ export class TicketmasterCollector {
       return [];
     }
 
-    const cleanCountry = country.toUpperCase();
+    const cleanCountry = typeof country === 'string' ? country.toUpperCase().trim() : 'US';
     const cleanCity = (cityName || '').trim();
     const dateKey = targetDate.toISOString().slice(0, 10);
     const cacheKey = `${lat.toFixed(3)}_${lon.toFixed(3)}_${cleanCountry}_${radiusKm}_${cleanCity}_${dateKey}`;
@@ -146,47 +145,45 @@ export class TicketmasterCollector {
 
     try {
 
-    // Fenêtre temporelle : aujourd'hui -> +60 jours (capte les concerts et matchs programmés de la saison)
+    // Fenêtre temporelle : aujourd'hui -> +30 jours (matchs, concerts et spectacles du mois)
     const startIso = targetDate.toISOString().replace(/\.\d{3}Z$/, 'Z');
-    const endDate = new Date(targetDate.getTime() + 60 * 24 * 3600 * 1000);
+    const endDate = new Date(targetDate.getTime() + 30 * 24 * 3600 * 1000);
     const endIso = endDate.toISOString().replace(/\.\d{3}Z$/, 'Z');
 
-    const isCloseToParis = Math.abs(lat - 48.85) < 0.6 && Math.abs(lon - 2.35) < 0.6;
-    const isFrance = cleanCountry === 'FR' || isCloseToParis;
-    const targetCity = isFrance
-      ? 'Paris'
-      : (cleanCity && cleanCity.toLowerCase() !== 'paris' ? cleanCity : (cleanCountry === 'US' ? 'New York' : cleanCity));
+    // Ville réelle de l'établissement (jamais écrasée artificiellement sur Paris)
+    const targetCity = cleanCity ? cleanCity.trim() : '';
 
     const radius = config.distanceUnit === 'miles' ? Math.max(5, Math.round(radiusKm * 0.621371)) : Math.max(10, radiusKm);
     const unit = config.distanceUnit; // 'miles' for US/UK, 'km' for others
 
     // URLs de requêtes :
-    // 1. Par coordonnées géographiques (idéal pour US/UK/Canada)
-    const primaryUrl = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${this.apiKey}&latlong=${geoPoint}&radius=${radius}&unit=${unit}&countryCode=${cleanCountry}&size=10&sort=date,asc`;
-    // 2. Par ville officielle (essentiel pour l'Europe et salles avec lat:0, lon:0)
+    // 1. Priorité 1 : Par coordonnées GPS réelles du restaurant (rayon local précis)
+    const primaryUrl = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${this.apiKey}&latlong=${geoPoint}&radius=${radius}&unit=${unit}&countryCode=${cleanCountry}&startDateTime=${startIso}&endDateTime=${endIso}&size=10&sort=date,asc`;
+    // 2. Repli : Par nom de ville réel du restaurant (prochains événements confirmés de la ville)
     const fallbackUrl = targetCity
       ? `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${this.apiKey}&city=${encodeURIComponent(targetCity)}&countryCode=${cleanCountry}&size=12&sort=date,asc`
       : null;
 
     let rawEvents: any[] = [];
 
-    // Tentative 1 : Par géolocalisation si non-France ou tentative initiale
-    if (!isFrance) {
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 6000);
-        const res = await fetch(primaryUrl, { signal: controller.signal });
-        clearTimeout(timeout);
-        if (res.ok) {
-          const data = await res.json();
-          rawEvents = data?._embedded?.events || [];
-        }
-      } catch (err: any) {
-        console.warn('[TICKETMASTER_COLLECTOR] Erreur requête latlong :', err?.message);
+    // Tentative 1 : Recherche géographique centrée sur le restaurant (priorité universelle)
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 6000);
+      const res = await fetch(primaryUrl, { signal: controller.signal });
+      clearTimeout(timeout);
+      if (res.ok) {
+        const data = await res.json();
+        rawEvents = data?._embedded?.events || [];
+      } else {
+        const txt = await res.text();
+        console.warn('[TICKETMASTER_COLLECTOR] Latlong returned HTTP', res.status, txt.slice(0, 150));
       }
+    } catch (err: any) {
+      console.warn('[TICKETMASTER_COLLECTOR] Erreur requête latlong :', err?.message);
     }
 
-    // Tentative 2 : Recherche par ville (prioritaire pour la France / repli pour autres)
+    // Tentative 2 : Repli par ville réelle du restaurant si la recherche GPS n'a rien trouvé
     if (rawEvents.length === 0 && fallbackUrl) {
       try {
         const controller = new AbortController();
@@ -196,25 +193,12 @@ export class TicketmasterCollector {
         if (res.ok) {
           const data = await res.json();
           rawEvents = data?._embedded?.events || [];
+        } else {
+          const txt = await res.text();
+          console.warn('[TICKETMASTER_COLLECTOR] City returned HTTP', res.status, txt.slice(0, 150));
         }
       } catch (err: any) {
         console.warn('[TICKETMASTER_COLLECTOR] Erreur requête par ville :', err?.message);
-      }
-    }
-
-    // Tentative 3 : Repli direct sur latlong si tentative ville n'a rien donné
-    if (rawEvents.length === 0 && isFrance) {
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 6000);
-        const res = await fetch(primaryUrl, { signal: controller.signal });
-        clearTimeout(timeout);
-        if (res.ok) {
-          const data = await res.json();
-          rawEvents = data?._embedded?.events || [];
-        }
-      } catch (err: any) {
-        console.warn('[TICKETMASTER_COLLECTOR] Erreur requête latlong repli :', err?.message);
       }
     }
 
@@ -440,8 +424,10 @@ export class TicketmasterCollector {
       });
     }
 
-      // Sauvegarde dans le cache mémoire
-      this.cache.set(cacheKey, { timestamp: now, signals });
+      // Sauvegarde dans le cache mémoire si des signaux réels ont été trouvés
+      if (signals.length > 0) {
+        this.cache.set(cacheKey, { timestamp: now, signals });
+      }
       return signals;
     } catch (err: any) {
       console.error('[TICKETMASTER_COLLECTOR] Erreur lors de la collecte Ticketmaster :', err?.message || err);

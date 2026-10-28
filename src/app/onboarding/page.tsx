@@ -7,6 +7,7 @@ import {
   MapPin,
   ArrowRight,
   ArrowLeft,
+  ChevronDown,
   Utensils,
   Phone,
   Globe,
@@ -151,6 +152,8 @@ export default function UnifiedOnboardingPage() {
   // Type d'établissement
   const [restaurantType, setRestaurantType] = useState('restaurant');
   const [customRestaurantTypeInput, setCustomRestaurantTypeInput] = useState('');
+  const selectedTypeItem = ESTABLISHMENT_TYPES.find((et) => et.id === restaurantType) || ESTABLISHMENT_TYPES[0];
+  const SelectedTypeIcon = selectedTypeItem ? selectedTypeItem.icon : Utensils;
 
   // Menu (Lien / Upload)
   const [menuType, setMenuType] = useState<'none' | 'link' | 'file'>('none');
@@ -196,10 +199,33 @@ export default function UnifiedOnboardingPage() {
   const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
 
-  // --- SECTION 2 : COMMUNICATION & OBJECTIFS ---
+  // --- SECTION 3 : COMMUNICATION & OBJECTIFS ---
   const [marketingGoal, setMarketingGoal] = useState('more_clients');
   const [targetAudiences, setTargetAudiences] = useState<string[]>(['young_pros', 'families']);
   const [tone, setTone] = useState('chaleureux');
+
+  const selectedGoalItem = MARKETING_GOALS.find((g) => g.id === marketingGoal) || MARKETING_GOALS[0];
+  const SelectedGoalIcon = selectedGoalItem ? selectedGoalItem.icon : Target;
+
+  const selectedToneItem = TONE_OPTIONS.find((t) => t.id === tone) || TONE_OPTIONS[0];
+  const SelectedToneIcon = selectedToneItem ? selectedToneItem.icon : Sun;
+
+  const [isTargetDropdownOpen, setIsTargetDropdownOpen] = useState(false);
+  const targetDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (targetDropdownRef.current && !targetDropdownRef.current.contains(event.target as Node)) {
+        setIsTargetDropdownOpen(false);
+      }
+    }
+    if (isTargetDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isTargetDropdownOpen]);
 
   // --- SECTION 4 : MARQUE & BRANDING ---
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -1720,35 +1746,28 @@ export default function UnifiedOnboardingPage() {
               </p>
             </div>
 
-            {/* Type d'établissement (Badges interactifs catégorisables) */}
+            {/* Type d'établissement (Liste déroulante en 1 clic) */}
             <div className={styles.fieldGroup}>
-              <label className={styles.label}>
+              <label htmlFor="restaurantTypeSelect" className={styles.label}>
                 <span>{t('onboarding.unified.establishmentTypeLabel')}</span>
                 <span className={styles.optionalTag}>{t('onboarding.unified.oneClick')}</span>
               </label>
-              <div className={styles.typeBadgesRow}>
-                {ESTABLISHMENT_TYPES.map((t) => {
-                  const IconComp = t.icon;
-                  const isSelected = restaurantType === t.id;
-                  return (
-                    <button
-                      type="button"
-                      key={t.id}
-                      className={`${styles.typeBadge} ${isSelected ? styles.typeBadgeSelected : ''}`}
-                      onClick={() => setRestaurantType(t.id)}
-                    >
-                      <span className={styles.typeBadgeIcon}>
-                        <IconComp size={18} strokeWidth={1.75} />
-                      </span>
-                      <span>{t.label}</span>
-                      {isSelected && (
-                        <span className={styles.typeBadgeCheck}>
-                          <Check size={14} strokeWidth={2.5} />
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+
+              <div className={styles.selectWrapper}>
+                <SelectedTypeIcon size={16} strokeWidth={1.75} className={styles.inputIcon} />
+                <select
+                  id="restaurantTypeSelect"
+                  value={restaurantType}
+                  onChange={(e) => setRestaurantType(e.target.value)}
+                  className={styles.selectInput}
+                >
+                  {ESTABLISHMENT_TYPES.map((et) => (
+                    <option key={et.id} value={et.id} className={styles.selectOption}>
+                      {et.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={16} strokeWidth={2} className={styles.selectArrow} />
               </div>
 
               {restaurantType === 'autre' && (
@@ -1982,84 +2001,162 @@ export default function UnifiedOnboardingPage() {
               </p>
             </div>
 
-            {/* Objectif principal sur les réseaux */}
+            {/* Objectif principal sur les réseaux (Liste déroulante en 1 clic) */}
             <div className={styles.fieldGroup}>
-              <label className={styles.label}>
+              <label htmlFor="marketingGoalSelect" className={styles.label}>
                 <span>{t('onboarding.unified.goalLabel')}</span>
                 <span className={styles.optionalTag}>{t('onboarding.unified.oneClick')}</span>
               </label>
-              <div className={styles.tagsRow}>
-                {MARKETING_GOALS.map((goal) => {
-                  const GoalIcon = goal.icon;
-                  const isSelected = marketingGoal === goal.id;
-                  return (
-                    <button
-                      type="button"
-                      key={goal.id}
-                      className={`${styles.quickTag} ${
-                        isSelected ? styles.quickTagSelected : ''
-                      }`}
-                      onClick={() => setMarketingGoal(goal.id)}
-                    >
-                      <GoalIcon size={14} strokeWidth={1.75} />
-                      <span>{goal.label}</span>
-                    </button>
-                  );
-                })}
+              <div className={styles.selectWrapper}>
+                <SelectedGoalIcon size={16} strokeWidth={1.75} className={styles.inputIcon} />
+                <select
+                  id="marketingGoalSelect"
+                  value={marketingGoal}
+                  onChange={(e) => setMarketingGoal(e.target.value)}
+                  className={styles.selectInput}
+                >
+                  {MARKETING_GOALS.map((goal) => (
+                    <option key={goal.id} value={goal.id} className={styles.selectOption}>
+                      {goal.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={16} strokeWidth={2} className={styles.selectArrow} />
               </div>
             </div>
 
-            {/* Cible prioritaire */}
+            {/* Cible prioritaire (Liste déroulante à sélection multiple) */}
             <div className={styles.fieldGroup}>
               <label className={styles.label}>
                 <span>{t('onboarding.unified.targetLabel')}</span>
                 <span className={styles.optionalTag}>{t('onboarding.unified.targetMultiple')}</span>
               </label>
-              <div className={styles.tagsRow}>
-                {TARGET_AUDIENCES.map((target) => {
-                  const TargetIcon = target.icon;
-                  const isSelected = targetAudiences.includes(target.id);
-                  return (
-                    <button
-                      type="button"
-                      key={target.id}
-                      className={`${styles.quickTag} ${
-                        isSelected ? styles.quickTagSelected : ''
+
+              <div className={styles.multiSelectContainer} ref={targetDropdownRef}>
+                <div
+                  className={`${styles.multiSelectTrigger} ${
+                    isTargetDropdownOpen ? styles.multiSelectTriggerOpen : ''
+                  }`}
+                  onClick={() => setIsTargetDropdownOpen(!isTargetDropdownOpen)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setIsTargetDropdownOpen(!isTargetDropdownOpen);
+                    }
+                  }}
+                >
+                  <Users size={16} strokeWidth={1.75} className={styles.inputIcon} />
+                  <div className={styles.multiSelectValue}>
+                    {targetAudiences.length === 0 ? (
+                      <span className={styles.multiSelectPlaceholder}>
+                        Sélectionnez un ou plusieurs publics cibles...
+                      </span>
+                    ) : (
+                      <span>
+                        {targetAudiences
+                          .map((id) => TARGET_AUDIENCES.find((a) => a.id === id)?.label)
+                          .filter(Boolean)
+                          .join(', ')}
+                      </span>
+                    )}
+                  </div>
+                  <div className={styles.multiSelectRight}>
+                    {targetAudiences.length > 0 && (
+                      <span className={styles.multiSelectBadgeCount}>{targetAudiences.length}</span>
+                    )}
+                    <ChevronDown
+                      size={16}
+                      strokeWidth={2}
+                      className={`${styles.selectArrowStatic} ${
+                        isTargetDropdownOpen ? styles.selectArrowOpen : ''
                       }`}
-                      onClick={() => toggleTarget(target.id)}
-                    >
-                      <TargetIcon size={14} strokeWidth={1.75} />
-                      <span>{target.label}</span>
-                    </button>
-                  );
-                })}
+                    />
+                  </div>
+                </div>
+
+                {isTargetDropdownOpen && (
+                  <div className={styles.multiSelectDropdown}>
+                    {TARGET_AUDIENCES.map((target) => {
+                      const TargetIcon = target.icon;
+                      const isSelected = targetAudiences.includes(target.id);
+                      return (
+                        <div
+                          key={target.id}
+                          className={`${styles.multiSelectOption} ${
+                            isSelected ? styles.multiSelectOptionSelected : ''
+                          }`}
+                          onClick={() => toggleTarget(target.id)}
+                        >
+                          <div className={styles.multiSelectOptionLeft}>
+                            <div
+                              className={`${styles.multiSelectCheckbox} ${
+                                isSelected ? styles.multiSelectCheckboxActive : ''
+                              }`}
+                            >
+                              {isSelected && <Check size={12} strokeWidth={3} />}
+                            </div>
+                            <TargetIcon size={15} strokeWidth={1.75} className={styles.multiSelectOptionIcon} />
+                            <span className={styles.multiSelectOptionLabel}>{target.label}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
+
+              {/* Badges amovibles des cibles sélectionnées */}
+              {targetAudiences.length > 0 && (
+                <div className={styles.selectedTargetsRow}>
+                  {targetAudiences.map((id) => {
+                    const item = TARGET_AUDIENCES.find((a) => a.id === id);
+                    if (!item) return null;
+                    const ItemIcon = item.icon;
+                    return (
+                      <span key={id} className={styles.selectedTargetChip}>
+                        <ItemIcon size={12} strokeWidth={1.75} />
+                        <span>{item.label}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleTarget(id);
+                          }}
+                          className={styles.removeTargetChipBtn}
+                          title="Retirer cette cible"
+                        >
+                          <X size={11} strokeWidth={2.5} />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
-            {/* Ton de communication */}
+            {/* Ton de communication (Liste déroulante en 1 clic) */}
             <div className={styles.fieldGroup}>
-              <label className={styles.label}>
+              <label htmlFor="toneSelect" className={styles.label}>
                 <span>{t('onboarding.unified.toneLabel')}</span>
                 <span className={styles.optionalTag}>{t('onboarding.unified.oneClick')}</span>
               </label>
-              <div className={styles.tagsRow}>
-                {TONE_OPTIONS.map((t) => {
-                  const ToneIcon = t.icon;
-                  const isSelected = tone === t.id;
-                  return (
-                    <button
-                      type="button"
-                      key={t.id}
-                      className={`${styles.quickTag} ${
-                        isSelected ? styles.quickTagSelected : ''
-                      }`}
-                      onClick={() => setTone(t.id)}
-                    >
-                      <ToneIcon size={14} strokeWidth={1.75} />
-                      <span>{t.label}</span>
-                    </button>
-                  );
-                })}
+              <div className={styles.selectWrapper}>
+                <SelectedToneIcon size={16} strokeWidth={1.75} className={styles.inputIcon} />
+                <select
+                  id="toneSelect"
+                  value={tone}
+                  onChange={(e) => setTone(e.target.value)}
+                  className={styles.selectInput}
+                >
+                  {TONE_OPTIONS.map((t) => (
+                    <option key={t.id} value={t.id} className={styles.selectOption}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={16} strokeWidth={2} className={styles.selectArrow} />
               </div>
             </div>
 
